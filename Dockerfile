@@ -34,7 +34,8 @@ RUN install2.r --error --skipinstalled \
     readxl \
     openxlsx \
     purrr \
-    RColorBrewer
+    RColorBrewer \
+    remotes
     
 RUN bash -c "cd /home; cd shiny; mkdir txtq"
 USER shiny
@@ -44,7 +45,7 @@ RUN mkdir /home/shiny/results
 
 USER root
 RUN R -e 'install.packages("/myapp/MTT", repos= NULL, type = "source")'
-RUN R -e 'install.packages("/myapp/COMELN", repos= NULL, type = "source")'
+RUN R -e 'remotes::install_github("ComPlat/comeln")'
 #USER shiny # not the best idea --> but otherwise go has not the permission for download
 
 EXPOSE 4001
