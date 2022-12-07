@@ -1,0 +1,12 @@
+---
+title: "Docu"
+format: pdf
+---
+
+## Installation and Running
+
+- https://blog.sellorm.com/2021/04/25/shiny-app-in-docker/
+- sudo docker build -t my-shiny-app .
+- sudo docker run --rm -p 3838:3838 my-shiny-app
+
+- https://stackoverflow.com/questions/48038969/an-image-does-not-exist-locally-with-the-tag-while-pushing-image-to-local-regis
