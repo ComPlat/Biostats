@@ -1,0 +1,86 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r }
+library(MTT)
+# test 
+p <- "/home/konrad/R/x86_64-pc-linux-gnu-library/4.1/MTT/data"
+setwd(p)
+
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+n1 <- data.frame(
+  V1 = rep("S1", 6),
+  V2 = rep("S1", 6),
+  V3 = rep("S2", 6),
+  V4 = rep("S2", 6),
+  V5 = rep("S3", 6),
+  V6 = rep("S3", 6),
+  V7 = rep("S4", 6),
+  V8 = rep("S4", 6),
+  V9 = rep("S5", 6),
+  V10 = c("neg", "neg", "neg", "pos", "pos", "pos")
+)
+
+c1 <- data.frame(
+  V1 = c(rep(25, 3),rep(10, 3)),
+  V2 = c(rep(5, 3),rep(0.5, 3)),
+  V3 = c(rep(25, 3),rep(10, 3)),
+  V4 = c(rep(5, 3),rep(0.5, 3)),
+  V5 = c(rep(25, 3),rep(10, 3)),
+  V6 = c(rep(5, 3),rep(0.5, 3)),
+  V7 = c(rep(25, 3),rep(10, 3)),
+  V8 = c(rep(5, 3),rep(0.5, 3)),
+  V9 = c(rep(25, 3),rep(10, 3)),
+  V10 = c("neg", "neg", "neg", "pos", "pos", "pos")
+)
+
+n2 <- data.frame(
+  V1 = rep("S6", 6),
+  V2 = rep("S6", 6),
+  V3 = rep("S7", 6),
+  V4 = rep("S7", 6),
+  V5 = rep("S8", 6),
+  V6 = rep("S8", 6),
+  V7 = rep("S9", 6),
+  V8 = rep("S9", 6),
+  V9 = rep("S5", 6),
+  V10 = c("neg", "neg", "neg", "pos", "pos", "pos")
+)
+
+c2 <- data.frame(
+  V1 = c(rep(25, 3),rep(10, 3)),
+  V2 = c(rep(5, 3),rep(0.5, 3)),
+  V3 = c(rep(25, 3),rep(10, 3)),
+  V4 = c(rep(5, 3),rep(0.5, 3)),
+  V5 = c(rep(25, 3),rep(10, 3)),
+  V6 = c(rep(5, 3),rep(0.5, 3)),
+  V7 = c(rep(25, 3),rep(10, 3)),
+  V8 = c(rep(5, 3),rep(0.5, 3)),
+  V9 = c(rep(5, 3),rep(0.5, 3)),
+  V10 = c("neg", "neg", "neg", "pos", "pos", "pos")
+)
+
+files <- list.files(pattern = "*.xml")
+files <- files[1:2]
+
+df1 <- MTT::import(files[[1]], n1, c1)
+df2 <- MTT::import(files[[1]], n2, c2)
+df <- rbind(df1, df2)
+
+stats1 <- MTT::ld50(df)
+p1 <- MTT::ld50plot(df)
+p2 <- MTT::box_plots(df)
+stats2 <- MTT::stats(df)
+
+
+MTT::save(p1, p2, stats1, stats2, "test.xlsx")
+
+```
+

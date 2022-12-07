@@ -1,0 +1,265 @@
+---
+output: pdf_document
+header-includes:
+  \usepackage{fancyhdr}
+  \pagestyle{fancy}
+
+params:
+  file: "nofile"
+bibliography: references.bib  
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+\fancyhf{}
+\fancyhead[L]{Cytotoxicity screen}
+\fancyfoot[CE,CO]{\thepage}
+
+# Screening Report COMPOUND PLATFORM
+
+\
+\
+
+```{r, results='asis', echo = FALSE}
+df <- readRDS(params$file)[[4]]
+cat(df[[1]], "\n")
+```
+\
+\
+
+**Type: Cytotoxicity screen** \
+**Cell viability of HeLa cells after exposition to compounds for three days**
+
+\
+\
+
+
+\tableofcontents 
+
+
+\newpage
+
+#	Introduction
+
+This report summarizes the result of the cytotoxicity test routinely conducted at our insitut *IBCS-FMS* in the working group *ComPlat* at the *KIT*. \
+
+In order to measure the cytotoxicity for mammalian organisms, *HeLa* cells are used within the assay. First, 100 µL of a solution containing 10^5^ cells/mL are sowed into 96 well plates. Subsequently, after 24 h, different concentrations (0.5 µM, 5µM, 10µM and 25 µM; diluted in cell media) of the respective compounds are added to the cells. After incubation of three days, MTT [3-(4,5-Dimethylthiazol-2-yl)-2,5-Diphenyltetrazoliumbromid)] is added. The cells reduce MTT to a formazan by oxidizing the reductant equivalents NADH or NADPH. Likewise, electrons from succinate are used for the reduction of MTT. This step is catalyzed by the enzyme succinate-dehydrogenase. The reaction is stopped after 3 hours, using an aqueous solution consisting of 10% SDS and roughly 0.3% HCl. The last step is the absorbance measurement of the formazan at 595 nm. \
+
+As a positiv control cells were lysed using a 20% triton solution, directly before adding MTT. Cells incubated exclusively in cell medium served as a negative control. \
+
+The cell viability is calculated using the following equation:
+
+$$
+cell\ viability_{well_{i}} = \frac{absorbance_{well_{i}} - mean(positive\ control)}{mean(negative\ control)}
+$$
+\newpage
+
+# Theoretical background
+
+The screening results are depicted in the figures above. On top on the left site the cell viability is plotted against the different compound concentrations. The plot below are the predicted values based on the calculated model. In read the median of the measured value is added additionally. \
+
+Furthermore, the LD50 concentration was calculated based on these results. The outcome is shown in the right panel on the top. Beyond the LD50 value the quality of the fit and the standard error are specified in the table. The quality of the fit is based on the following equation: \
+
+$$
+qualitiy\ fit = 1 - \frac{Residual\ Deviance}{Null\ Deviance}
+$$
+
+Moreover, summary information of the model are shown in the second table in the right panel. For the analysis a logistic regression model [*glm(viability ~ log(conc))*] is calculated using R (@R-base). \
+
+The basic form of the generalized linear has the following form: \
+
+$$
+g(\mu_i) = X_{i}^{T}\beta = \beta_{0} + \sum_{j = 1}^{p}x_{ij}\beta_{j}
+$$
+where:
+
+- $\mu_i = E(Y_i)$ is the value of the response variable ($Y_i$) produced by the predictor $g()$. 
+- predictor variables are called $X_{i}^{T} = (x_{i0}, x_{i1}, x_{i2}, ..., x_{ip})$
+- regression coefficients are called $\beta = (\beta_0, \beta_1, ..., \beta_p)$
+
+\
+The specific model used for the analysis has the following form:
+
+$$
+E(cell\ viability) = \alpha + \beta_1(log(conc))
+$$
+\
+
+The coefficient *estimate* indicates how much the response variable (cell viability) changes with one unit of the  logarithmised concentration. The next column indicates the *standard error* associated with the coefficient *estimate*. Subsequently, the column *statistic* is the ratio between *estimate* and *standard error*. The last column contains the *p-value* that indicates the probability associated with the *statistic* column. The lower the *p-value* the better the *statistic* values can be predicted. 
+
+
+# Compounds and results
+
+```{r, eval = TRUE, echo = FALSE, fig.width = 12, fig.height = 16}
+library(gridExtra)
+library(grid)
+df <- readRDS(params$file)
+plots <- df[[1]]
+ld50 <- df[[2]]
+ld50fit <- df[[3]]
+
+library(ggpmisc)
+library(ggplot2)
+library(ggpmisc)
+library(gridExtra)
+
+round_df <- function(df) {
+  df <- as.data.frame(df)
+  nums <- vapply(seq_along(df), function(x) {
+    nam <- names(df)[x]
+    temp <- df[, x]
+    isnum <- is.numeric(temp)
+    
+    digits = 4
+    if(nam == "p.value") {
+      digits = 10
+    }
+    return(data.frame(numeric = isnum, digits = digits))
+  },
+  FUN.VALUE = data.frame(numeric = logical(1), digits = numeric(1)) )
+  
+  nums <- data.frame(nums)
+  ret <- sapply(seq_along(nums), function(x) {
+    to_round <- nums[1, x]
+    num_digits <- nums[2, x]
+    if(to_round$numeric) {
+      return(round(df[, x], digits = num_digits$digits))
+    }
+    return(df[,x])
+    return(out)
+  })
+  ret <- as.data.frame(ret)
+  names(ret) <- names(df)
+  return(ret)
+}
+
+getld50 <- function(inp, idx) {
+  temp <- data.frame(LD50 = inp[1, idx], r2 = inp[2, idx], SE = inp[3, idx])
+  names(temp) <- c("LD50 [µM]", "r2", "SE [µM]")
+  temp_num <- apply(temp, 2, is.numeric)
+  temp[temp_num] <- round(temp[temp_num], digits = 4)
+  tableGrob(temp, theme = ttheme_default(base_size = 16))
+}
+
+getld50fit <- function(inp, idx) {
+  temp <- inp[[idx]]
+  temp <- round_df(temp)
+  tableGrob(temp, theme = ttheme_default(base_size = 16))
+}
+
+num_plot_elements <- length(plots) %% 3
+
+for(i in seq_along(plots)) {
+  
+  check <- i %% 3
+  if(check == 0) { # 3 elements in page
+    
+    ld50temp0 <- getld50(ld50, i - 2)
+    ld50fittemp0 <- getld50fit(ld50fit, i - 2)
+    ld50temp1 <- getld50(ld50, i - 1)
+    ld50fittemp1 <- getld50fit(ld50fit, i - 1)
+    ld50temp2 <- getld50(ld50, i)
+    ld50fittemp2 <- getld50fit(ld50fit, i)
+    
+    pl0 <- cowplot::as_grob(plots[[i-2]])
+    pl1 <- cowplot::as_grob(plots[[i-1]])
+    pl2 <- cowplot::as_grob(plots[[i]])
+    
+    empty <- grob()
+  
+    lay = matrix(c(1,  1,  1,  1,  1,  1,  1,  1,  1, NA,
+         4,  4,  4,  4,  4,  4,  4,  4,  4, NA,
+         7,  7,  7,  7,  7,  7,  7,  7,  7, NA,
+         NA,  2,  2, NA, NA,  3,  3, NA, NA, NA,
+         NA,  5,  5, NA, NA,  6,  6, NA, NA, NA,
+         NA,  8,  8, NA, NA,  9,  9, NA, NA, NA), ncol = 2)
+    
+    cat('\r\n\r\n')
+    p <- grid.arrange(pl0, ld50temp0, ld50fittemp0,
+                      pl1, ld50temp1, ld50fittemp1,
+                      pl2, ld50temp2, ld50fittemp2,
+             layout_matrix = lay)
+  
+    x <-  c(0.05,   0.5,  0.95,      0.5,    0.5,  0.5)
+    y <-  c(0.675,    0.675,  0.675,       0.0075,      0.5,  1)
+    id <- c(1,      1,    1,         2,      2,    2)
+    grid.polygon(x,y,id)
+    x <-  c(0.05,   0.5,  0.95,      0.5,    0.5,  0.5)
+    y <-  c(0.325,    0.325,  0.325,       0.05,      0.5,  1)
+    id <- c(1,      1,    1,         2,      2,    2)
+    grid.polygon(x,y,id)
+    
+  } else if( (num_plot_elements != 0) &&
+             (i == length(plots)) ) { # less then 3 elements
+    
+    
+    if(num_plot_elements == 2) { # 2 elements on page
+    
+    ld50temp1 <- getld50(ld50, i - 1)
+    ld50fittemp1 <- getld50fit(ld50fit, i - 1)
+    ld50temp2 <- getld50(ld50, i)
+    ld50fittemp2 <- getld50fit(ld50fit, i)
+    pl1 <- cowplot::as_grob(plots[[i-1]])
+    pl2 <- cowplot::as_grob(plots[[i]])
+    
+    empty <- grob()
+    
+    lay = matrix(c(1,  1,  1,  1,  1,  1,  1,  1,  1, NA,
+         4,  4,  4,  4,  4,  4,  4,  4,  4, NA,
+         7,  7,  7,  7,  7,  7,  7,  7,  7, NA,
+         2,  2, NA, NA,  3,  3, NA, NA, NA, NA,
+         5,  5, NA, NA,  6,  6, NA, NA, NA,  7,
+         7,  7,  7,  7,  7,  7,  7,  7), ncol = 2)
+    cat('\r\n\r\n')
+    p <- grid.arrange(pl1, ld50temp1, ld50fittemp1,
+                      pl2, ld50temp2, ld50fittemp2,
+                      empty, 
+             layout_matrix = lay)
+  
+    x <-  c(0.05,   0.5,  0.95,      0.5,    0.5,  0.5)
+    y <-  c(0.675,    0.675,  0.675,       0.0075,      0.5,  1)
+    id <- c(1,      1,    1,         2,      2,    2)
+    grid.polygon(x,y,id)
+    x <-  c(0.05,   0.5,  0.95,      0.5,    0.5,  0.5)
+    y <-  c(0.325,    0.325,  0.325,       0.05,      0.5,  1)
+    id <- c(1,      1,    1,         2,      2,    2)
+    grid.polygon(x,y,id)
+    
+    } else if(num_plot_elements == 1) { # 1 element on page
+      
+    ld50temp1 <- getld50(ld50, i)
+    ld50fittemp1 <- getld50fit(ld50fit, i)
+    pl1 <- cowplot::as_grob(plots[[i]])
+    empty <- grob()
+    cat('\r\n\r\n')
+    
+    lay = matrix(c(1,  1,  1,  1,  1,  1,  1,  1,  1, NA,
+         4,  4,  4,  4,  4,  4,  4,  4,  4, NA,
+         4,  4,  4,  4,  4,  4,  4,  4,  4, NA,
+         2,  2, NA, NA,  3,  3, NA, NA, NA, NA,
+         4,  4, NA, NA,  4,  4, NA, NA, NA,  4,
+         4,  4,  4,  4,  4,  4,  4,  4), ncol = 2)
+    
+    p <- grid.arrange(pl1, ld50temp1, ld50fittemp1,
+                      empty, 
+             layout_matrix = lay)
+  
+    x <-  c(0.05,   0.5,  0.95,      0.5,    0.5,  0.5)
+    y <-  c(0.675,    0.675,  0.675,       0.0075,      0.5,  1)
+    id <- c(1,      1,    1,         2,      2,    2)
+    grid.polygon(x,y,id)
+    x <-  c(0.05,   0.5,  0.95,      0.5,    0.5,  0.5)
+    y <-  c(0.325,    0.325,  0.325,       0.05,      0.5,  1)
+    id <- c(1,      1,    1,         2,      2,    2)
+    grid.polygon(x,y,id)
+    } 
+    
+  } 
+}
+```
+
+\newpage
+
+# References

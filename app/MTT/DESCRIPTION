@@ -1,0 +1,12 @@
+Package: MTT
+Type: Package
+Title: Analysis of MTT assay. Calculation of LD50.
+Version: 1.0
+Date: 2022-03-24
+Author: Konrad Krämer
+Maintainer: <konrad_kraemer@kit.edu>
+Description: Import xml files from platereader. Calculation of LD50. Creating boxplots of raw data and the curves used for calculation of LD50.
+License: GPL-2
+Imports: xml2, tidyr, ggplot2, MASS, xlsx, openxlsx, drc
+RoxygenNote: 7.1.2
+Encoding: UTF-8
