@@ -54,14 +54,14 @@ ui <- dashboardPage(
               radioButtons("xtype", "Type of x",
                            choices = c(factor = "factor",
                                        numeric = "numeric"),
-                           selected = "numeric"),
+                           selected = "factor"),
 
               textInput("xaxis_text", "X axis label", value = "x label"),
               textInput("yaxis_text", "Y axis label", value = "y label"),
 
-              textInput("fill", "Fill variable", value = "fill variable"),
+              textInput("fill", "Fill variable"),
               textInput("legendtitle_fill", "Legend title for fill", value = "Title fill"),
-              textInput("col", "Colour variable", value = "colour variable"),
+              textInput("col", "Colour variable"),
               textInput("legendtitle_col", "Legend title for colour", value = "Title colour"),
               actionButton("boxplot","Boxplot"),
               actionButton("dotplot","Dotplot"),
@@ -79,6 +79,7 @@ ui <- dashboardPage(
             ),
             box(
               actionButton("plot_save", "Add output to result-file"),
+              textInput("plot_file_name", "Filename", value = "new_file.xlsx"),
               actionButton("plot_upload", "Save and exit"),
               width = 12
             ),
@@ -117,6 +118,7 @@ ui <- dashboardPage(
                   ),
                 box(
                   actionButton("corr_save", "Add output to result-file"),
+                  textInput("corr_file_name", "Filename", value = "new_file.xlsx"),
                   actionButton("corr_upload", "Save and exit"),
                   width = 12
                 ),
@@ -149,6 +151,7 @@ ui <- dashboardPage(
                   ),
                   box(
                     actionButton("ass_save", "Add output to result-file"),
+                    textInput("ass_file_name", "Filename", value = "new_file.xlsx"),
                     actionButton("ass_upload", "Save and exit"),
                     width = 12
                   ),
@@ -223,6 +226,7 @@ ui <- dashboardPage(
 
               box(
                 actionButton("tests_save", "Add output to result-file"),
+                textInput("tests_file_name", "Filename", value = "new_file.xlsx"),
                 actionButton("tests_upload", "Save and exit"),
                 width = 12
               ),
@@ -251,6 +255,7 @@ ui <- dashboardPage(
                 ),
                 box(
                   actionButton("lc50_save", "Add output to result-file"),
+                  textInput("lc50_file_name", "Filename", value = "new_file.xlsx"),
                   actionButton("lc50_upload", "Save and exit"),
                   width = 12
                 ),

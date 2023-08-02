@@ -1,3 +1,4 @@
+options(shiny.port = 3838)
 library(shiny)
 library(DT)
 library(httr)
@@ -10,25 +11,23 @@ library(purrr)
 library(RColorBrewer)
 library(MTT)
 library(COMELN)
+library(openssl)
+library(jose)
 
 source("check_ast.R")
-
-# -------------------------------------------------------------------------------------------------------
-# Sending files to logfile!
-# -------------------------------------------------------------------------------------------------------
-#cat(file = stderr(), "bla bla")
 
 server <- function(input, output, session) {
 
   # -------------------------------------------------------------------------------------------------------
   # 1. download data from ELN and load into shiny
   # -------------------------------------------------------------------------------------------------------
-  var <- reactiveValues(df = NULL, token = NULL, url = NULL, id = NULL, type = NULL, ip = NULL)
+  var <- reactiveValues(df = NULL, token = NULL, url = NULL, id = NULL, type = NULL, ip = NULL, filename_user = NULL)
 
   output$dat1 <- renderDT({
     
-    file <- COMELN::download(session, "/home/shiny/results/")
-    file <- paste0("/home/shiny/results/", file)
+    
+
+    file <- COMELN::download(session, "http://localhost:3000", "/home/shiny/results") 
 
     # upload file into R
     upload <- function(path) {
@@ -140,12 +139,10 @@ server <- function(input, output, session) {
   })
 
   # -------------------------------------------------------------------------------------------------------
-  # 3. Save results in file and send info to golang
+  # 3. Save results in file and send file
   # -------------------------------------------------------------------------------------------------------
-
-  # send file information to golang
   observeEvent(checker$check, {
-      COMELN::upload(session, checker$file)
+      COMELN::upload(session, "http://localhost:3000", checker$file, new_name = var$filename_user)
       checker$check <- NULL
       checker$file <- NULL
   })
@@ -241,10 +238,10 @@ server <- function(input, output, session) {
   # send already saved results in file
   observeEvent(input$corr_upload, {
     indices <- match(input$TableSaved, result$names)
+    var$filename_user <- input$corr_file_name
     saving(indices)
     js$closewindow()
   })
-
 
   corr_fct <- function(method) {
     dep1 <- input$indep3
@@ -307,7 +304,6 @@ server <- function(input, output, session) {
 
   # save results
   observeEvent(input$plot_save, {
-
     result$saved[[length(result$saved) + 1]] <- result$d
     result$names[[length(result$names) + 1]] <- result$curr_name
     updateCheckboxGroupInput(session, "TableSaved5", choices = result$names)
@@ -321,9 +317,9 @@ server <- function(input, output, session) {
   # send already saved results in file
   observeEvent(input$plot_upload, {
     indices <- match(input$TableSaved2, result$names)
+    var$filename_user <- input$plot_file_name
     saving(indices)
     js$closewindow()
-    #stopApp()
   })
 
 
@@ -472,9 +468,9 @@ server <- function(input, output, session) {
   # send already saved results in file
   observeEvent(input$ass_upload, {
     indices <- match(input$TableSaved3, result$names)
+    var$filename_user <- input$ass_file_name
     saving(indices)
     js$closewindow()
-    #stopApp()
   })
 
   as_res <- reactiveValues(data = NULL)
@@ -657,9 +653,9 @@ server <- function(input, output, session) {
   # send already saved results in file
   observeEvent(input$tests_upload, {
     indices <- match(input$TableSaved4, result$names)
+    var$filename_user <- input$tests_file_name
     saving(indices)
     js$closewindow()
-    #stopApp()
   })
 
   # -------------------------------------------------------------------------------------------------------
@@ -998,9 +994,9 @@ server <- function(input, output, session) {
   # send already saved results in file
   observeEvent(input$lc50_upload, {
     indices <- match(input$TableSaved5, result$names)
+    var$filename_user <- input$lc50_file_name
     saving(indices)
     js$closewindow()
-    stopApp()
   })
 
   lc50_res <- reactiveValues(data = NULL)
