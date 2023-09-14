@@ -11,4 +11,4 @@ The app offers a web interface to various statistical tests relevant in biology:
 
 Partly funded by the Deutsche Forschungsgemeinschaft (DFG, German Research Foundation) under the National Research Data Infrastructure – NFDI4Chem – project No 441958208.
 
-![DFG Logo][dfg.jpg]
+![DFG Logo](dfg.jpg)
