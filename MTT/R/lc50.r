@@ -179,6 +179,7 @@ ic50 <- function(df, abs_col, conc_col, substance_name_col, negative_identifier,
     })
     res[[i]] <- m
   }
+  
   return(res)
 }
 
