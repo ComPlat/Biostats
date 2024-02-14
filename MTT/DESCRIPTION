@@ -7,6 +7,6 @@ Author: Konrad Krämer
 Maintainer: <konrad_kraemer@kit.edu>
 Description: Import xml files from platereader. Calculation of LD50. Creating boxplots of raw data and the curves used for calculation of LD50.
 License: GPL-2
-Imports: xml2, tidyr, ggplot2, MASS, xlsx, openxlsx, drc
+Imports: tidyr, ggplot2, drc, R6
 RoxygenNote: 7.1.2
 Encoding: UTF-8

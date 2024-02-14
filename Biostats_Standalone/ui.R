@@ -41,6 +41,10 @@ ui <- dashboardPage(
             actionButton("mod","Modify"),
             verbatimTextOutput("mod_error"),
             width = 12
+          ),
+          box(
+            fileInput("upload", "Upload a file"),
+            width = 12
           )
         ),
 
@@ -70,8 +74,7 @@ ui <- dashboardPage(
                   ),
                 box(
                   actionButton("corr_save", "Add output to result-file"),
-                  textInput("corr_file_name", "Filename", value = "new_file.xlsx"),
-                  actionButton("corr_upload", "Save and exit"),
+                  downloadButton("download_corr", "Save results"),
                   width = 12
                 ),
                 box(
@@ -104,7 +107,7 @@ ui <- dashboardPage(
                   box(
                     actionButton("ass_save", "Add output to result-file"),
                     textInput("ass_file_name", "Filename", value = "new_file.xlsx"),
-                    actionButton("ass_upload", "Save and exit"),
+                    downloadButton("download_ass", "Save results"),
                     width = 12
                   ),
                   box(
@@ -179,7 +182,7 @@ ui <- dashboardPage(
               box(
                 actionButton("tests_save", "Add output to result-file"),
                 textInput("tests_file_name", "Filename", value = "new_file.xlsx"),
-                actionButton("tests_upload", "Save and exit"),
+                downloadButton("download_tests", "Save results"),
                 width = 12
               ),
               box(
@@ -211,7 +214,7 @@ ui <- dashboardPage(
                 box(
                   actionButton("lc50_save", "Add output to result-file"),
                   textInput("lc50_file_name", "Filename", value = "new_file.xlsx"),
-                  actionButton("lc50_upload", "Save and exit"),
+                  downloadButton("download_lc50", "Save results"),
                   width = 12
                 ),
                 box(

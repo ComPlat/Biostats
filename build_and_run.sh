@@ -1,4 +1,5 @@
 #!/bin/bash
+sudo systemctl stop shiny-server
 var=`docker container ls  | grep 'my-shiny-app' | awk '{print $1}'`
 docker stop $var
 docker build -t my-shiny-app .

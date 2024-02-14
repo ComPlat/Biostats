@@ -1,4 +1,4 @@
-options(shiny.port = 3838)
+#options(shiny.port = 3838)
 library(shiny)
 library(DT)
 library(httr)
@@ -10,7 +10,6 @@ library(openxlsx)
 library(purrr)
 library(RColorBrewer)
 library(MTT)
-library(COMELN)
 library(openssl)
 library(jose)
 library(pheatmap)
@@ -38,8 +37,13 @@ server <- function(input, output, session) {
   source("server/plotting.R")
 
   output$dat1 <- renderDT({
-    readData("readData", var)
-    var$df
+    req(input$upload)
+    df <- upload(input$upload$datapath) 
+    if (is.data.frame(df)) {
+      var$df <- df
+    } else {
+      showNotification("File can not be used. Upload into R failed!", duration = 0)
+    }
   })
 
   # -------------------------------------------------------------------------------------------------------
@@ -78,12 +82,10 @@ server <- function(input, output, session) {
   })
 
   # -------------------------------------------------------------------------------------------------------
-  # 3. Save results in file and send file
+  # 3. Save results in file and download it  
   # -------------------------------------------------------------------------------------------------------
   observeEvent(checker$check, {
-    # COMELN::upload(session, "https://3.complat-eln-stage.ibcs.kit.edu", checker$file, new_name = var$filename_user)
-    # "http://localhost:3000"
-    COMELN::upload(session, checker$file, new_name = var$filename_user)
+    output$download()
     checker$check <- NULL
     checker$file <- NULL
   })
@@ -107,79 +109,22 @@ server <- function(input, output, session) {
       return(NULL)
     }
 
-    filename <- function() {
-      tempfile <- tempfile(tmpdir = "/home/shiny/results", fileext = ".xlsx")
-      checker$file <- tempfile
-      return(tempfile)
-    }
-
     plot_files <- new.env()
-    content <- function(file, indices) {
+    content <- function(indices) {
       l <- list()
-
       counter <- 1
       for (i in indices) {
         l[[counter]] <- result$saved[[i]]
         counter <- counter + 1
       }
-
       if (length(l) == 0) {
         return(NULL)
       }
-
-      wb <- openxlsx::createWorkbook()
-      addWorksheet(wb, "Results")
-
-      curr_row <- 1
-      for (i in seq_along(1:length(l))) {
-        curr_val <- l[[i]]
-        if (class(curr_val)[1] != "plotResult") { # own R6 class
-          writeData(wb, "Results", curr_val, startRow = curr_row)
-          curr_row <- curr_row + dim(curr_val)[1] + 5
-        } else { # find plot element
-          tempfile_plot <- tempfile(fileext = ".png")
-          ggsave(tempfile_plot,
-            plot = curr_val$obj,
-            width = curr_val$width, height = curr_val$height,
-            dpi = curr_val$dpi, device = "jpeg", units = "cm"
-          )
-          insertImage(wb, "Results", tempfile_plot, startRow = curr_row)
-          curr_row <- curr_row + 20
-          plot_files$files <- c(plot_files, tempfile_plot)
-        }
-      }
-
-      res <- tryCatch(
-        expr = {
-          openxlsx::saveWorkbook(wb, file)
-        },
-        error = function(e) {
-          "Error"
-        }
-      )
-      return(res)
+      return(l)
     }
 
-    fn <- filename()
-    checker$file <- fn
-    content(fn, indices)
-
-    for (i in seq_along(plot_files$files)) {
-      tryCatch(
-        {
-          system(paste("rm -r ", i))
-        },
-        warning = function(warn) {
-          showNotification(paste("A warning occurred: ", conditionMessage(warn)), duration = 0)
-        },
-        error = function(err) {
-          showNotification(paste("An error occurred: ", conditionMessage(err)), duration = 0)
-        }
-      )
-    }
-
-
-    checker$check <- TRUE
+    l <- content(indices)
+    return(l)
   }
 
   # -------------------------------------------------------------------------------------------------------
@@ -203,6 +148,41 @@ server <- function(input, output, session) {
     saving(indices)
     js$closewindow()
   })
+
+  output$download_corr <- downloadHandler(
+    filename = function() {
+      "result.xlsx"
+    },
+    
+    content = function(file) {
+      plot_files <- new.env()
+      indices <- match(input$TableSaved, result$names)
+      l <- saving(indices)
+      wb <- openxlsx::createWorkbook()
+      addWorksheet(wb, "Results")
+      curr_row <- 1
+      
+      for (i in seq_along(l)) {
+        curr_val <- l[[i]]
+        if (class(curr_val)[1] != "plotResult") {
+          writeData(wb, "Results", curr_val, startRow = curr_row)
+          curr_row <- curr_row + dim(curr_val)[1] + 5
+        } else { 
+          tempfile_plot <- tempfile(fileext = ".png")
+          ggsave(tempfile_plot,
+                 plot = curr_val$obj,
+                 width = curr_val$width, height = curr_val$height,
+                 dpi = curr_val$dpi, device = "jpeg", units = "cm"
+          )
+          insertImage(wb, "Results", tempfile_plot, startRow = curr_row)
+          curr_row <- curr_row + curr_val$height + 20
+          plot_files$files <- c(plot_files, tempfile_plot)
+        }
+      }
+      openxlsx::saveWorkbook(wb, file)
+    }
+    
+  )
 
   corr_fct <- function(method) {
     dep1 <- input$indep3
@@ -290,6 +270,41 @@ server <- function(input, output, session) {
     saving(indices)
     js$closewindow()
   })
+  
+  output$download_plot <- downloadHandler(
+    filename = function() {
+      "result.xlsx"
+    },
+    
+    content = function(file) {
+      plot_files <- new.env()
+      indices <- match(input$TableSaved2, result$names)
+      l <- saving(indices)
+      wb <- openxlsx::createWorkbook()
+      addWorksheet(wb, "Results")
+      curr_row <- 1
+      
+      for (i in seq_along(l)) {
+        curr_val <- l[[i]]
+        if (class(curr_val)[1] != "plotResult") {
+          writeData(wb, "Results", curr_val, startRow = curr_row)
+          curr_row <- curr_row + dim(curr_val)[1] + 5
+        } else { 
+          tempfile_plot <- tempfile(fileext = ".png")
+          ggsave(tempfile_plot,
+                 plot = curr_val$obj,
+                 width = curr_val$width, height = curr_val$height,
+                 dpi = curr_val$dpi, device = "jpeg", units = "cm"
+          )
+          insertImage(wb, "Results", tempfile_plot, startRow = curr_row)
+          curr_row <- curr_row + curr_val$height + 20
+          plot_files$files <- c(plot_files, tempfile_plot)
+        }
+      }
+      openxlsx::saveWorkbook(wb, file)
+    }
+    
+  )
 
 
   # -------------------------------------------------------------------------------------------------------
@@ -305,7 +320,6 @@ server <- function(input, output, session) {
     updateCheckboxGroupInput(session, "TableSaved4", choices = result$names)
   })
 
-
   # send already saved results in file
   observeEvent(input$ass_upload, {
     indices <- match(input$TableSaved3, result$names)
@@ -313,6 +327,41 @@ server <- function(input, output, session) {
     saving(indices)
     js$closewindow()
   })
+  
+  output$download_ass <- downloadHandler(
+    filename = function() {
+      "result.xlsx"
+    },
+    
+    content = function(file) {
+      plot_files <- new.env()
+      indices <- match(input$TableSaved3, result$names)
+      l <- saving(indices)
+      wb <- openxlsx::createWorkbook()
+      addWorksheet(wb, "Results")
+      curr_row <- 1
+      
+      for (i in seq_along(l)) {
+        curr_val <- l[[i]]
+        if (class(curr_val)[1] != "plotResult") {
+          writeData(wb, "Results", curr_val, startRow = curr_row)
+          curr_row <- curr_row + dim(curr_val)[1] + 5
+        } else { 
+          tempfile_plot <- tempfile(fileext = ".png")
+          ggsave(tempfile_plot,
+                 plot = curr_val$obj,
+                 width = curr_val$width, height = curr_val$height,
+                 dpi = curr_val$dpi, device = "jpeg", units = "cm"
+          )
+          insertImage(wb, "Results", tempfile_plot, startRow = curr_row)
+          curr_row <- curr_row + curr_val$height + 20
+          plot_files$files <- c(plot_files, tempfile_plot)
+        }
+      }
+      openxlsx::saveWorkbook(wb, file)
+    }
+    
+  )
 
   as_res <- reactiveValues(data = NULL)
   # -------------------------------------------------------------------------------------------------------
@@ -497,6 +546,41 @@ server <- function(input, output, session) {
     saving(indices)
     js$closewindow()
   })
+  
+  output$download_tests <- downloadHandler(
+    filename = function() {
+      "result.xlsx"
+    },
+    
+    content = function(file) {
+      plot_files <- new.env()
+      indices <- match(input$TableSaved4, result$names)
+      l <- saving(indices)
+      wb <- openxlsx::createWorkbook()
+      addWorksheet(wb, "Results")
+      curr_row <- 1
+      
+      for (i in seq_along(l)) {
+        curr_val <- l[[i]]
+        if (class(curr_val)[1] != "plotResult") {
+          writeData(wb, "Results", curr_val, startRow = curr_row)
+          curr_row <- curr_row + dim(curr_val)[1] + 5
+        } else { 
+          tempfile_plot <- tempfile(fileext = ".png")
+          ggsave(tempfile_plot,
+                 plot = curr_val$obj,
+                 width = curr_val$width, height = curr_val$height,
+                 dpi = curr_val$dpi, device = "jpeg", units = "cm"
+          )
+          insertImage(wb, "Results", tempfile_plot, startRow = curr_row)
+          curr_row <- curr_row + curr_val$height + 20
+          plot_files$files <- c(plot_files, tempfile_plot)
+        }
+      }
+      openxlsx::saveWorkbook(wb, file)
+    }
+    
+  )
 
   # -------------------------------------------------------------------------------------------------------
   # 7.1 t-test
@@ -861,6 +945,41 @@ server <- function(input, output, session) {
     saving(indices)
     js$closewindow()
   })
+  
+  output$download_lc50 <- downloadHandler(
+    filename = function() {
+      "result.xlsx"
+    },
+    
+    content = function(file) {
+      plot_files <- new.env()
+      indices <- match(input$TableSave5, result$names)
+      l <- saving(indices)
+      wb <- openxlsx::createWorkbook()
+      addWorksheet(wb, "Results")
+      curr_row <- 1
+      
+      for (i in seq_along(l)) {
+        curr_val <- l[[i]]
+        if (class(curr_val)[1] != "plotResult") {
+          writeData(wb, "Results", curr_val, startRow = curr_row)
+          curr_row <- curr_row + dim(curr_val)[1] + 5
+        } else { 
+          tempfile_plot <- tempfile(fileext = ".png")
+          ggsave(tempfile_plot,
+                 plot = curr_val$obj,
+                 width = curr_val$width, height = curr_val$height,
+                 dpi = curr_val$dpi, device = "jpeg", units = "cm"
+          )
+          insertImage(wb, "Results", tempfile_plot, startRow = curr_row)
+          curr_row <- curr_row + curr_val$height + 20
+          plot_files$files <- c(plot_files, tempfile_plot)
+        }
+      }
+      openxlsx::saveWorkbook(wb, file)
+    }
+    
+  )
 
   lc50_res <- reactiveValues(data = NULL, plot_final = NULL)
 

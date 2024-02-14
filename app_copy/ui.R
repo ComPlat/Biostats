@@ -8,8 +8,6 @@ shinyjs.closewindow = function() {
   //top.window.close();
 }'
 
-source("ui/plotting.R")
-
 ui <- dashboardPage(
 
   dashboardHeader(title = "Biostats"),
@@ -18,7 +16,7 @@ ui <- dashboardPage(
     extendShinyjs(text = jsCode, functions = c("geturl", "closewindow")),
     sidebarMenu(
       menuItem("Data", tabName = "data", icon = icon("table")),
-      menuItem("Visualisation", tabName = "Visualisation", icon = icon("table")),
+      menuItem("Plots", tabName = "plot", icon = icon("table")),
       menuItem("Correlations", tabName = "corr", icon = icon("table")),
       menuItem("Assumptions", tabName = "ass", icon = icon("table")),
       menuSubItem("Statistical tests", tabName = "tests",  icon = icon("table")),
@@ -34,6 +32,7 @@ ui <- dashboardPage(
           tabName = "data",
           DT::DTOutput("dat1"),
           h3("Types of columns"),
+
           box(
             h5(strong("Modify a variable")),
             textInput("op", "Operations", value = "var1 + 10"),
@@ -46,7 +45,56 @@ ui <- dashboardPage(
 
 
         # plotting
-        plotting("plotting"),
+        tabItem(tabName = "plot",
+          fluidRow(
+            box(
+              h5(strong("Plot variables")),
+              textInput("y", "Y variable", value = "y"),
+              textInput("x", "X variable", value = "x"),
+              radioButtons("xtype", "Type of x",
+                           choices = c(factor = "factor",
+                                       numeric = "numeric"),
+                           selected = "factor"),
+
+              textInput("xaxis_text", "X axis label", value = "x label"),
+              textInput("yaxis_text", "Y axis label", value = "y label"),
+
+              textInput("fill", "Fill variable"),
+              textInput("legendtitle_fill", "Legend title for fill", value = "Title fill"),
+              textInput("col", "Colour variable"),
+              textInput("legendtitle_col", "Legend title for colour", value = "Title colour"),
+              actionButton("boxplot","Boxplot"),
+              actionButton("dotplot","Dotplot"),
+              actionButton("lineplot","Lineplot"),
+              selectInput("themes", "Choose a colour theme",
+                          c("BuPu" = "BuPu",
+                            "RdYIBu" = "RdYIBu",
+                            "Paired" = "Paired",
+                            "PuOr" = "PuOr",
+                            "Spectral" = "Spectral",
+                            "Pastel1" = "Pastel1",
+                            "hue" = "hue",
+                            "grey" = "grey"), selectize = FALSE ),
+              width = 12
+            ),
+            box(
+              actionButton("plot_save", "Add output to result-file"),
+              textInput("plot_file_name", "Filename", value = "new_file.xlsx"),
+              actionButton("plot_upload", "Save and exit"),
+              width = 12
+            ),
+            box(
+              checkboxGroupInput("TableSaved2", "Saved results to file", NULL),
+              width = 12
+            ),
+            box(
+              plotOutput("plot_res"),
+              width = 12
+            )
+          )
+        ),
+
+
 
         # calculate correlations
         tabItem(tabName = "corr",
@@ -198,14 +246,11 @@ ui <- dashboardPage(
                 box(textInput("abs", "Absorbance", value = "abs")  ),
                 box(textInput("names", "names of compounds", value = "names") ),
                 box(textInput("conc", "concentrations", value = "conc") ),
-                box(textInput("negative_identifier", "How is the negative control labeled", value = "neg") ),
-                box(textInput("positive_identifier", "How is the positive control labeled", value = "pos") ),
                 box(
                   actionButton("lc50", "Calculate LC50"),
-                  actionButton("lc50Plot", "Create LC50 plots"),
                   h4(strong("Results of test:")),
-                  DT::DTOutput("lc50_result"),
-                  plotOutput("lc50_plot"),
+                  tableOutput("lc50_result"),
+                  verbatimTextOutput("lc50_error"),
                   width = 12
                 ),
                 box(

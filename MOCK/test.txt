@@ -1,0 +1,37 @@
+Var1,Var2,Freq
+,      X,Min.   :  1.00  
+,      X,1st Qu.: 38.25  
+,      X,Median : 75.50  
+,      X,Mean   : 75.50  
+,      X,3rd Qu.:112.75  
+,      X,Max.   :150.00  
+, Sepal.Length,Min.   :4.300  
+, Sepal.Length,1st Qu.:5.100  
+, Sepal.Length,Median :5.800  
+, Sepal.Length,Mean   :5.843  
+, Sepal.Length,3rd Qu.:6.400  
+, Sepal.Length,Max.   :7.900  
+, Sepal.Width,Min.   :2.000  
+, Sepal.Width,1st Qu.:2.800  
+, Sepal.Width,Median :3.000  
+, Sepal.Width,Mean   :3.057  
+, Sepal.Width,3rd Qu.:3.300  
+, Sepal.Width,Max.   :4.400  
+, Petal.Length,Min.   :1.000  
+, Petal.Length,1st Qu.:1.600  
+, Petal.Length,Median :4.350  
+, Petal.Length,Mean   :3.758  
+, Petal.Length,3rd Qu.:5.100  
+, Petal.Length,Max.   :6.900  
+, Petal.Width,Min.   :0.100  
+, Petal.Width,1st Qu.:0.300  
+, Petal.Width,Median :1.300  
+, Petal.Width,Mean   :1.199  
+, Petal.Width,3rd Qu.:1.800  
+, Petal.Width,Max.   :2.500  
+,  Species,Length:150        
+,  Species,Class :character  
+,  Species,Mode  :character  
+,  Species,NA
+,  Species,NA
+,  Species,NA
