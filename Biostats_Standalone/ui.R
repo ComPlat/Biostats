@@ -48,7 +48,6 @@ ui <- dashboardPage(
           )
         ),
 
-
         # plotting
         plotting("plotting"),
 

@@ -953,7 +953,7 @@ server <- function(input, output, session) {
     
     content = function(file) {
       plot_files <- new.env()
-      indices <- match(input$TableSave5, result$names)
+      indices <- match(input$TableSaved5, result$names)
       l <- saving(indices)
       wb <- openxlsx::createWorkbook()
       addWorksheet(wb, "Results")
@@ -996,6 +996,10 @@ server <- function(input, output, session) {
     req(negative_identifier)
     positive_identifier <- input$positive_identifier
     req(positive_identifier)
+    if ( any(is.na(df[, conc])) ) {
+      showNotification("Found NAs in conc column", duration = 0)
+    }
+    req(!any(is.na(df[, conc])))
     res <- try(MTT::ic50(df, abs, conc, names, negative_identifier, positive_identifier))
     err <- NULL
     if (inherits(res, "try-error")) {

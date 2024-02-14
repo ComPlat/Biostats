@@ -1,7 +1,7 @@
 upload <- function(path) {
   req(is.character(path))
   df <- NULL
-  df <- try( as.data.frame(read_excel(path, col_names = TRUE)), silent = TRUE)
+    df <- try( as.data.frame(read_excel(path, col_names = TRUE)), silent = TRUE)
   if (class(df) == "try-error") {
     # identify seperator
     line <- readLines(path, n = 1)
