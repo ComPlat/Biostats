@@ -145,6 +145,21 @@ ic50_internal <- function(df, abs, conc, title) {
   return(list(res, p))
 }
 
+#' Calculates the ic50 values
+#' @export
+#' @import drc
+#' @import ggplot2
+#' @param df a data.frame which contains all the data
+#' @param abs_col the name of the column in df which contains the dependent variable
+#' @param conc_col the name of the column in df which contains the different concentrations
+#' @param substance_name_col the name of the column in df which contains the different names of the compounds
+#' @param negative_identifier a character defining the name to identify the negative control within conc_col
+#' @param positive_identifier a character defining the name to identify the positive control within conc_col
+#' @return a list is returned containing the ic50 value the fitted plots and other parameters
+#' @examples
+#' path <- system.file("data", package = "MTT")
+#' df <- read.csv(paste0(path, "/ExampleData.txt"))
+#' ic50(df, "abs", "conc", "names", "neg", "pos")
 ic50 <- function(df, abs_col, conc_col, substance_name_col, negative_identifier, positive_identifier) {
   substances <- unique(df$names)
 
