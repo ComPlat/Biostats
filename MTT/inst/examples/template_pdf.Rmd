@@ -1,0 +1,323 @@
+---
+output: pdf_document
+header-includes:
+  \usepackage{fancyhdr}
+  \pagestyle{fancy}
+
+params:
+  file: "nofile"
+bibliography: references.bib  
+link-citations: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+\fancyhf{}
+\fancyhead[L]{Cytotoxicity screen}
+\fancyfoot[CE,CO]{\thepage}
+
+# Screening Report COMPOUND PLATFORM
+
+\
+\
+
+```{r, results='asis', echo = FALSE}
+df <- readRDS(params$file)[[5]]
+cat(df[[1]], "\n")
+```
+\
+\
+
+**Type: Cytotoxicity screen** \
+**Cell viability of HeLa cells after exposition to compounds for three days**
+
+\
+\
+
+
+\tableofcontents 
+
+
+\newpage
+
+#	Introduction
+
+This report summarizes the result of the cytotoxicity test routinely conducted at our insitut *IBCS-FMS* in the working group *ComPlat* at the *KIT*. \
+
+In order to measure the cytotoxicity for mammalian organisms, *HeLa* cells are used within the assay. First, 100 µL of a solution containing 10^5^ cells/mL are sowed into 96 well plates. Subsequently, after 24 h, different concentrations (0.5 µM, 5µM, 10µM and 25 µM; diluted in cell media) of the respective compounds are added to the cells. After incubation of three days, MTT [3-(4,5-Dimethylthiazol-2-yl)-2,5-Diphenyltetrazoliumbromid)] is added. The cells reduce MTT to a formazan by oxidizing the reductant equivalents NADH or NADPH. Likewise, electrons from succinate are used for the reduction of MTT. This step is catalyzed by the enzyme succinate-dehydrogenase. The reaction is stopped after 3 hours, using an aqueous solution consisting of 10% SDS and roughly 0.3% HCl. The last step is the absorbance measurement of the formazan at 595 nm. \
+
+As a positiv control cells were lysed using a 20% triton solution, directly before adding MTT. Cells incubated exclusively in cell medium served as a negative control. \
+
+The cell viability is calculated using the following equation:
+
+$$
+cell\ viability_{well_{i}} = \frac{absorbance_{well_{i}} - mean(positive\ control)}{mean(negative\ control)}
+$$
+\
+
+# Representation of data analysis
+
+The screening results are shown in the next section. The data is represented in two plots shown at the left column. The first plot shows the cell viability plotted against the different compound concentrations. Moreover, the results of two statistical tests are indicated within the plot. \
+
+\
+
+First, the *CUSUM Test* of the *CPAT* package was conducted (see @CPAT). The result is represented by the black line. Moreover, the p-value associated with the line is added. If the p-value is below a certain threshold (mostly p <= 0.05) the result is significant. Hence, the line indicates the position after which a different response was found for the following concentrations. \
+For instance, assuming that the line is drawn after the second group (e.g. 0.5 µM) with a p-value of 0.0002. Thus, the results of the *CUSUM Test* would indicate that there is no difference between 0 and 0.5 µM. However, the concentrations greater 0.5 µM differ from the negative control (0 µM). Thus, the compound is applicable in the range from 0-0.5 µM without harming *HeLa* cells. \
+
+\
+
+Moreover, an *anova* ($\operatorname{abs} = \alpha + \beta_{1}(\operatorname{conc}) + \epsilon$) and subsequently a *TukeyHSD* test were conducted (see @agricolae). The result of the *anova* are shown at the first table at the right side. The columns of the table contain the following information: \
+
+```{r, echo = FALSE, eval = TRUE}
+cols <- data.frame(
+  column = c("df", "SSQ", "MSQ", "F", "p.value"),
+  meaning = c("degree of freedom", "Sum of squares", "Mean squares", "F-value", "p-value")
+)
+knitr::kable(cols)
+```
+
+In contrast to the result of the *anova* is the output of the *TukeyHSD* test directly represented within the plot of the left side using a letter and colour code. \
+The letters indicate the different groups identified by the *TukeyHSD* test. Significant differences are shown by different letter combination. Notably, if one letter is shared between two groups within a letter-combination it is not significant. 
+For example, 0 µM has an *a*, 10 µM has an *ab* and 25 µM has a *b*. Hence, the 0 µM group is significantly different from 25 µM. Whereas there is no significant difference found between 0 µM and 10 µM or 10 µM and 25 µM. \
+The colour code indicates the different letter combination not considering significant tests. Thus, in the example above three colours would be used for 0 µM, 10 µM and 25 µM. \
+
+\
+The second plot shows the output of the calculation of the LD50. First a general linear model was created. Using the model values where predicted within the measurement range of the compound concentrations. The predicted values where used to draw the line in the plot. Moreover, the median values of the different boxplots (see first plot) are depicted. \
+Subsequently, the statistical tests are described. In the second table the LD50 value and the quality of the fit are specified. If the calculation is not possible all values are set to NA. The quality of the fit is based on the following equation: \
+
+$$
+qualitiy\ fit = 1 - \frac{Residual\ Deviance}{Null\ Deviance}
+$$
+
+```{r, echo = FALSE}
+cols <- data.frame(
+  column = c("LD50 [µM]", "r2"),
+  meaning = c("predicted LD50 value", "error of the prediction")
+)
+knitr::kable(cols)
+```
+
+
+Moreover, summary information of the model are shown in the third table in the right panel. For the analysis a logistic regression model [*glm(viability ~ log(conc))*] is calculated using R (@R-base). If the calculation is not possible all values are set to NA. \
+
+The basic form of the generalized linear has the following form: \
+
+$$
+g(\mu_i) = X_{i}^{T}\beta = \beta_{0} + \sum_{j = 1}^{p}x_{ij}\beta_{j}
+$$
+where:
+
+- $\mu_i = E(Y_i)$ is the value of the response variable ($Y_i$) produced by the predictor $g()$. 
+- predictor variables are called $X_{i}^{T} = (x_{i0}, x_{i1}, x_{i2}, ..., x_{ip})$
+- regression coefficients are called $\beta = (\beta_0, \beta_1, ..., \beta_p)$
+
+\
+The specific model used for the analysis has the following form:
+
+$$
+E(cell\ viability) = \alpha + \beta_1(log(conc))
+$$
+\
+The different columns in the third table have the following meaning:
+
+```{r, echo = FALSE}
+cols <- data.frame(
+  column = c("estimate", "std.error", "statistic", "p.value"),
+  meaning = c("indicates how much the response variable (cell viability) changes with one unit of the  logarithmised concentration",
+              "standard error associated with the estimation",
+              "estimate / standard error",
+              "probability associated with the *statistic* column")
+)
+knitr::kable(cols)
+```
+
+
+# Compounds and results
+
+```{r, eval = TRUE, echo = FALSE, fig.width = 12, fig.height = 16}
+library(gridExtra)
+library(grid)
+df <- readRDS(params$file)
+plots <- df[[1]]
+ld50 <- df[[2]]
+ld50fit <- df[[3]]
+aov_res <- df[[4]]
+
+library(ggpmisc)
+library(ggplot2)
+library(ggpmisc)
+library(gridExtra)
+
+round_df <- function(df) {
+  df <- as.data.frame(df)
+  nums <- vapply(seq_along(df), function(x) {
+    nam <- names(df)[x]
+    temp <- df[, x]
+    isnum <- is.numeric(temp)
+    
+    digits = 4
+    if(nam == "p.value") {
+      digits = 10
+    }
+    return(data.frame(numeric = isnum, digits = digits))
+  },
+  FUN.VALUE = data.frame(numeric = logical(1), digits = numeric(1)) )
+  
+  nums <- data.frame(nums)
+  ret <- sapply(seq_along(nums), function(x) {
+    to_round <- nums[1, x]
+    num_digits <- nums[2, x]
+    if(to_round$numeric) {
+      return(round(df[, x], digits = num_digits$digits))
+    }
+    return(df[,x])
+    return(out)
+  })
+  ret <- as.data.frame(ret)
+  names(ret) <- names(df)
+  return(ret)
+}
+
+getld50 <- function(inp, idx) {
+  temp <- data.frame(LD50 = inp[1, idx], r2 = inp[2, idx])
+  names(temp) <- c("LD50 [µM]", "r2")
+  temp_num <- apply(temp, 2, is.numeric)
+  temp[temp_num] <- round(temp[temp_num], digits = 4)
+  tableGrob(temp, theme = ttheme_default(base_size = 16))
+}
+
+getld50fit <- function(inp, idx) {
+  temp <- inp[[idx]]
+  temp <- round_df(temp)
+  names(temp)[1] <- "glm"
+  tableGrob(temp, theme = ttheme_default(base_size = 16))
+}
+
+getaov <- function(inp, idx, digits) {
+  temp <- inp[[idx]]
+  temp <- round_df(temp)
+  temp <- temp[, 2:7]
+  names(temp)[3:5] <- c("SSQ", "MSQ", "F")
+  temp <- tableGrob(temp, theme = ttheme_default(base_size = 16))
+}
+
+num_plot_elements <- length(plots) %% 3
+
+for(i in seq_along(plots)) {
+  
+  check <- i %% 3
+  if(check == 0) { # 3 elements in page
+    
+    ld50temp0 <- getld50(ld50, i - 2)
+    ld50fittemp0 <- getld50fit(ld50fit, i - 2)
+    ld50temp1 <- getld50(ld50, i - 1)
+    ld50fittemp1 <- getld50fit(ld50fit, i - 1)
+    ld50temp2 <- getld50(ld50, i)
+    ld50fittemp2 <- getld50fit(ld50fit, i)
+    
+    aovtemp0 <- getaov(aov_res, i - 2)
+    aovtemp1 <- getaov(aov_res, i - 1)
+    aovtemp2 <- getaov(aov_res, i)
+
+    pl0 <- cowplot::as_grob(plots[[i-2]])
+    pl1 <- cowplot::as_grob(plots[[i-1]])
+    pl2 <- cowplot::as_grob(plots[[i]])
+    
+    empty <- grob()
+  
+    lay = matrix(ncol = 2, nrow = 30)
+    lay[1:30, 1] <- c(NA, rep(1, 9), NA, rep(5, 9), NA, rep(9, 9))
+    lay[1:10, 2] <- c(NA, rep(4, 3), NA, rep(2, 2), NA, rep(3, 2))
+    lay[11:20, 2] <- c(NA, rep(8, 3), NA, rep(6, 2), NA, rep(7, 2))
+    lay[21:30, 2] <- c(NA, rep(12, 3), NA, rep(10, 2), NA, rep(11, 2))
+    
+    cat('\r\n\r\n')
+    p <- grid.arrange(pl0, ld50temp0, ld50fittemp0, aovtemp0,
+                      pl1, ld50temp1, ld50fittemp1, aovtemp1,
+                      pl2, ld50temp2, ld50fittemp2, aovtemp2,
+             layout_matrix = lay)
+  
+    x <-  c(0.05,   0.5,  0.95,      0.5,    0.5,  0.5)
+    y <-  c(0.665,    0.665,  0.665,       0.0075,      0.5,  1)
+    id <- c(1,      1,    1,         2,      2,    2)
+    grid.polygon(x,y,id)
+    x <-  c(0.05,   0.5,  0.95,      0.5,    0.5,  0.5)
+    y <-  c(0.325,    0.325,  0.325,       0.05,      0.5,  1)
+    id <- c(1,      1,    1,         2,      2,    2)
+    grid.polygon(x,y,id)
+  } else if( (num_plot_elements != 0) &&
+             (i == length(plots)) ) { # less then 3 elements
+    
+    
+    if(num_plot_elements == 2) { # 2 elements on page
+    
+    ld50temp1 <- getld50(ld50, i - 1)
+    ld50fittemp1 <- getld50fit(ld50fit, i - 1)
+    ld50temp2 <- getld50(ld50, i)
+    ld50fittemp2 <- getld50fit(ld50fit, i)
+    aovtemp1 <- getaov(aov_res, i - 1)
+    aovtemp2 <- getaov(aov_res, i)
+    
+    pl1 <- cowplot::as_grob(plots[[i-1]])
+    pl2 <- cowplot::as_grob(plots[[i]])
+    
+    empty <- grob()
+    
+    lay = matrix(ncol = 2, nrow = 30)
+    lay[1:30, 1] <- c(rep(1, 10), rep(5, 10), rep(9, 10))
+    lay[1:10, 2] <- c(NA, rep(4, 3), NA, rep(2, 2), NA, rep(3, 2))
+    lay[11:20, 2] <- c(NA, rep(8, 3), NA, rep(6, 2), NA, rep(7, 2))
+    lay[21:30, 2] <- rep(9, 10)
+    cat('\r\n\r\n')
+    p <- grid.arrange(pl1, ld50temp1, ld50fittemp1, aovtemp1,
+                      pl2, ld50temp2, ld50fittemp2, aovtemp2,
+                      empty, 
+             layout_matrix = lay)
+  
+    x <-  c(0.05,   0.5,  0.95,      0.5,    0.5,  0.5)
+    y <-  c(0.665,    0.665,  0.665,       0.0075,      0.5,  1)
+    id <- c(1,      1,    1,         2,      2,    2)
+    grid.polygon(x,y,id)
+    x <-  c(0.05,   0.5,  0.95,      0.5,    0.5,  0.5)
+    y <-  c(0.325,    0.325,  0.325,       0.05,      0.5,  1)
+    id <- c(1,      1,    1,         2,      2,    2)
+    grid.polygon(x,y,id)
+    
+    } else if(num_plot_elements == 1) { # 1 element on page
+      
+    ld50temp1 <- getld50(ld50, i)
+    ld50fittemp1 <- getld50fit(ld50fit, i)
+    aovtemp1 <- getaov(aov_res, i)
+    pl1 <- cowplot::as_grob(plots[[i]])
+    empty <- grob()
+    cat('\r\n\r\n')
+    
+    lay = matrix(ncol = 2, nrow = 30)
+    lay[1:30, 1] <- c(rep(1, 10), rep(5, 10), rep(5, 10))
+    lay[1:10, 2] <- c(NA, rep(4, 3), NA, rep(2, 2), NA, rep(3, 2))
+    lay[11:20, 2] <- rep(5, 10)
+    lay[21:30, 2] <- rep(5, 10)
+    
+    p <- grid.arrange(pl1, ld50temp1, ld50fittemp1, aovtemp1,
+                      empty, 
+             layout_matrix = lay)
+  
+    x <-  c(0.05,   0.5,  0.95,      0.5,    0.5,  0.5)
+    y <-  c(0.665,    0.665,  0.665,       0.0075,      0.5,  1)
+    id <- c(1,      1,    1,         2,      2,    2)
+    grid.polygon(x,y,id)
+    x <-  c(0.05,   0.5,  0.95,      0.5,    0.5,  0.5)
+    y <-  c(0.325,    0.325,  0.325,       0.05,      0.5,  1)
+    id <- c(1,      1,    1,         2,      2,    2)
+    grid.polygon(x,y,id)
+    } 
+    
+  } 
+}
+```
+
+\newpage
+
+# References

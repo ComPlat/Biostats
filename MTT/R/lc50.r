@@ -162,6 +162,14 @@ ic50 <- function(df, abs_col, conc_col, substance_name_col, negative_identifier,
   if(!is.numeric(df[, abs_col])) {
     return(errorClass$new("The absorbance data is not numerical")) 
   }
+  temp_conc <- df[, conc_col]
+  temp_conc[temp_conc == negative_identifier] <- -1
+  temp_conc[temp_conc == positive_identifier] <- -2
+  temp_conc <- as.numeric(temp_conc)
+  if(any(is.na(temp_conc))) {
+    return(errorClass$new("The concentration data cannot be converted to numerical")) 
+  }
+  df[, conc_col] <- temp_conc
   if(!is.numeric(df[, conc_col])) {
     return(errorClass$new("The concentration data is not numerical")) 
   }
@@ -179,7 +187,7 @@ ic50 <- function(df, abs_col, conc_col, substance_name_col, negative_identifier,
     })
     res[[i]] <- m
   }
-  
+    
   return(res)
 }
 
