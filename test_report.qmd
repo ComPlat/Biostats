@@ -1,9 +1,8 @@
 ---
-output: pdf_document
-header-includes:
-  \usepackage{fancyhdr}
-  \pagestyle{fancy}
-
+title: "Test"
+format: pdf
+execute: 
+  cache: true
 params:
   file: "nofile"
 bibliography: references.bib  
@@ -23,9 +22,9 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 \
 \
 
-```{r, results='asis', echo = FALSE}
-df <- readRDS(params$file)[[5]]
-cat(df[[1]], "\n")
+```{r}
+#df <- readRDS(params$file)
+print(str(params$file))
 ```
 \
 \
@@ -136,186 +135,42 @@ knitr::kable(cols)
 
 # Compounds and results
 
-```{r, eval = TRUE, echo = FALSE, fig.width = 12, fig.height = 16}
-library(gridExtra)
-library(grid)
-df <- readRDS(params$file)
-plots <- df[[1]]
-ld50 <- df[[2]]
-ld50fit <- df[[3]]
-aov_res <- df[[4]]
 
-library(ggpmisc)
-library(ggplot2)
-library(ggpmisc)
-library(gridExtra)
+```{r, eval = FALSE}
+#| echo: false
+#| warning: false
+p1 <- df[[1]][[1]]
+a <- df[[1]][[2]] |> t() |> as.data.frame() 
+a <- data.frame(names = row.names(a), Predicition = a)
+a[a$names == "Response_lowestdose_predicted", 1] <- "Response_lowestdose"
+a[a$names == "Response_highestdose_predicted", 1] <- "Response_highestdose"
+problem <- a[a$names == "Problems", 2]
+a <- a[(a$names != "Problems") & (a$names != "name"), ]
+p2 <- ggplot(a, aes(x = 0, y = factor(names), label = Prediction)) +
+  geom_line(size = 0) +
+  geom_text(position = position_nudge(x = -1.1), hjust = 0, size = 3) +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.y = element_text(hjust = 0, face = "bold"),
+        axis.line.y = element_line(),
+        plot.caption = element_text(hjust = 1, face = "italic", size = 9) ) +
+  labs(caption = paste("Note:", as.character(problem)) )
+p3 <- ggdraw() +
+  draw_line(x = c(0, 1), y = c(0.5, 0.5), color = "black", size = 1) +
+  theme_void()
 
-round_df <- function(df) {
-  df <- as.data.frame(df)
-  nums <- vapply(seq_along(df), function(x) {
-    nam <- names(df)[x]
-    temp <- df[, x]
-    isnum <- is.numeric(temp)
-    
-    digits = 4
-    if(nam == "p.value") {
-      digits = 10
-    }
-    return(data.frame(numeric = isnum, digits = digits))
-  },
-  FUN.VALUE = data.frame(numeric = logical(1), digits = numeric(1)) )
-  
-  nums <- data.frame(nums)
-  ret <- sapply(seq_along(nums), function(x) {
-    to_round <- nums[1, x]
-    num_digits <- nums[2, x]
-    if(to_round$numeric) {
-      return(round(df[, x], digits = num_digits$digits))
-    }
-    return(df[,x])
-    return(out)
-  })
-  ret <- as.data.frame(ret)
-  names(ret) <- names(df)
-  return(ret)
-}
-
-getld50 <- function(inp, idx) {
-  temp <- data.frame(LD50 = inp[1, idx], r2 = inp[2, idx])
-  names(temp) <- c("LD50 [µM]", "r2")
-  temp_num <- apply(temp, 2, is.numeric)
-  temp[temp_num] <- round(temp[temp_num], digits = 4)
-  tableGrob(temp, theme = ttheme_default(base_size = 16))
-}
-
-getld50fit <- function(inp, idx) {
-  temp <- inp[[idx]]
-  temp <- round_df(temp)
-  names(temp)[1] <- "glm"
-  tableGrob(temp, theme = ttheme_default(base_size = 16))
-}
-
-getaov <- function(inp, idx, digits) {
-  temp <- inp[[idx]]
-  temp <- round_df(temp)
-  temp <- temp[, 2:7]
-  names(temp)[3:5] <- c("SSQ", "MSQ", "F")
-  temp <- tableGrob(temp, theme = ttheme_default(base_size = 16))
-}
-
-num_plot_elements <- length(plots) %% 3
-
-for(i in seq_along(plots)) {
-  
-  check <- i %% 3
-  if(check == 0) { # 3 elements in page
-    
-    ld50temp0 <- getld50(ld50, i - 2)
-    ld50fittemp0 <- getld50fit(ld50fit, i - 2)
-    ld50temp1 <- getld50(ld50, i - 1)
-    ld50fittemp1 <- getld50fit(ld50fit, i - 1)
-    ld50temp2 <- getld50(ld50, i)
-    ld50fittemp2 <- getld50fit(ld50fit, i)
-    
-    aovtemp0 <- getaov(aov_res, i - 2)
-    aovtemp1 <- getaov(aov_res, i - 1)
-    aovtemp2 <- getaov(aov_res, i)
-
-    pl0 <- cowplot::as_grob(plots[[i-2]])
-    pl1 <- cowplot::as_grob(plots[[i-1]])
-    pl2 <- cowplot::as_grob(plots[[i]])
-    
-    empty <- grob()
-  
-    lay = matrix(ncol = 2, nrow = 30)
-    lay[1:30, 1] <- c(NA, rep(1, 9), NA, rep(5, 9), NA, rep(9, 9))
-    lay[1:10, 2] <- c(NA, rep(4, 3), NA, rep(2, 2), NA, rep(3, 2))
-    lay[11:20, 2] <- c(NA, rep(8, 3), NA, rep(6, 2), NA, rep(7, 2))
-    lay[21:30, 2] <- c(NA, rep(12, 3), NA, rep(10, 2), NA, rep(11, 2))
-    
-    cat('\r\n\r\n')
-    p <- grid.arrange(pl0, ld50temp0, ld50fittemp0, aovtemp0,
-                      pl1, ld50temp1, ld50fittemp1, aovtemp1,
-                      pl2, ld50temp2, ld50fittemp2, aovtemp2,
-             layout_matrix = lay)
-  
-    x <-  c(0.05,   0.5,  0.95,      0.5,    0.5,  0.5)
-    y <-  c(0.665,    0.665,  0.665,       0.0075,      0.5,  1)
-    id <- c(1,      1,    1,         2,      2,    2)
-    grid.polygon(x,y,id)
-    x <-  c(0.05,   0.5,  0.95,      0.5,    0.5,  0.5)
-    y <-  c(0.325,    0.325,  0.325,       0.05,      0.5,  1)
-    id <- c(1,      1,    1,         2,      2,    2)
-    grid.polygon(x,y,id)
-  } else if( (num_plot_elements != 0) &&
-             (i == length(plots)) ) { # less then 3 elements
-    
-    
-    if(num_plot_elements == 2) { # 2 elements on page
-    
-    ld50temp1 <- getld50(ld50, i - 1)
-    ld50fittemp1 <- getld50fit(ld50fit, i - 1)
-    ld50temp2 <- getld50(ld50, i)
-    ld50fittemp2 <- getld50fit(ld50fit, i)
-    aovtemp1 <- getaov(aov_res, i - 1)
-    aovtemp2 <- getaov(aov_res, i)
-    
-    pl1 <- cowplot::as_grob(plots[[i-1]])
-    pl2 <- cowplot::as_grob(plots[[i]])
-    
-    empty <- grob()
-    
-    lay = matrix(ncol = 2, nrow = 30)
-    lay[1:30, 1] <- c(rep(1, 10), rep(5, 10), rep(9, 10))
-    lay[1:10, 2] <- c(NA, rep(4, 3), NA, rep(2, 2), NA, rep(3, 2))
-    lay[11:20, 2] <- c(NA, rep(8, 3), NA, rep(6, 2), NA, rep(7, 2))
-    lay[21:30, 2] <- rep(9, 10)
-    cat('\r\n\r\n')
-    p <- grid.arrange(pl1, ld50temp1, ld50fittemp1, aovtemp1,
-                      pl2, ld50temp2, ld50fittemp2, aovtemp2,
-                      empty, 
-             layout_matrix = lay)
-  
-    x <-  c(0.05,   0.5,  0.95,      0.5,    0.5,  0.5)
-    y <-  c(0.665,    0.665,  0.665,       0.0075,      0.5,  1)
-    id <- c(1,      1,    1,         2,      2,    2)
-    grid.polygon(x,y,id)
-    x <-  c(0.05,   0.5,  0.95,      0.5,    0.5,  0.5)
-    y <-  c(0.325,    0.325,  0.325,       0.05,      0.5,  1)
-    id <- c(1,      1,    1,         2,      2,    2)
-    grid.polygon(x,y,id)
-    
-    } else if(num_plot_elements == 1) { # 1 element on page
-      
-    ld50temp1 <- getld50(ld50, i)
-    ld50fittemp1 <- getld50fit(ld50fit, i)
-    aovtemp1 <- getaov(aov_res, i)
-    pl1 <- cowplot::as_grob(plots[[i]])
-    empty <- grob()
-    cat('\r\n\r\n')
-    
-    lay = matrix(ncol = 2, nrow = 30)
-    lay[1:30, 1] <- c(rep(1, 10), rep(5, 10), rep(5, 10))
-    lay[1:10, 2] <- c(NA, rep(4, 3), NA, rep(2, 2), NA, rep(3, 2))
-    lay[11:20, 2] <- rep(5, 10)
-    lay[21:30, 2] <- rep(5, 10)
-    
-    p <- grid.arrange(pl1, ld50temp1, ld50fittemp1, aovtemp1,
-                      empty, 
-             layout_matrix = lay)
-  
-    x <-  c(0.05,   0.5,  0.95,      0.5,    0.5,  0.5)
-    y <-  c(0.665,    0.665,  0.665,       0.0075,      0.5,  1)
-    id <- c(1,      1,    1,         2,      2,    2)
-    grid.polygon(x,y,id)
-    x <-  c(0.05,   0.5,  0.95,      0.5,    0.5,  0.5)
-    y <-  c(0.325,    0.325,  0.325,       0.05,      0.5,  1)
-    id <- c(1,      1,    1,         2,      2,    2)
-    grid.polygon(x,y,id)
-    } 
-    
-  } 
-}
+p <- ggdraw() +
+  draw_plot(p2, x = 0, y = 0, width = 0.5, height = 0.5) +
+  draw_plot(p1, x = 0.5, y = 0, width = 0.5, height = 0.5) 
+p
+p3
 ```
 
 \newpage

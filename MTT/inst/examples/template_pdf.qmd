@@ -1,0 +1,84 @@
+---
+title: "Test"
+format: pdf
+header-includes:
+  \usepackage{fancyhdr}
+  \pagestyle{fancy}
+execute: 
+  cache: true
+params:
+  file: "nofile"
+bibliography: references.bib  
+link-citations: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+\fancyhf{}
+\fancyhead[L]{Cytotoxicity screen}
+\fancyfoot[CE,CO]{\thepage}
+
+# Screening Report COMPOUND PLATFORM
+
+\
+\
+
+```{r, results='asis', echo = FALSE}
+df <- readRDS(params$file)
+cat(df[[2]], "\n")
+```
+\
+
+**Type: Cytotoxicity screen** \
+**Cell viability of HeLa cells after exposition to compounds for three days**
+
+\
+\
+
+
+\tableofcontents 
+
+
+\newpage
+
+#	Introduction
+
+This report summarizes the result of the cytotoxicity test routinely conducted at our insitut *IBCS-FMS* in the working group *ComPlat* at the *KIT*. \
+
+In order to measure the cytotoxicity for mammalian organisms, *HeLa* cells are used within the assay. First, 100 µL of a solution containing 10^5^ cells/mL are sowed into 96 well plates. Subsequently, after 24 h, different concentrations (0.5 µM, 5µM, 10µM and 25 µM; diluted in cell media) of the respective compounds are added to the cells. After incubation of three days, MTT [3-(4,5-Dimethylthiazol-2-yl)-2,5-Diphenyltetrazoliumbromid)] is added. The cells reduce MTT to a formazan by oxidizing the reductant equivalents NADH or NADPH. Likewise, electrons from succinate are used for the reduction of MTT. This step is catalyzed by the enzyme succinate-dehydrogenase. The reaction is stopped after 3 hours, using an aqueous solution consisting of 10% SDS and roughly 0.3% HCl. The last step is the absorbance measurement of the formazan at 595 nm. \
+
+As a positiv control cells were lysed using a 20% triton solution, directly before adding MTT. Cells incubated exclusively in cell medium served as a negative control. \
+
+The cell viability is calculated using the following equation:
+
+$$
+cell\ viability_{well_{i}} = \frac{absorbance_{well_{i}} - mean(positive\ control)}{mean(negative\ control)}
+$$
+\
+
+# Representation of data analysis
+
+The screening results are shown in the next section. The data is represented in one plots shown at the right column. The normalised data is depicted in the Boxplots. Moreover, the corresponding fit is shown as a line.
+
+
+$$
+f(x) = c + \frac{d-c}{1+\exp(b(\log(x)-\log(e)))}
+$$
+
+\newpage
+
+# Compounds and results
+
+
+```{r}
+#| echo: false
+#| warning: false
+library(cowplot)
+MTT:::report_plots(df[[1]])
+```
+
+\newpage
+
+# References

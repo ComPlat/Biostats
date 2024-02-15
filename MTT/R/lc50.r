@@ -70,7 +70,8 @@ false_discovery_rate <- function(res) {
 }
 
 check_fit <- function(model, min_conc, max_conc, min_abs, max_abs, substance_name) {
-  if(model$fit$convergence != TRUE) return(errorClass$new("Model did not converge"))
+  if(model$fit$convergence != TRUE) return(errorClass$new(paste(substance_name,
+                                                                "Model did not converge")))
   b <- coefficients(model)[1]   #Hill coefficient
   c <- coefficients(model)[2]   #asymptote 1
   d <- coefficients(model)[3]   #asymptote 2
@@ -128,8 +129,8 @@ drawplot <- function(df, abs_col, conc_col, model, valid_points, title) {
                      conc = grid)
   data_measured <- data.frame(conc = df[, conc_col], abs = df[, abs_col])
   p <- ggplot() +
-      geom_boxplot(data = data_measured, aes(x = conc, y = abs, group = conc)) +
-      geom_line(data = data, aes(x = conc, y = abs)) +
+      geom_boxplot(data = data_measured, aes(x = conc, y = abs*100, group = conc)) +
+      geom_line(data = data, aes(x = conc, y = abs*100)) +
       xlab("Concentration [µM]") +
       ylab("Viability [%]") +
       ggtitle(title) 

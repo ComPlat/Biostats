@@ -4,22 +4,21 @@
 \alias{report_pdf}
 \title{Creates report file}
 \usage{
-report_pdf(boxplots, ld50_values, ld50fit, stat_aov, text, file_name)
+report_pdf(ic_50List, text, file_name)
 }
 \arguments{
-\item{boxplots}{result of box_plots()}
-
-\item{ld50_values}{result of ld50()}
-
-\item{ld50fit}{result of ld50 fit summary}
+\item{ic_50List}{the list result of a call to ic50.}
 
 \item{text}{the variable text which has to be inserted in the document}
 
-\item{filename}{name of excel file}
-}
-\value{
-Nothing is returned. Just called for its sideeffects
+\item{file_name}{the name of the excel file where the results should be saved.}
 }
 \description{
 Creates report file
+}
+\examples{
+path <- system.file("data", package = "MTT")
+df <- read.csv(paste0(path, "/ExampleData.txt"))
+res <- ic50(df, "abs", "conc", "names", "neg", "pos")
+report_pdf(res, "blabla", "report.pdf")
 }
