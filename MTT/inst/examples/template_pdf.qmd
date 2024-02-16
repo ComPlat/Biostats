@@ -60,13 +60,29 @@ $$
 
 # Representation of data analysis
 
-The screening results are shown in the next section. The data is represented in one plots shown at the right column. The normalised data is depicted in the Boxplots. Moreover, the corresponding fit is shown as a line.
-
+The screening results are shown in the next section. The data is represented in one plots shown at the right column. The normalized data is depicted in the Boxplots which also include the corresponding fit. The graphics are produced by using ggplot2 (for details see @ggplotBook). 
+The fit is calculated based on the equation below. For further details please refer to @drc and @Seber1989. As a side note, the outliers were detected using a method described by @motulsky_detecting_2006. 
 
 $$
-f(x) = c + \frac{d-c}{1+\exp(b(\log(x)-\log(e)))}
+\sum_{i=1}^N [(y_i-f_i) / w_i]^2
 $$
+where:
 
+* $y_i$ is the ith observation of the measured data
+* $w_i$ is the weight for the ith observation
+* $f(i) = c + \frac{d-c}{1+\exp(b(\log(i)-\log(e)))}$ is the expected ith value 
+
+The following parameter are listed in the table beneath the plot:
+  
+  * The estimated residual standard error (*RSE*)
+  * The response at the lowest and highest concentration 
+  * The $-log10(IC50/1000000)$ value (*pIC50*) 
+  * The p value compares the dose-response model with a simple linear regression model with slope 0 (a horizontal regression line corresponding     to no dose effect)
+  * The *IC50_relative_higher/lower* arre the $IC50 \pm 95\%$ confidence intervall
+  * The *relative IC50* (*e* in the equation above)
+  * The Hill coefficent (*b* in the equation above)
+  * The first and second asymptote (parameter *c* and *d* respecitvly in the equation above)
+  
 \newpage
 
 # Compounds and results

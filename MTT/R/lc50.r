@@ -1,6 +1,7 @@
 errorClass <- R6::R6Class("errorClass",
   public = list(
     error_message = NULL,
+    object = NULL,
     initialize = function(error_message = NULL) {
       self$error_message = error_message
     },
@@ -146,6 +147,18 @@ ic50_internal <- function(df, abs, conc, title) {
   return(list(res, p))
 }
 
+drawplotOnlyRawData <- function(df, abs_col, conc_col, title) {
+  min_conc <- min(df[, conc_col])
+  max_conc <- max(df[, conc_col])
+  data_measured <- data.frame(conc = df[, conc_col], abs = df[, abs_col])
+  p <- ggplot() +
+    geom_boxplot(data = data_measured, aes(x = conc, y = abs*100, group = conc)) +
+    xlab("Concentration [µM]") +
+    ylab("Viability [%]") +
+    ggtitle(title) 
+  return(p)
+}
+
 #' Calculates the ic50 values
 #' @export
 #' @import drc
@@ -199,7 +212,9 @@ ic50 <- function(df, abs_col, conc_col, substance_name_col, negative_identifier,
       m <- ic50_internal(df_temp, abs_col, conc_col, substances[i])
     }, 
     error = function(err) {
-          return(errorClass$new(paste("A warning occurred: ", conditionMessage(err))))
+      retval <- errorClass$new(paste("A warning occurred: ", conditionMessage(err)))
+      retval$object <- drawplotOnlyRawData(df_temp, abs_col, conc_col, substances[i])
+      return(retval)
     })
     res[[i]] <- m
   }

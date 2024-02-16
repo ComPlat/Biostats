@@ -4,7 +4,12 @@ report_plots <- function(ic50List) {
     theme_void()
   for(i in seq_along(ic50List)) {
     if(is(ic50List[[i]], "errorClass")) {
-      print(ic50List[[i]]) # issue: draw raw data. Explanation that ic50 cannot be calculated
+      p <- ic50List[[i]]$object
+      p <- p + 
+        annotate("text", x = -Inf, y = -Inf,
+                 hjust = -0.2, vjust = -1, label = ic50List[[i]]$error_message)
+      print(p)
+      print(p3)
       next
     }
     p1 <- ic50List[[i]][[2]]
