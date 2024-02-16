@@ -33,7 +33,8 @@ report_plots <- function(ic50List) {
             axis.title.y = element_blank(),
             axis.text.y = element_text(hjust = 0, face = "bold"),
             axis.line.y = element_line(),
-            plot.caption = element_text(hjust = 1, face = "italic", size = 7) ) 
+            plot.caption = element_text(hjust = 1, face = "italic", colour = "darkred", 
+                                        size = 7) ) 
     if(problem != "") {
       p2 <- p2 + labs(caption = paste("Note:", as.character(problem)) )
     }

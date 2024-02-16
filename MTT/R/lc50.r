@@ -120,7 +120,8 @@ check_fit <- function(model, min_conc, max_conc, min_abs, max_abs, substance_nam
   return (outvar)
 }
 
-drawplot <- function(df, abs_col, conc_col, model, valid_points, title) {
+drawplot <- function(df, abs_col, conc_col, model, valid_points, title,
+                     IC50_relative, IC50_relative_lower, IC50_relative_higher) {
   min_conc <- min(df[, conc_col])
   max_conc <- max(df[, conc_col])
   grid <- seq(min_conc, max_conc, 0.1)
@@ -135,6 +136,30 @@ drawplot <- function(df, abs_col, conc_col, model, valid_points, title) {
       xlab("Concentration [µM]") +
       ylab("Viability [%]") +
       ggtitle(title) 
+  
+  max_conc <- max(df[, conc_col]) + 10
+  min_conc <- -10
+  xmin <- IC50_relative - IC50_relative_lower
+  xmax <- IC50_relative + IC50_relative_higher
+  if (!is.na(xmin) & !is.na(xmax)) {
+    ymin <- min(df[, abs_col]) * 100
+    ymax <- max(df[, abs_col]) * 100
+    yrange <- ymax - ymin
+    butt_height <- yrange * 0.1
+    ymedian <- median(df[, abs_col]) * 100
+    if (xmin > min_conc && xmax < max_conc ) {
+      p <- p + geom_errorbarh(aes(xmin = xmin,
+                                  xmax = xmax, y = ymedian),
+                              colour = "darkred", end = "butt", height = butt_height) 
+    } else {
+      p <- p + labs(caption = "Confidence intervall not in conc. range") +
+        theme(plot.caption = element_text(color = "darkred", face = "italic", size = 7))
+    }  
+  } else {
+    p <- p + labs(caption = "Confidence intervall could not be calculated") +
+      theme(plot.caption = element_text(color = "darkred", face = "italic", size = 7))
+  }
+  
   return(p)
 }
 
@@ -143,7 +168,8 @@ ic50_internal <- function(df, abs, conc, title) {
   valid_points <- false_discovery_rate(residuals(model))
   model <- drm(abs ~ conc, data = df , subset = valid_points, start = model$coefficients, fct = LL.4(), robust = "mean")
   res <- check_fit(model, min(df[, conc]), max(df[, conc]), min(df[, abs]), max(df[, abs]), title)
-  p <- drawplot(df, abs, conc, model, valid_points, title)
+  p <- drawplot(df, abs, conc, model, valid_points, title, res$IC50_relative,
+                res$IC50_relative_lower, res$IC50_relative_higher)
   return(list(res, p))
 }
 
