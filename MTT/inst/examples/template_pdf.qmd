@@ -4,8 +4,6 @@ format: pdf
 header-includes:
   \usepackage{fancyhdr}
   \pagestyle{fancy}
-execute: 
-  cache: true
 params:
   file: "nofile"
 bibliography: references.bib  

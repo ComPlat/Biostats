@@ -69,6 +69,7 @@ conc_default <- function() {
 
 #' Import data
 #'
+#' @export
 #' @param path defines the path to the file which should be imported
 #' @param names is a data.frame which defines the names of the wells. This argument is optional. The default value can be checked using names_default()
 #' @param conc is a data.frame which defines the concentrations within the wells. This argument is optional. The default value can be checked using conc_default()
