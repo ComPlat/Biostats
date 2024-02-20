@@ -1,5 +1,4 @@
 ---
-title: "Test"
 format: pdf
 header-includes:
   \usepackage{fancyhdr}
