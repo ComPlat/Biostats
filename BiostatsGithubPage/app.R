@@ -6,7 +6,8 @@ ui <- fluidPage(
     textInput("user_message", "Enter your message:"),
     actionButton("trigger_button", "Trigger Custom Message Handler"),
     tags$head(
-      tags$script(src = "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js")
+      tags$script(src = "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"),
+      tags$script(src = "https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js")
     ),
     tags$script(
       "
@@ -33,7 +34,15 @@ ui <- fluidPage(
           var filenames = message.filenames;
           console.log(files.length);
           var zip = new JSZip();
-          console.log('bla');
+          for(i in filenames) {
+            var fileData = files[i];
+            var fileName = filenames[i];
+            zip.file(fileName, fileData);
+          }
+          zip.generateAsync({type:'blob'})
+            .then(function(content) {
+            saveAs(content, 'download.zip');
+          });
       });
       "
     ),
