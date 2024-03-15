@@ -1,0 +1,7 @@
+library(base64enc)
+fn <- tempfile(fileext = '.png')
+png(fn)
+plot(runif(10))
+dev.off()
+base64enc::base64encode(fn)
+unlink(fn)
