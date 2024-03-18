@@ -282,7 +282,6 @@ visServer <- function(id, data, listResults) {
           jsString[i] <- l[[i]]
         }
       }
-      plot(length(jsString))
       session$sendCustomMessage(type = "downloadZip",
                                 list(numberOfResults = length(jsString),
                                      FileContent = jsString))
