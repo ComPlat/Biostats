@@ -32,10 +32,11 @@ corrUI <- function(id) {
   )
 }
 
-corrServer <- function(id, df, listResults) {
+corrServer <- function(id, data, listResults) {
   moduleServer(id, function(input, output, session) {  
       corr_fct <- function(method) {
-        req(is.data.frame(df))
+        req(is.data.frame(data$df))
+        df <- data$df
         req(input$dep)
         req(input$indep)
         dep <- input$dep
@@ -67,7 +68,7 @@ corrServer <- function(id, df, listResults) {
         corr_fct("pearson")
       })
       output$cor_result <- renderTable({
-        listResults$data
+        listResults$curr_data
         }, digits = 6
       )
       
@@ -75,7 +76,7 @@ corrServer <- function(id, df, listResults) {
         corr_fct("spearman")
       })
       output$cor_result <- renderTable({
-        listResults$data
+        listResults$curr_data
         }, digits = 6
       )
       
@@ -83,7 +84,7 @@ corrServer <- function(id, df, listResults) {
         corr_fct("kendall")
       })
       output$cor_result <- renderTable({
-        listResults$data
+        listResults$curr_data
         }, digits = 6
       )
       
@@ -101,7 +102,7 @@ corrServer <- function(id, df, listResults) {
            if (inherits(l[[i]], "ggplot")) {
              fn <- tempfile(fileext = '.png')
              ggsave(plot = l[[i]], filename = fn)
-             jsString[i] <- base64enc::base64encode(fn)
+             jsString[i] <- paste0("data:image/png;base64,", base64enc::base64encode(fn))
              unlink(fn)
            } else if (inherits(l[[i]], "data.frame")) {
              jsString[i] <- DF2String(l[[i]])

@@ -112,8 +112,8 @@ server <- function(input, output) {
   
   listResults <- reactiveValues(curr_data = NULL, curr_name = NULL,
                                 all_data = list(), all_names = list())
-  listResults <- corrServer("CORR", data$df, listResults)
-  listResults <- visServer("VIS", data$df, listResults)
+  corrServer("CORR", data, listResults)
+  visServer("VIS", data, listResults)
   
 }
 
