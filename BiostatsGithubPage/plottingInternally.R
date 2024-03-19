@@ -74,8 +74,6 @@
 		return(p)
 	}
 
-
-
 	annotatePlot <- function(p, method, plotMethod, level = 2, k = 5) {
 		pB <- ggplot_build(p) # issue: otherwise data is empty
 		df <- pB$data[[1]]	
@@ -100,8 +98,16 @@
 		}
 	}
 
+	addFacet <- function(p, facetVar, facetMode) {
+    	if(facetMode == "facet_wrap") {
+    		p <- p + facet_wrap(.~ .data[[facetVar]], scales = "free")
+    	} 
+    	#else if(facetMode == "facet_grid") {
+    		#return(p + facet_grid(.~ .data[[facetVar]], scales = "free") )
+    	#}
+	}
 
-	BoxplotFct <- function(df, x, y, typeX, xLabel, yLabel,
+	BoxplotFct <- function(df, x, y, xLabel, yLabel,
 										fillVar, legendTitleFill, fillTheme, 
 										colourVar, legendTitleColour,
 										colourTheme, facetMode, facetVar) {
@@ -120,12 +126,26 @@
 											 aes(!!!aes, !!!aesColour, !!!aesFill,
 													group = interaction(.data[[x]],
 																		 !!!aesColour, !!!aesFill) ) )	
+		if (!missing(xLabel)) p <- p + xlab(xLabel)
+		if (!missing(yLabel)) p <- p + ylab(yLabel)
+		if (!missing(legendTitleFill)) p <- p + guides(fill = guide_legend(title = legendTitleFill))
+		if (!missing(legendTitleColour)) p <- p + guides(colour = guide_legend(title = legendTitleColour))
+		if (!missing(fillTheme)) p <- p + scale_fill_brewer(palette = fillTheme)	
+		if (!missing(colourTheme)) p <- p + scale_color_brewer(palette = colourTheme)	
+    if (missing(facetVar) | missing(facetMode)) {
+    	return(p)
+    } else {
+    	p <- addFacet(p, facetVar, facetMode)
+    }
 		return(p)
 	}
 
-BoxplotFct(CO2, "conc", "uptake", colourVar = "Type", fillVar = "Treatment")
-BoxplotFct(CO2, "conc", "uptake", colourVar = "Type")
-BoxplotFct(CO2, "conc", "uptake", colourVar = "Type")
+BoxplotFct(CO2, "conc", "uptake", xLabel = "bla", yLabel = "uptake2",
+					 fillVar = "Treatment", legendTitleFill = "Treament fill", fillTheme = "PuOr",
+					 colourVar = "Type", legendTitleColour = "bla", colourTheme = "hue",
+					 "facet_wrap", "Type")
+#BoxplotFct(CO2, "conc", "uptake", colourVar = "Type")
+#BoxplotFct(CO2, "conc", "uptake", colourVar = "Type")
 #PlFct("dot", CO2, "conc", "uptake", colourVar = "Type", fillVar = "Treatment")
 	#method <- "lm"
 	#p <- ggplot(data = CO2, aes(x = conc, y = uptake)) +

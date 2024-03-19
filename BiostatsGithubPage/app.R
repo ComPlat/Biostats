@@ -7,6 +7,7 @@ library(ggplot2)
 library(base64enc)
 library(shinyjs)
 library(mgcv)
+library(RColorBrewer)
 
 source("check_ast.R")
 source("utils.R")
