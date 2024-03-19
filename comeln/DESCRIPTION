@@ -1,0 +1,12 @@
+Package: COMELN
+Type: Package
+Title: Download and upload files from/to ELN
+Version: 0.1.0
+Author: Konrad Krämer
+Maintainer: Krämer Konrad <konrad.kraemer@kit.edu>
+Description: Download and upload files from/to ELN
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 6.0.1.9000
+Imports: shiny, httr, openssl, jose
+License: GPL-2
