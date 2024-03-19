@@ -6,6 +6,7 @@ library(utils)
 library(ggplot2)
 library(base64enc)
 library(shinyjs)
+library(ggpmisc)
 
 source("check_ast.R")
 source("utils.R")
