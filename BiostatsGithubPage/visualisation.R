@@ -171,26 +171,26 @@ visServer <- function(id, data, listResults) {
       
       pfct <- function() {
         if ( (fill == "") && (col == "")) {
-          p <- ggplot(data = df, aes(x = xd, y = yd)) +
+          p <- ggplot(data = df, aes(x = xd, y = yd, group = xd)) +
             ylab(ylabel) +
             xlab(xlabel)  
         } else if ((fill != "") && (col != "") ) {
           p <- ggplot(data = df,
-                      aes(x = xd, y = yd,
+                      aes(x = xd, y = yd, group = xd,
                           fill = df[,fill], color = df[,col]) ) +
             ylab(ylabel) +
             xlab(xlabel) +
             guides(fill = guide_legend(title = fill_title), col = guide_legend(title = col_title))       
         } else if ( (fill != "") && (col == "") ) {
           p <- ggplot(data = df,
-                      aes(x = xd, y = yd,
+                      aes(x = xd, y = yd, group = xd, 
                           fill = df[,fill]) ) +
             ylab(ylabel) +
             xlab(xlabel) +
             guides(fill = guide_legend(title = fill_title) )
         } else if ( (fill == "") && (col != "") ) {
           p <- ggplot(data = df,
-                      aes(x = xd, y = yd,
+                      aes(x = xd, y = yd, group = xd,
                           color = df[,col]) ) +
             ylab(ylabel) +
             xlab(xlabel) +
@@ -201,15 +201,23 @@ visServer <- function(id, data, listResults) {
             scale_color_brewer(palette = theme) +
             scale_fill_brewer(palette = themeFill)
           p <- p + geom_boxplot()
+          if (fitMethod != "" && !is.null(fitMethod) && fitMethod != "none") {
+            p <- annotatePlot(p, fitMethod)
+          } 
         } else if (method == "dot") {
           p <- p +
             scale_color_brewer(palette = theme) 
           p <- p + geom_point() +   geom_smooth(method = fitMethod) 
-          if (fitMethod != "" && !is.null(fitMethod) && fitMethod != "none") p <- p + stat_poly_eq(ggpmisc::use_label(c("eq", "n", "R2", "p", "F"))) 
+          if (fitMethod != "" && !is.null(fitMethod) && fitMethod != "none") {
+            p <- annotatePlot(p, fitMethod)
+          } 
         } else if (method == "line") {
           p <- p +
             scale_color_brewer(palette = theme) 
           p <- p + geom_line()
+          if (fitMethod != "" && !is.null(fitMethod) && fitMethod != "none") {
+            p <- annotatePlot(p, fitMethod)
+          } 
         }  
         if (facetMode == "facet_wrap") {
           p <- p + facet_wrap(~ df[,facet], scales = "free")
@@ -273,7 +281,7 @@ visServer <- function(id, data, listResults) {
       for (i in seq_along(l)) {
         if (inherits(l[[i]], "ggplot")) {
           fn <- tempfile(fileext = '.png')
-          ggsave(plot = l[[i]], filename = fn)
+          ggsave(plot = l[[i]], filename = fn) # issue: add resoultion, width and height
           jsString[i] <- paste0("data:image/png;base64,", base64enc::base64encode(fn))
           unlink(fn)
         } else if (inherits(l[[i]], "data.frame")) {
