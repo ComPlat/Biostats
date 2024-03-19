@@ -12,21 +12,24 @@ visSidebarUI <- function(id) {
     ),
     textInput(NS(id, "xaxisText"), "X axis label", value = "x label"),
     textInput(NS(id, "yaxisText"), "Y axis label", value = "y label"),
-    selectInput(NS(id, "fitMethod"), "Choose a fitting method",
-                c(
-                  "none" = "none",
-                  "lm" = "lm",
-                  "glm" = "glm",
-                  "gam" = "gam",
-                  "loess" = "loess"
-                ),
-                selectize = FALSE
+    conditionalPanel(
+        condition = "input.VisConditionedPanels == 'Scatterplot'",
+        selectInput(NS(id, "fitMethod"), "Choose a fitting method",
+                    c(
+                      "none" = "none",
+                      "lm" = "lm",
+                      "glm" = "glm",
+                      "gam" = "gam",
+                      "loess" = "loess"
+                    ),
+                    selectize = FALSE
+        ),
     ),
-    textInput(NS(id, "fill"), "Fill variable"),
-    textInput(NS(id, "legendTitleFill"), "Legend title for fill", value = "Title fill"),
-    textInput(NS(id, "col"), "Colour variable"),
-    textInput(NS(id, "legendTitleCol"), "Legend title for colour", value = "Title colour"),
-    selectInput(NS(id, "theme"), "Choose a 'colour' theme",
+    conditionalPanel(
+      condition = "input.VisConditionedPanels == 'Boxplot'",
+      textInput(NS(id, "fill"), "Fill variable"),
+      textInput(NS(id, "legendTitleFill"), "Legend title for fill", value = "Title fill"),
+      selectInput(NS(id, "themeFill"), "Choose a 'fill' theme",
                 c(
                   "BuPu" = "BuPu",
                   "RdYIBu" = "RdYIBu",
@@ -38,8 +41,11 @@ visSidebarUI <- function(id) {
                   "grey" = "grey"
                 ),
                 selectize = FALSE
+      )
     ),
-    selectInput(NS(id, "themeFill"), "Choose a 'fill' theme",
+    textInput(NS(id, "col"), "Colour variable"),
+    textInput(NS(id, "legendTitleCol"), "Legend title for colour", value = "Title colour"),
+    selectInput(NS(id, "theme"), "Choose a 'colour' theme",
                 c(
                   "BuPu" = "BuPu",
                   "RdYIBu" = "RdYIBu",

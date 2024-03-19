@@ -1,0 +1,70 @@
+vars                  package:ggplot2                  R Documentation
+
+_Q_u_o_t_e _f_a_c_e_t_i_n_g _v_a_r_i_a_b_l_e_s
+
+_D_e_s_c_r_i_p_t_i_o_n:
+
+     Just like ‘aes()’, ‘vars()’ is a quoting function that takes
+     inputs to be evaluated in the context of a dataset. These inputs
+     can be:
+
+        • variable names
+
+        • complex expressions
+
+     In both cases, the results (the vectors that the variable
+     represents or the results of the expressions) are used to form
+     faceting groups.
+
+_U_s_a_g_e:
+
+     vars(...)
+     
+_A_r_g_u_m_e_n_t_s:
+
+     ...: <‘data-masking’> Variables or expressions automatically
+          quoted. These are evaluated in the context of the data to
+          form faceting groups. Can be named (the names are passed to a
+          labeller).
+
+_S_e_e _A_l_s_o:
+
+     ‘aes()’, ‘facet_wrap()’, ‘facet_grid()’
+
+_E_x_a_m_p_l_e_s:
+
+     p <- ggplot(mtcars, aes(wt, disp)) + geom_point()
+     p + facet_wrap(vars(vs, am))
+     
+     # vars() makes it easy to pass variables from wrapper functions:
+     wrap_by <- function(...) {
+       facet_wrap(vars(...), labeller = label_both)
+     }
+     p + wrap_by(vs)
+     p + wrap_by(vs, am)
+     
+     # You can also supply expressions to vars(). In this case it's often a
+     # good idea to supply a name as well:
+     p + wrap_by(drat = cut_number(drat, 3))
+     
+     # Let's create another function for cutting and wrapping a
+     # variable. This time it will take a named argument instead of dots,
+     # so we'll have to use the "enquote and unquote" pattern:
+     wrap_cut <- function(var, n = 3) {
+       # Let's enquote the named argument `var` to make it auto-quoting:
+       var <- enquo(var)
+     
+       # `as_label()` will create a nice default name:
+       nm <- as_label(var)
+     
+       # Now let's unquote everything at the right place. Note that we also
+       # unquote `n` just in case the data frame has a column named
+       # `n`. The latter would have precedence over our local variable
+       # because the data is always masking the environment.
+       wrap_by(!!nm := cut_number(!!var, !!n))
+     }
+     
+     # Thanks to tidy eval idioms we now have another useful wrapper:
+     p + wrap_cut(drat)
+     
+

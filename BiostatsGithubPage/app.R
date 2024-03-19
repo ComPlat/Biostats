@@ -10,7 +10,7 @@ library(mgcv)
 
 source("check_ast.R")
 source("utils.R")
-source("plotAnnotation.R")
+source("plottingInternally.R")
 source("correlation.R")
 source("visualisation.R")
 
