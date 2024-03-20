@@ -1,9 +1,11 @@
 annotateDF <- function(p, method, level = 2) {
 		pB <- ggplot_build(p) # issue: otherwise data is empty
 		df <- pB$data[[1]]	
-		l <- pB$layout$layout
-		l <- data.frame(PANEL = l$PANEL, names = l$`<unknown>`)
-		df$PANEL <- l[match(df$PANEL, l$PANEL), 2]	
+		if (length(unique(df$PANEL)) > 1) {
+			l <- pB$layout$layout
+			l <- data.frame(PANEL = l$PANEL, names = l$`<unknown>`)
+			df$PANEL <- l[match(df$PANEL, l$PANEL), 2]	
+		}
 		# https://stackoverflow.com/questions/40854225/how-to-identify-the-function-used-by-geom-smooth
 		formula <- p$layers[[level]]$stat$setup_params(df, p$layers[[level]]$stat_params)$formula
 		df$interaction <- interaction(df$PANEL, df$group)
@@ -100,92 +102,99 @@ DotplotFct <- function(df, x, y, xLabel, yLabel,
 		aesColour = NULL
 		aesFill = NULL
 		p <- NULL
-		if (!missing(colourVar)) {
-			aesColour <- aes(colour = .data[[colourVar]])
+		
+		if (colourVar == "") {
+				aesColour <- aes()
+		} else {
+				aesColour <- aes(colour = .data[[colourVar]])	
 		}
 		p <- ggplot(data = df,
-											 aes(!!!aes, !!!aesColour, !!!aesFill)) +
+											 aes(!!!aes, !!!aesColour)) +
 						geom_point() 
-		if (!missing(xLabel)) p <- p + xlab(xLabel)
-		if (!missing(yLabel)) p <- p + ylab(yLabel)
-		if (!missing(legendTitleColour)) p <- p + guides(colour = guide_legend(title = legendTitleColour))
-		if (!missing(colourTheme)) p <- p + scale_color_brewer(palette = colourTheme)	
-		if (!missing(facetVar) | !missing(facetMode)) {
-    	p <- addFacet(p, facetVar, facetMode)
+
+		p <- p + xlab(xLabel)
+		p <- p + ylab(yLabel)
+		p <- p + guides(colour = guide_legend(title = legendTitleColour))
+		p <- p + scale_color_brewer(palette = colourTheme)	
+		if(facetMode != "none") {
+				p <- addFacet(p, facetVar, facetMode)	 
     }	
-   
-		if (!missing(fitMethod)) {
-					if(fitMethod == "gam") {
-						p <- p + geom_smooth(method = fitMethod,
-														  formula = y ~ s(x, bs = "cs", k = k))
-					} else {
-						p <- p + geom_smooth(method = fitMethod)	
-					}
-					df <- annotateDF(p, fitMethod) # issue: add k as parameter
-					names(df) <- ifelse(names(df) == "PANEL", "Panel", names(df))
-					if(fitMethod == "gam") {
-						p <- ggplot(data = df, aes(x = x, y = y, colour = colour)) +
-									geom_point() +
-									geom_smooth(method = fitMethod,
-														  formula = y ~ s(x, bs = "cs", k = k)) +
-									geom_text(aes(x = xPos, y = yPos,
-												 label = annotation, size = 3),
-												 show.legend = FALSE, position = position_dodge(width = .9))	
-      
-					} else {
-						p <- ggplot(data = df, aes(x = x, y = y, colour = colour)) +
-									geom_point() +
-									geom_smooth(method = fitMethod) +
-									geom_text(aes(x = xPos, y = yPos,
-												 label = annotation, size = 3),
-												 show.legend = FALSE, position = position_dodge(width = .9))	
-					}
-					
-					if (!missing(xLabel)) p <- p + xlab(xLabel)
-					if (!missing(yLabel)) p <- p + ylab(yLabel)
-					if (!missing(legendTitleColour)) p <- p + guides(colour = guide_legend(title = legendTitleColour))
-					if (!missing(colourTheme)) p <- p + scale_color_brewer(palette = colourTheme)		
-					if (missing(facetVar) | missing(facetMode)) {
-    				return(p)
-    			} else {
-    				p <- addFacet(p, "Panel", facetMode)
-    				return(p)
-    			}
-    			return(p)
-		}
+		if(fitMethod == "none" | fitMethod == "") {
+			return(p)
+		} else {
+			if(fitMethod == "gam") {
+				p <- p + geom_smooth(method = fitMethod,
+												  formula = y ~ s(x, bs = "cs", k = k))
+			} else {
+				p <- p + geom_smooth(method = fitMethod)	
+			}
+			df <- annotateDF(p, fitMethod) 
+			names(df) <- ifelse(names(df) == "PANEL", "Panel", names(df))
+			if(fitMethod == "gam") {
+				p <- ggplot(data = df, aes(x = x, y = y, colour = colour)) +
+							geom_point() +
+							geom_smooth(method = fitMethod,
+												  formula = y ~ s(x, bs = "cs", k = k)) +
+							geom_text(aes(x = xPos, y = yPos,
+										 label = annotation, size = 3),
+										 show.legend = FALSE, position = position_dodge(width = .9))	
+			} else {
+				p <- ggplot(data = df, aes(x = x, y = y, colour = colour)) +
+							geom_point() +
+							geom_smooth(method = fitMethod) +
+							geom_text(aes(x = xPos, y = yPos,
+										 label = annotation, size = 3),
+										 show.legend = FALSE, position = position_dodge(width = .9))	
+			}
+			
+			p <- p + xlab(xLabel)
+			p <- p + ylab(yLabel)
+			p <- p + guides(colour = guide_legend(title = legendTitleColour))
+			p <- p + scale_color_brewer(palette = colourTheme)		
+			if(facetMode != "none") {
+				p <- addFacet(p, "Panel", facetMode)	
+			} 
+    }	
+    
 		return(p)
 }
+#DotplotFct(df = CO2, x = "conc", y = "uptake", xLabel = "x lable", yLabel = "y label",
+#					 fitMethod = "lm", colourVar = "", legendTitleColour = "Title colour", 
+#					 colourTheme = "PuOr", facetMode = "facet_wrap", facetVar = "Type", k = 10)
 
 BoxplotFct <- function(df, x, y, xLabel, yLabel,
 										fillVar, legendTitleFill, fillTheme, 
 										colourVar, legendTitleColour,
 										colourTheme, facetMode, facetVar) {
+
 		aes <- aes(x = .data[[x]], y = .data[[y]])
 		aesColour = NULL
 		aesFill = NULL
 		p <- NULL
-		if (!missing(colourVar)) {
-			aesColour <- aes(colour = .data[[colourVar]])
+		if (colourVar == "") {
+				aesColour <- aes()
+		} else {
+				aesColour <- aes(colour = .data[[colourVar]])	
 		}
-		if (!missing(fillVar)) {
-			aesFill <- aes(fill = .data[[fillVar]])
+		if (fillVar == "") {
+				aesFill <- aes()
+		} else {
+				aesFill <- aes(fill = .data[[fillVar]])	
 		}
 		p <- ggplot() +
 					geom_boxplot(data = df,
 											 aes(!!!aes, !!!aesColour, !!!aesFill,
 													group = interaction(.data[[x]],
 																		 !!!aesColour, !!!aesFill) ) )	
-		if (!missing(xLabel)) p <- p + xlab(xLabel)
-		if (!missing(yLabel)) p <- p + ylab(yLabel)
-		if (!missing(legendTitleFill)) p <- p + guides(fill = guide_legend(title = legendTitleFill))
-		if (!missing(legendTitleColour)) p <- p + guides(colour = guide_legend(title = legendTitleColour))
-		if (!missing(fillTheme)) p <- p + scale_fill_brewer(palette = fillTheme)	
-		if (!missing(colourTheme)) p <- p + scale_color_brewer(palette = colourTheme)	
-    if (missing(facetVar) | missing(facetMode)) {
-    	return(p)
-    } else {
-    	p <- addFacet(p, facetVar, facetMode)
-    }
+		p <- p + xlab(xLabel)
+		p <- p + ylab(yLabel)
+		p <- p + guides(fill = guide_legend(title = legendTitleFill))
+		p <- p + guides(colour = guide_legend(title = legendTitleColour))
+		p <- p + scale_fill_brewer(palette = fillTheme)	
+		p <- p + scale_color_brewer(palette = colourTheme)	
+    if(facetMode != "none") {
+				p <- addFacet(p, facetVar, facetMode)	 
+    }	
 		return(p)
 }
 
@@ -195,41 +204,22 @@ LineplotFct <- function(df, x, y, xLabel, yLabel,
 		aes <- aes(x = .data[[x]], y = .data[[y]])
 		aesColour = NULL
 		p <- NULL
-		if (!missing(colourVar)) {
-			aesColour <- aes(colour = .data[[colourVar]])
+		if (colourVar == "") {
+				aesColour <- aes()
+		} else {
+				aesColour <- aes(colour = .data[[colourVar]])	
 		}
 		p <- ggplot() +
 					geom_line(data = df,
 											 aes(!!!aes, !!!aesColour, 
 													group = interaction(.data[[x]],
 																		 !!!aesColour) ) )	
-		if (!missing(xLabel)) p <- p + xlab(xLabel)
-		if (!missing(yLabel)) p <- p + ylab(yLabel)
-		if (!missing(legendTitleColour)) p <- p + guides(colour = guide_legend(title = legendTitleColour))
-		if (!missing(colourTheme)) p <- p + scale_color_brewer(palette = colourTheme)	
-    if (missing(facetVar) | missing(facetMode)) {
-    	return(p)
-    } else {
-    	p <- addFacet(p, facetVar, facetMode)
-    }
+		p <- p + xlab(xLabel)
+		p <- p + ylab(yLabel)
+		p <- p + guides(colour = guide_legend(title = legendTitleColour))
+		p <- p + scale_color_brewer(palette = colourTheme)	
+    if(facetMode != "none") {
+				p <- addFacet(p, facetVar, facetMode)	 
+    }	
 		return(p)
 }
-
-#BoxplotFct(CO2, "conc", "uptake", xLabel = "bla", yLabel = "uptake2",
-#					 fillVar = "Treatment", legendTitleFill = "Treament fill", fillTheme = "PuOr",
-#					 colourVar = "Type", legendTitleColour = "bla", colourTheme = "hue",
-#					 "facet_wrap", "Type")
-
-#DotplotFct(df = CO2, x = "conc", y = "uptake", "xLabel", "yLabel",
-#					 colourVar = "Treatment",
-#					 facetMode = "facet_wrap", facetVar = "Type")
-DotplotFct(df = CO2, x = "conc", y = "uptake", "xLabel", "yLabel",
-					 colourVar = "Treatment",
-					 facetMode = "facet_wrap", facetVar = "Type",
-					 fitMethod = "gam", k = 5)
-DotplotFct(df = CO2, x = "conc", y = "uptake", "xLabel", "yLabel",
-					 colourVar = "Treatment")
-
-LineplotFct(CO2, "conc", "uptake", xLabel = "bla", yLabel = "uptake2",
-					 colourVar = "Type", legendTitleColour = "bla", 
-					 facetMode = "facet_wrap", facetVar = "Type")

@@ -56,9 +56,6 @@ corrServer <- function(id, data, listResults) {
         } else {
           listResults$curr_data <- renderTable(fit, digits = 6)
           listResults$curr_name <- paste("Test Nr", length(listResults$all_names) + 1, "Conducted test: ", method)
-          listResults$all_data[[length(listResults$all_data) + 1]] <- fit
-          listResults$all_names <- c(listResults$all_names, 
-                                     paste("Test Nr", length(listResults$all_names) + 1, "Conducted test: ", method))
           output$corr_result <- renderTable(fit, digits = 6)
           output$corr_error <- renderText(err)  
         }
@@ -89,30 +86,25 @@ corrServer <- function(id, data, listResults) {
       )
       
       observeEvent(input$corr_save, {
+        if (!(listResults$curr_name %in% unlist(listResults$all_names)) ) {
+          listResults$all_data[[length(listResults$all_data) + 1]] <- listResults$curr_data
+          listResults$all_names[[length(listResults$all_names) + 1]] <- listResults$curr_name  
+        }
         updateCheckboxGroupInput(session, "TableSaved",
                                  choices = listResults$all_names)
       })
       
       observeEvent(input$download_corr, {
-        indices <- which(input$TableSaved == listResults$all_names)
+        lr <- unlist(listResults$all_names)
+        indices <- sapply(input$TableSaved, function(x) {
+          which(x == lr)
+        })
         req(length(indices) >= 1)
         l <- listResults$all_data[indices]
-        jsString <- character(length(l))
-        for (i in seq_along(l)) {
-           if (inherits(l[[i]], "ggplot")) {
-             fn <- tempfile(fileext = '.png')
-             ggsave(plot = l[[i]], filename = fn)
-             jsString[i] <- paste0("data:image/png;base64,", base64enc::base64encode(fn))
-             unlink(fn)
-           } else if (inherits(l[[i]], "data.frame")) {
-             jsString[i] <- DF2String(l[[i]])
-           } else if (is.character(l[[i]])) {
-             jsString[i] <- l[[i]]
-           }
-        }
+        jsString <- createJSString(l)
         session$sendCustomMessage(type = "downloadZip",
-                                  list(numberOfResults = length(jsString),
-                                       FileContent = jsString))
+          list(numberOfResults = length(jsString),
+           FileContent = jsString))
       })
       
 	})

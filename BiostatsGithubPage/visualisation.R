@@ -24,6 +24,7 @@ visSidebarUI <- function(id) {
                     ),
                     selectize = FALSE
         ),
+        numericInput(NS(id, "k"), "number of knots used by spline for gam", value = 10)
     ),
     conditionalPanel(
       condition = "input.VisConditionedPanels == 'Boxplot'",
@@ -173,68 +174,34 @@ visServer <- function(id, data, listResults) {
       yd <- as.numeric(df[,y])
       if (fitMethod != "none" && !is.null(fitMethod) && xtype != "numeric") {
         showNotification("Fit method will be ignored as X variable is not numerical", duration = 0)
+        fitMethod <- "none"
       }
-      
-      pfct <- function() {
-        if ( (fill == "") && (col == "")) {
-          p <- ggplot(data = df, aes(x = xd, y = yd, group = xd)) +
-            ylab(ylabel) +
-            xlab(xlabel)  
-        } else if ((fill != "") && (col != "") ) {
-          p <- ggplot(data = df,
-                      aes(x = xd, y = yd, group = xd,
-                          fill = df[,fill], color = df[,col]) ) +
-            ylab(ylabel) +
-            xlab(xlabel) +
-            guides(fill = guide_legend(title = fill_title), col = guide_legend(title = col_title))       
-        } else if ( (fill != "") && (col == "") ) {
-          p <- ggplot(data = df,
-                      aes(x = xd, y = yd, group = xd, 
-                          fill = df[,fill]) ) +
-            ylab(ylabel) +
-            xlab(xlabel) +
-            guides(fill = guide_legend(title = fill_title) )
-        } else if ( (fill == "") && (col != "") ) {
-          p <- ggplot(data = df,
-                      aes(x = xd, y = yd, group = xd,
-                          color = df[,col]) ) +
-            ylab(ylabel) +
-            xlab(xlabel) +
-            guides(col = guide_legend(title = col_title) )
-        }
-        if (method == "box") {
-          p <- p +
-            scale_color_brewer(palette = theme) +
-            scale_fill_brewer(palette = themeFill)
-          p <- p + geom_boxplot()
-          if (fitMethod != "" && !is.null(fitMethod) && fitMethod != "none") {
-            p <- annotatePlot(p, fitMethod)
-          } 
-        } else if (method == "dot") {
-          p <- p +
-            scale_color_brewer(palette = theme) 
-          p <- p + geom_point() +   geom_smooth(method = fitMethod) 
-          if (fitMethod != "" && !is.null(fitMethod) && fitMethod != "none") {
-            p <- annotatePlot(p, fitMethod)
-          } 
-        } else if (method == "line") {
-          p <- p +
-            scale_color_brewer(palette = theme) 
-          p <- p + geom_line()
-          if (fitMethod != "" && !is.null(fitMethod) && fitMethod != "none") {
-            p <- annotatePlot(p, fitMethod)
-          } 
-        }  
-        if (facetMode == "facet_wrap") {
-          p <- p + facet_wrap(~ df[,facet], scales = "free")
-        } else if (facetMode == "facet_grid") {
-          p <- p + facet_grid(. ~  df[,facet], scales = "free")
-        }
-        return(p)
-      }
-      
+
       p <- tryCatch({
-        p <- pfct()
+        if (method == "box") {
+          p <- BoxplotFct(df, x, y, xlabel, ylabel,
+                    fill, fillTitle, themeFill,
+                    col, colTitle, theme, 
+                    facetMode, facet)
+        } else if (method == "dot") {
+          k <- NULL
+          if (fitMethod == "gam") {
+            req(input$k)
+            k <- input$k
+            if(k <= 0) {
+              showNotification("k has to be at least 1 and is set to this value")
+              k <- 1
+            }
+          }
+          p <- DotplotFct(df, x, y, xlabel, ylabel,
+                    fitMethod,
+                    col, colTitle, theme,
+                    facetMode, facet, k)
+        } else if (method == "line") {
+          p <- LineplotFct(df, x, y, xlabel, ylabel,
+                    col, colTitle, theme,
+                     facetMode, facet)
+        }
       }, 
       warning = function(warn) {
         showNotification(paste("A warning occurred: ", conditionMessage(warn)), duration = 0)
@@ -243,11 +210,9 @@ visServer <- function(id, data, listResults) {
         showNotification(paste("An error occurred: ", conditionMessage(err)), duration = 0)
       })
       output$plotResult <- renderPlot(p)
-      listResults$curr_data <- p
+      listResults$curr_data <- new("plot", p = p, width = width, height = height, resolution = resolution)
       listResults$curr_name <- paste("Plot Nr",
                                      length(listResults$all_names) + 1,  paste("Type: ", method))
-      listResults$all_data[[length(listResults$all_data) + 1]] <- p
-      listResults$all_names[[length(listResults$all_names) + 1]] <- listResults$curr_name
     }
     
     observeEvent(input$CreatePlotBox, {
@@ -275,27 +240,22 @@ visServer <- function(id, data, listResults) {
     })
     
     observeEvent(input$plotSave, {
+      if (!(listResults$curr_name %in% unlist(listResults$all_names)) ) {
+        listResults$all_data[[length(listResults$all_data) + 1]] <- listResults$curr_data
+        listResults$all_names[[length(listResults$all_names) + 1]] <- listResults$curr_name  
+      }
       updateCheckboxGroupInput(session, "TableSaved",
                                choices = listResults$all_names)
     })
     
     observeEvent(input$downloadViss, {
-      indices <- which(input$TableSaved == listResults$all_names)
+      lr <- unlist(listResults$all_names)
+      indices <- sapply(input$TableSaved, function(x) {
+        which(x == lr)
+      })
       req(length(indices) >= 1)
       l <- listResults$all_data[indices]
-      jsString <- character(length(l))
-      for (i in seq_along(l)) {
-        if (inherits(l[[i]], "ggplot")) {
-          fn <- tempfile(fileext = '.png')
-          ggsave(plot = l[[i]], filename = fn) # issue: add resoultion, width and height
-          jsString[i] <- paste0("data:image/png;base64,", base64enc::base64encode(fn))
-          unlink(fn)
-        } else if (inherits(l[[i]], "data.frame")) {
-          jsString[i] <- DF2String(l[[i]])
-        } else if (is.character(l[[i]])) {
-          jsString[i] <- l[[i]]
-        }
-      }
+      jsString <- createJSString(l)
       session$sendCustomMessage(type = "downloadZip",
                                 list(numberOfResults = length(jsString),
                                      FileContent = jsString))
