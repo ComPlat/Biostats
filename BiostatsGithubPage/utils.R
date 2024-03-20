@@ -40,3 +40,16 @@ createJSString <- function(l) {
   }
   return(jsString)
 }
+
+stackDF <- function(df, keepCol) {
+  as.data.frame(pivot_longer(df, cols = -keepCol,
+               names_to = "name", values_to = "value"))
+}
+
+unstackDF <- function(df, name, value) {
+  df <- pivot_wider(df, names_from = name, values_from = value)
+  df <- map(df, simplify) %>% 
+    as.data.frame()
+  as.data.frame(df)
+}
+

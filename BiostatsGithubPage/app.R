@@ -8,6 +8,8 @@ library(base64enc)
 library(shinyjs)
 library(mgcv)
 library(RColorBrewer)
+library(tidyr)
+library(purrr)
 
 source("check_ast.R")
 source("utils.R")
@@ -29,6 +31,13 @@ ui <- fluidPage(
         textInput("op", "Operations", value = "var / 1000"),
         textInput("new_col", "Name of new variable", value = "var"),
         actionButton("mod", "Modify"),
+        tags$hr(),
+        textInput("keepVar", "const variable"),
+        actionButton("pivotLonger", "conversion to long format"),
+        tags$hr(),
+        textInput("name", "name column"),
+        textInput("value", "value column"),
+        actionButton("pivotWider", "convert to wide format"),
         verbatimTextOutput("mod_error"),
         tags$hr(),
         helpText("Please upload a CSV file.")
@@ -65,7 +74,8 @@ ui <- fluidPage(
 )
 
 server <- function(input, output) {
-  data <- reactiveValues(df = NA)
+  dataSet <- reactiveValues(df = NULL)
+
   output$df <- renderDT({
     req(input$file)
     df <- try(read.csv(input$file$datapath))
@@ -74,17 +84,17 @@ server <- function(input, output) {
       showNotification(err)
       return(NULL)
     } 
-    data$df <- df
-    req(!is.na(data$df))
-    datatable(data$df, options = list(pageLength = 10)) 
+    dataSet$df <- df
+    req(!is.na(dataSet$df))
+    datatable(dataSet$df, options = list(pageLength = 10)) 
   })
 
   observeEvent(input$mod, {
-    req(!is.null(data$df))
-    req(is.data.frame(data$df))
+    req(!is.null(dataSet$df))
+    req(is.data.frame(dataSet$df))
     req(input$op)
     req(input$new_col)
-    dt <- data$df
+    dt <- dataSet$df
     op <- input$op
     new_col <- input$new_col
     new <- NULL
@@ -100,23 +110,53 @@ server <- function(input, output) {
       showNotification(e)
       return()
     }
-    e <- try(
+    e <- try({
       new <- with(dt, eval(parse(text = op)))
-    )
+      dataSet$df[, new_col] <- new
+    })
     if (inherits(e, "try-error")) {
       err <- conditionMessage(attr(e, "condition"))
-    } else {
-      data$df[, new_col] <- new
+    } 
+    output$df <- renderDT(dataSet$df)
+    output$mod_error <- renderText(err)  
+    return(df)
+  })
+
+  observeEvent(input$pivotLonger, {
+    req(!is.null(dataSet$df))
+    req(input$keepVar)
+    err <- NULL
+    e <- try({
+      dataSet$df <- stackDF(dataSet$df, input$keepVar)
+    })
+    if (inherits(e, "try-error")) {
+      err <- conditionMessage(attr(e, "condition"))
     }
-    output$df <- renderDT(data$df)
+    output$df <- renderDT(dataSet$df)
+    output$mod_error <- renderText(err)  
+    return(df)
+  })
+
+  observeEvent(input$pivotWider, {
+    req(!is.null(dataSet$df))
+    req(input$name)
+    req(input$value)
+    err <- NULL
+    e <- try({
+      dataSet$df <- unstackDF(dataSet$df, input$name, input$value)
+    })
+    if (inherits(e, "try-error")) {
+      err <- conditionMessage(attr(e, "condition"))
+    }
+    output$df <- renderDT(dataSet$df)
     output$mod_error <- renderText(err)  
     return(df)
   })
   
   listResults <- reactiveValues(curr_data = NULL, curr_name = NULL,
                                 all_data = list(), all_names = list())
-  corrServer("CORR", data, listResults)
-  visServer("VIS", data, listResults)
+  corrServer("CORR", dataSet, listResults)
+  visServer("VIS", dataSet, listResults)
   
 }
 

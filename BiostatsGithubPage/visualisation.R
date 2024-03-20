@@ -32,14 +32,14 @@ visSidebarUI <- function(id) {
       textInput(NS(id, "legendTitleFill"), "Legend title for fill", value = "Title fill"),
       selectInput(NS(id, "themeFill"), "Choose a 'fill' theme",
                 c(
-                  "BuPu" = "BuPu",
-                  "RdYIBu" = "RdYIBu",
-                  "Paired" = "Paired",
-                  "PuOr" = "PuOr",
-                  "Spectral" = "Spectral",
-                  "Pastel1" = "Pastel1",
-                  "hue" = "hue",
-                  "grey" = "grey"
+                  "BuGn" = "BuGn",
+                  "PuRd" = "PuRd",
+                  "YlOrBr" = "YlOrBr",
+                  "Greens" = "Greens",
+                  "GnBu" = "GnBu",
+                  "Reds" = "Reds",
+                  "Oranges" = "Oranges",
+                  "Greys" = "Greys"
                 ),
                 selectize = FALSE
       )
@@ -48,14 +48,14 @@ visSidebarUI <- function(id) {
     textInput(NS(id, "legendTitleCol"), "Legend title for colour", value = "Title colour"),
     selectInput(NS(id, "theme"), "Choose a 'colour' theme",
                 c(
-                  "BuPu" = "BuPu",
-                  "RdYIBu" = "RdYIBu",
+                  "Accent" = "Accent",
+                  "Dark2" = "Dark2",
                   "Paired" = "Paired",
-                  "PuOr" = "PuOr",
-                  "Spectral" = "Spectral",
                   "Pastel1" = "Pastel1",
-                  "hue" = "hue",
-                  "grey" = "grey"
+                  "Pastel2" = "Pastel2",
+                  "Set1" = "Set1",
+                  "Set2" = "Set2",
+                  "Set3" = "Set3"
                 ),
                 selectize = FALSE
     ),
@@ -73,7 +73,54 @@ visUI <- function(id) {
       tags$script(src = "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"),
       tags$script(src = "https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"),
       tags$script(src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/0.4.1/html2canvas.min.js"),
-      tags$script(src = "download.js")
+      tags$script(src = "download.js"),
+
+      tags$script(src = "
+        Shiny.addCustomMessageHandler('downloadZip', function(message) {
+  var FileContent = message.FileContent;
+  if( (typeof FileContent) == 'string') {
+    if (FileContent.startsWith('data:image')) {
+      var fileName = 'file' + (i + 1) + '.png'; 
+      var zip = new JSZip();
+      var imageData = atob(FileContent.split(',')[1]);
+      var byteArray = new Uint8Array(imageData.length);
+      for (var i = 0; i < imageData.length; i++) {
+        byteArray[i] = imageData.charCodeAt(i);
+      }
+      zip.file(fileName, byteArray, {binary: true});
+      zip.generateAsync({type: 'blob'}).then(function(content) {
+        saveAs(content, 'download.zip');
+      });
+    } else {
+      var zipText = new JSZip();
+      var fileNameText = 'file' + 1 + '.txt'; 
+      zipText.file(fileNameText, FileContent);
+      zipText.generateAsync({type: 'blob'}).then(function(content) {
+        saveAs(content, 'download.zip');
+      });
+    }
+  } else {
+    var zip = new JSZip();
+    for (var i in FileContent) {
+      if (FileContent[i].startsWith('data:image')) {
+        var fileName = 'file' + (i + 1) + '.png'; 
+        var imageData = atob(FileContent[i].split(',')[1]);
+        var byteArray = new Uint8Array(imageData.length);
+        for (var i = 0; i < imageData.length; i++) {
+          byteArray[i] = imageData.charCodeAt(i);
+        }
+        zip.file(fileName, byteArray, {binary: true});
+      } else {
+        var fileName = 'file' + (i + 1) + '.txt'; 
+        zip.file(fileName, FileContent[i]); 
+      }
+    }
+    zip.generateAsync({type: 'blob'}).then(function(content) {
+      saveAs(content, 'download.zip');
+    });
+  }
+});
+        ")
     ),
     br(),
     tabsetPanel(
@@ -151,7 +198,7 @@ visServer <- function(id, data, listResults) {
       col <- input$col
       fill <- input$fill
       if ( !(fill %in% names(df)) && (fill != "") ) showNotification("fill variable not found", duration = 0)
-      if ( !(col %in% names(df)) && (fill != "") ) showNotification("colour variable not found", duration = 0)
+      if ( !(col %in% names(df)) && (col != "") ) showNotification("colour variable not found", duration = 0)
       req( (fill %in% names(df)) || (fill == "") )
       req( (col %in% names(df)) || (col == "") )
       fillTitle <- input$legendTitleFill

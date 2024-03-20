@@ -54,7 +54,7 @@ corrServer <- function(id, data, listResults) {
         if (inherits(e, "try-error")) {
           err <- conditionMessage(attr(e, "condition"))
         } else {
-          listResults$curr_data <- renderTable(fit, digits = 6)
+          listResults$curr_data <- fit
           listResults$curr_name <- paste("Test Nr", length(listResults$all_names) + 1, "Conducted test: ", method)
           output$corr_result <- renderTable(fit, digits = 6)
           output$corr_error <- renderText(err)  
