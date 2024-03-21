@@ -66,6 +66,7 @@ assServer <- function(id, data, listResults) {
         res <- list()
         e <- try({
           formula <- as.formula(paste(dep, "~", indep))
+          stopifnot(get_ast(formula) != "Error")
           dat <- splitData(df, formula)
           for (i in unique(dat[, 2])) {
             tempDat <- dat[dat[, 2] == i, ]
@@ -105,6 +106,7 @@ assServer <- function(id, data, listResults) {
       res <- NULL
       e <- try({
         formula <- as.formula(paste(dep, "~", indep))
+        stopifnot(get_ast(formula) != "Error")
         fit <- lm(formula, data = df)
         r <- resid(fit)
         res <- broom::tidy(shapiro.test(r))
@@ -136,6 +138,7 @@ assServer <- function(id, data, listResults) {
       fit <- NULL
       e <- try({
         formula <- as.formula(paste(dep, "~", indep))
+        stopifnot(get_ast(formula) != "Error")
         fit <- broom::tidy(car::leveneTest(formula, data = df, center = input$center))
       })
       if (inherits(e, "try-error")) {
@@ -172,6 +175,7 @@ assServer <- function(id, data, listResults) {
       f <- NULL
       e <- try({
         formula <- as.formula(paste(dep, "~", indep))
+        stopifnot(get_ast(formula) != "Error")
         f <- diagnosticPlot(df, formula)  
       })
       if (inherits(e, "try-error")) {

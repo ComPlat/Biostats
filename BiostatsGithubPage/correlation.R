@@ -35,6 +35,7 @@ corrUI <- function(id) {
 corrServer <- function(id, data, listResults) {
   moduleServer(id, function(input, output, session) {  
       corr_fct <- function(method) {
+        output$corr_error <- renderText(NULL)    
         req(is.data.frame(data$df))
         df <- data$df
         req(input$dep)
@@ -44,20 +45,22 @@ corrServer <- function(id, data, listResults) {
         d <- df
         fit <- NULL
         err <- NULL
-        e <- try(
+        e <- try({
+          stopifnot(get_ast(str2lang(indep)) != "Error")
+          stopifnot(get_ast(str2lang(dep)) != "Error")
           fit <- broom::tidy(
             cor.test(d[, dep], d[, indep],
                      method = method,
                      alternative = input$alt,
                      conf.level = input$conflevel))
-        )
+        })
         if (inherits(e, "try-error")) {
           err <- conditionMessage(attr(e, "condition"))
+          output$corr_error <- renderText(err)
         } else {
           listResults$curr_data <- fit
           listResults$curr_name <- paste("Test Nr", length(listResults$all_names) + 1, "Conducted test: ", method)
-          output$corr_result <- renderTable(fit, digits = 6)
-          output$corr_error <- renderText(err)  
+          output$corr_result <- renderTable(fit, digits = 6)  
         }
       }
       

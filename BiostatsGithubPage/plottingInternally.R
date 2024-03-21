@@ -18,6 +18,7 @@ annotateDF <- function(p, method, level = 2) {
 }
 
 calcParams <- function(df, formula, method) {
+	stopifnot(get_ast(formula) != "Error")
 	if (method == "lm") {
 		model <- lm(formula, data = df)
 		r_squared <- summary(model)$r.squared

@@ -23,7 +23,7 @@ get_ast <- function(inp) {
     "ppois", "rpois", "dunif", "punif", "qunif", "runif",
     "mean", "sd", "median", "quantile", "range",
     "sum", "diff", "min", "max", "scale",
-    "c", "vector", "length", "matrix"
+    "c", "vector", "length", "matrix", "~"
   )
 
   check <- deparse(fct)

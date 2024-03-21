@@ -6,3 +6,4 @@ httpuv::runStaticServer("docs")
 setwd("/home/konrad/Documents/GitHub/shinychem/BiostatsGithubPage")
 source("/home/konrad/Documents/GitHub/shinychem/BiostatsGithubPage/app.R")
 shinyApp(ui, server)
+

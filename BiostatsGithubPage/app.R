@@ -10,6 +10,7 @@ library(mgcv)
 library(RColorBrewer)
 library(tidyr)
 library(purrr)
+library(agricolae)
 
 source("check_ast.R")
 source("utils.R")
@@ -17,6 +18,7 @@ source("plottingInternally.R")
 source("correlation.R")
 source("visualisation.R")
 source("assumption.R")
+source("statisticalTests.R")
 
 ui <- fluidPage(
   useShinyjs(),
@@ -54,6 +56,10 @@ ui <- fluidPage(
       conditionalPanel(
         condition = "input.conditionedPanels == 'Assumption'",
         assSidebarUI("ASS")
+      ),
+      conditionalPanel(
+        condition = "input.conditionedPanels == 'Tests'",
+        testsSidebarUI("TESTS")
       )
     ),  
     
@@ -62,19 +68,18 @@ ui <- fluidPage(
         tabPanel("Data",
             DTOutput("df")
         ),
-        
         tabPanel("Correlation",
             corrUI("CORR")
         ),
-        
         tabPanel("Visualisation",
             visUI("VIS")
         ),
-
         tabPanel("Assumption",
             assUI("ASS")
         ),
-        
+        tabPanel("Tests",
+            testsUI("TESTS")
+        ),
         id = "conditionedPanels"   
       )
     )
@@ -136,6 +141,7 @@ server <- function(input, output) {
     req(input$keepVar)
     err <- NULL
     e <- try({
+      stopifnot(get_ast(str2lang(input$keepVar)) != "Error")
       dataSet$df <- stackDF(dataSet$df, input$keepVar)
     })
     if (inherits(e, "try-error")) {
@@ -152,6 +158,8 @@ server <- function(input, output) {
     req(input$value)
     err <- NULL
     e <- try({
+      stopifnot(get_ast(str2lang(input$value)) != "Error")
+      stopifnot(get_ast(str2lang(input$name)) != "Error")
       dataSet$df <- unstackDF(dataSet$df, input$name, input$value)
     })
     if (inherits(e, "try-error")) {
@@ -167,6 +175,7 @@ server <- function(input, output) {
   corrServer("CORR", dataSet, listResults)
   visServer("VIS", dataSet, listResults)
   assServer("ASS", dataSet, listResults)
+  testsServer("TESTS", dataSet, listResults)
   
 }
 
