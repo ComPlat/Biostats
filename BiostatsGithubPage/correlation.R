@@ -80,12 +80,13 @@ corrServer <- function(id, data, listResults) {
       observeEvent(input$kendall, {
         corr_fct("kendall")
       })
-      output$cor_result <- renderTable({
+      output$cor_result <- renderTable({ # issue: check whether this is required
         listResults$curr_data
         }, digits = 6
       )
       
       observeEvent(input$corr_save, {
+        if(is.null(listResults$curr_name)) return(NULL)
         if (!(listResults$curr_name %in% unlist(listResults$all_names)) ) {
           listResults$all_data[[length(listResults$all_data) + 1]] <- listResults$curr_data
           listResults$all_names[[length(listResults$all_names) + 1]] <- listResults$curr_name  

@@ -16,6 +16,7 @@ source("utils.R")
 source("plottingInternally.R")
 source("correlation.R")
 source("visualisation.R")
+source("assumption.R")
 
 ui <- fluidPage(
   useShinyjs(),
@@ -49,6 +50,10 @@ ui <- fluidPage(
       conditionalPanel(
         condition = "input.conditionedPanels == 'Visualisation'",
         visSidebarUI("VIS")
+      ),
+      conditionalPanel(
+        condition = "input.conditionedPanels == 'Assumption'",
+        assSidebarUI("ASS")
       )
     ),  
     
@@ -64,6 +69,10 @@ ui <- fluidPage(
         
         tabPanel("Visualisation",
             visUI("VIS")
+        ),
+
+        tabPanel("Assumption",
+            assUI("ASS")
         ),
         
         id = "conditionedPanels"   
@@ -157,6 +166,7 @@ server <- function(input, output) {
                                 all_data = list(), all_names = list())
   corrServer("CORR", dataSet, listResults)
   visServer("VIS", dataSet, listResults)
+  assServer("ASS", dataSet, listResults)
   
 }
 

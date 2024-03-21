@@ -20,6 +20,12 @@ setClass("plot",
   )
 )
 
+setClass("diagnosticPlot",
+  slots = c(
+    p = "character"
+  )
+)
+
 createJSString <- function(l) {
 	jsString <- character(length(l))
 	for (i in seq_along(l)) {
@@ -32,6 +38,9 @@ createJSString <- function(l) {
           ggsave(plot = p, filename = fn, width = width, height = height, dpi = resolution) 
           jsString[i] <- paste0("data:image/png;base64,", base64enc::base64encode(fn))
           unlink(fn)
+        } else if (inherits(l[[i]], "diagnosticPlot")) {
+          jsString[i] <- paste0("data:image/png;base64,", base64enc::base64encode(l[[i]]@p))
+          unlink(l[[i]]@p)
         } else if (inherits(l[[i]], "data.frame")) {
           jsString[i] <- DF2String(l[[i]])
         } else if (is.character(l[[i]])) {
@@ -51,4 +60,55 @@ unstackDF <- function(df, name, value) {
   df <- map(df, simplify) %>% 
     as.data.frame()
   as.data.frame(df)
+}
+
+correctName <- function(name, df) {
+        name %in% names(df)
+}
+
+changeCharInput <- function(chars) {
+  nams <- unlist(strsplit(chars, split = ","))
+  for (i in 1:length(nams)) {
+    nams[i] <- gsub(" ", "", nams[i])
+  }
+  nams
+}
+
+combine <- function(new, vec, df, first) {
+  if (length(vec) == 0) {
+    return(new)
+  }
+  if (correctName(vec[length(vec)], df)) {
+    if (isTRUE(first)) {
+      new <- df[, vec[length(vec)]]
+      first <- FALSE
+    } else {
+      new <- interaction(new, df[, vec[length(vec)]])
+    }
+  }
+  vec <- vec[-length(vec)]
+  combine(new, vec, df, first)
+}
+
+splitData <- function(df, formula) {
+  df <- model.frame(formula, data = df)   
+  stopifnot(ncol(df) >= 2) 
+  res <- data.frame(value = df[, 1], interaction = interaction(df[, 2:ncol(df)]))
+  names(res) <- c("value", interaction = paste0(names(df)[2:ncol(df)], collapse = "."))
+  res
+}
+
+diagnosticPlot <- function(df, formula) {
+  model <- lm(formula, data = df)
+  f <- tempfile(fileext = ".png")
+  png(f)
+  par(mfrow = c(3, 2))
+  plot(model, 1)
+  plot(model, 2)
+  plot(model, 3)
+  plot(model, 4)
+  plot(model, 5)
+  plot(model, 6)
+  dev.off()
+  return(f)
 }
