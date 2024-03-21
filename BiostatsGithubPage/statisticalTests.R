@@ -71,15 +71,12 @@ testsUI <- function(id) {
     tabsetPanel(
       tabPanel("Two groups",
         br(),
-        actionButton(NS(id, "CreatePlotBox"), "Create plot")
         ),
       tabPanel("More than two groups",
         br(),
-        actionButton(NS(id, "CreatePlotScatter"), "Create plot") 
         ),
       tabPanel("Posthoc tests",
         br(),
-        actionButton(NS(id, "CreatePlotLine"), "Create plot")
         ),
       id = "TestsConditionedPanels"   
       ),
@@ -138,6 +135,7 @@ testsServer <- function(id, data, listResults) {
     })
 
     conductTests <- function(method) {
+      output$test_error <- renderText(NULL)    
       req(is.data.frame(data$df))
       df <- data$df
       req(input$indep)
@@ -203,7 +201,11 @@ testsServer <- function(id, data, listResults) {
         if (inherits(e, "try-error")) {
           err <- conditionMessage(attr(e, "condition"))
           output$test_error <- renderText(err)
+        } else if(is.null(fit)) {
+          output$test_error <- renderText("Result is NULL")
         } else {
+          fit <- cbind(fit, row.names(fit))
+          names(fit)[ncol(fit)] <- paste0(indep, collapse = ".")
           listResults$curr_data <- fit
           listResults$curr_name <- paste("Test Nr", length(listResults$all_names) + 1, "Conducted: ", method)
           output$test_result <- renderTable(fit, digits = 6)  
