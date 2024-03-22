@@ -26,8 +26,15 @@ setClass("diagnosticPlot",
   )
 )
 
+setClass("doseResponse",
+  slots = c(
+    df = "data.frame",
+    p = "ANY"
+  )
+)
+
 createJSString <- function(l) {
-	jsString <- character(length(l))
+	jsString <- c()
 	for (i in seq_along(l)) {
         if (inherits(l[[i]], "plot")) {
           p <- l[[i]]@p
@@ -36,15 +43,22 @@ createJSString <- function(l) {
           resolution <- l[[i]]@resolution
           fn <- tempfile(fileext = '.png')
           ggsave(plot = p, filename = fn, width = width, height = height, dpi = resolution) 
-          jsString[i] <- paste0("data:image/png;base64,", base64enc::base64encode(fn))
+          jsString <- c(jsString, paste0("data:image/png;base64,", base64enc::base64encode(fn)) )
           unlink(fn)
         } else if (inherits(l[[i]], "diagnosticPlot")) {
-          jsString[i] <- paste0("data:image/png;base64,", base64enc::base64encode(l[[i]]@p))
+          jsString <- c(jsString, aste0("data:image/png;base64,", base64enc::base64encode(l[[i]]@p)) )
           unlink(l[[i]]@p)
+        } else if (inherits(l[[i]], "doseResponse")) {
+          p <- l[[i]]@p
+          fn <- tempfile(fileext = '.png')
+          ggsave(plot = p, filename = fn) 
+          jsString <- c(jsString, paste0("data:image/png;base64,", base64enc::base64encode(fn)) )
+          unlink(fn)
+          jsString <- c(jsString, DF2String(l[[i]]@df))
         } else if (inherits(l[[i]], "data.frame")) {
-          jsString[i] <- DF2String(l[[i]])
+          jsString <- c(jsString, DF2String(l[[i]]))
         } else if (is.character(l[[i]])) {
-          jsString[i] <- l[[i]]
+          jsString <- c(jsString, l[[i]])
         }
   }
   return(jsString)

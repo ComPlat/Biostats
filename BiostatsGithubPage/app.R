@@ -11,14 +11,19 @@ library(RColorBrewer)
 library(tidyr)
 library(purrr)
 library(agricolae)
+library(drc)
+library(cowplot)
+library(patchwork)
 
 source("check_ast.R")
 source("utils.R")
 source("plottingInternally.R")
+source("lc50.r")
 source("correlation.R")
 source("visualisation.R")
 source("assumption.R")
 source("statisticalTests.R")
+source("DoseResponse.R")
 
 ui <- fluidPage(
   useShinyjs(),
@@ -60,6 +65,10 @@ ui <- fluidPage(
       conditionalPanel(
         condition = "input.conditionedPanels == 'Tests'",
         testsSidebarUI("TESTS")
+      ),
+      conditionalPanel(
+        condition = "input.conditionedPanels == 'Dose Response analysis'",
+        DoseResponseSidebarUI("DOSERESPONSE")
       )
     ),  
     
@@ -79,6 +88,9 @@ ui <- fluidPage(
         ),
         tabPanel("Tests",
             testsUI("TESTS")
+        ),
+        tabPanel("Dose Response analysis",
+            DoseResponseUI("DOSERESPONSE")
         ),
         id = "conditionedPanels"   
       )
@@ -176,6 +188,7 @@ server <- function(input, output) {
   visServer("VIS", dataSet, listResults)
   assServer("ASS", dataSet, listResults)
   testsServer("TESTS", dataSet, listResults)
+  DoseResponseServer("DOSERESPONSE", dataSet, listResults)
   
 }
 
