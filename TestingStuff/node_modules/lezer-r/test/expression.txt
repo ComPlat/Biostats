@@ -1,0 +1,129 @@
+# Function
+
+function() {}
+fn <- function(arg1, arg2, ...) {
+  return(arg1)
+}
+fn = function(arg1, arg2, ...) {
+  return(arg1)
+}
+fn <<- function(arg1, arg2, ...) {
+  return(arg1)
+}
+
+==>
+
+Script(FunctionDeclaration(function,ParamList,Block),
+  VariableAssignment(Assignable(Identifier),AssignmentOperator,FunctionDeclaration(function,ParamList(Identifier,Identifier,"..."),Block(ReturnStatement(return,Identifier)))),
+  VariableAssignment(Assignable(Identifier),AssignmentOperator,FunctionDeclaration(function,ParamList(Identifier,Identifier"..."),Block(ReturnStatement(return,Identifier)))),
+  VariableAssignment(Assignable(Identifier),AssignmentOperator,FunctionDeclaration(function,ParamList(Identifier,Identifier"..."),Block(ReturnStatement(return,Identifier)))))
+
+# Function Call
+
+function() {}()
+fn()
+"fn"()
+
+==>
+
+Script(FunctionCall(FunctionDeclaration(function,ParamList,Block), ArgList),
+  FunctionCall(Identifier,ArgList),
+  FunctionCall(String,ArgList))
+
+# If Else
+
+if (T) {1} else {2}
+if (T) {1}
+
+==>
+
+Script(IfStatement(if,True(T),Block(Numeric),else,Block(Numeric)),
+  IfStatement(if,True(T),Block(Numeric)))
+
+# Repeat
+
+repeat {1}
+repeat {next}
+repeat {next()}
+repeat {break}
+repeat {break()}
+
+==>
+
+Script(RepeatStatement(repeat,Block(Numeric)),
+  RepeatStatement(repeat,Block(NextStatement(next))),
+  RepeatStatement(repeat,Block(NextStatement(next))),
+  RepeatStatement(repeat,Block(BreakStatement(break))),
+  RepeatStatement(repeat,Block(BreakStatement(break))))
+
+# While
+
+while(T) {1}
+
+==>
+
+Script(WhileStatement(while,True(T),Block(Numeric)))
+
+# For
+
+for(x in xs) {1}
+
+==>
+
+Script(ForStatement(for,Identifier,in,Identifier,Block(Numeric)))
+
+# Indexing
+
+ls[1]
+ls[[1]]
+ls$x
+
+==>
+
+Script(IndexStatement(Identifier,Numeric),
+  IndexStatement(Identifier,Numeric),
+  IndexStatement(Identifier,Identifier))
+
+# Binary Expression
+
+1^2
+1*2
+1/2
+1%%2
+1+2
+1-2
+1==2
+1!=2
+1>=2
+1<=2
+1%in%ls
+x%/%y
+x%*%y
+x%o%y
+x%x%y
+x|y
+x||y
+x&y
+x&&y
+
+==>
+
+Script(BinaryStatement(Numeric,ArithOp,Numeric),
+  BinaryStatement(Numeric,ArithOp,Numeric),
+  BinaryStatement(Numeric,ArithOp,Numeric),
+  BinaryStatement(Numeric,ArithOp,Numeric),
+  BinaryStatement(Numeric,ArithOp,Numeric),
+  BinaryStatement(Numeric,ArithOp,Numeric),
+  BinaryStatement(Numeric,CompareOp,Numeric),
+  BinaryStatement(Numeric,CompareOp,Numeric),
+  BinaryStatement(Numeric,CompareOp,Numeric),
+  BinaryStatement(Numeric,CompareOp,Numeric),
+  BinaryStatement(Numeric,CompareOp,Identifier),
+  BinaryStatement(Identifier,MatrixOp,Identifier),
+  BinaryStatement(Identifier,MatrixOp,Identifier),
+  BinaryStatement(Identifier,MatrixOp,Identifier),
+  BinaryStatement(Identifier,MatrixOp,Identifier),
+  BinaryStatement(Identifier,LogicOp,Identifier),
+  BinaryStatement(Identifier,LogicOp,Identifier),
+  BinaryStatement(Identifier,LogicOp,Identifier),
+  BinaryStatement(Identifier,LogicOp,Identifier))

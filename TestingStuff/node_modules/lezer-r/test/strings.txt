@@ -1,0 +1,12 @@
+# String
+
+'a'
+"b"
+'a\'b'
+"a\"b"
+'\\'
+"\\"
+
+===>
+
+Script(String, String, String, String, String, String)

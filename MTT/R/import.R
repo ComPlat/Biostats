@@ -1,3 +1,34 @@
+#' Conversion of xml to data.frame
+#'
+#' @export
+#' @param string is a xml file as string
+#' @return data.frame containg the imported data with the corresponding names and conc. 
+XML2DF <- function(string) {
+  pg <- xml2::as_xml_document(string)
+  test <- xml2::xml_child(pg, search = 4)
+  test <- xml2::as_list(test)
+  df <- NULL
+  for(i in test[[1]]) {
+    d <- c()
+    if(length(i) == 11) { # required that data has always the same layout!!!
+      for(j in 1:11) {
+        d <- c(d, i[[j]]$Data[[1]])
+      }
+      df <- rbind(df, d)
+    }
+  }
+  df <- as.data.frame(df)
+  names(df) <- c("conc",
+                 vapply(1:10, FUN.VALUE = character(1), function(x) {
+                   return(as.character(paste0("V", x)))
+                 })
+  )
+  row.names(df) <- NULL
+  df <- df[, -1]
+  df
+}
+
+
 reader <- function(path) {
   pg <- xml2::read_xml(path)
   test <- xml2::xml_child(pg, search = 4)

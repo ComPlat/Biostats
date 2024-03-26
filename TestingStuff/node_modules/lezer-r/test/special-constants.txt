@@ -1,0 +1,31 @@
+# Null
+
+NULL
+
+==>
+
+Script(Null(NULL))
+
+# NA
+
+NA
+
+==>
+
+Script(NA(NA))
+
+# Inf
+
+Inf
+
+==>
+
+Script(Inf(Inf))
+
+# NaN
+
+NaN
+
+==>
+
+Script(NaN(NaN))

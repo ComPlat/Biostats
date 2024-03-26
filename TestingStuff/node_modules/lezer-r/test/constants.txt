@@ -1,0 +1,48 @@
+# Integer
+
+1L
+0x10L
+1000000L
+1e6L
+1.L
+
+==>
+
+Script(Integer, Integer, Integer, Integer, Integer)
+
+# Logical
+
+TRUE
+T
+FALSE
+F
+
+==>
+
+Script(True(TRUE), True(T), False(FALSE), False(F))
+
+# Numeric
+
+1
+10
+0.1
+.2
+1e-7
+1.2e+7
+22.8
+0x1.1p-2
+
+==>
+
+Script(Numeric, Numeric, Numeric, Numeric, Numeric, Numeric, Numeric, Numeric)
+
+# Complex
+
+2i
+4.1i
+1e-2i
+0x1.1p-2i
+
+==> 
+
+Script(Complex, Complex, Complex, Complex)
