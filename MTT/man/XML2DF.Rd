@@ -4,10 +4,14 @@
 \alias{XML2DF}
 \title{Conversion of xml to data.frame}
 \usage{
-XML2DF(string)
+XML2DF(string, names, conc)
 }
 \arguments{
 \item{string}{is a xml file as string}
+
+\item{names}{is a data.frame which defines the names of the wells. This argument is optional. The default value can be checked using names_default()}
+
+\item{conc}{is a data.frame which defines the concentrations within the wells. This argument is optional. The default value can be checked using conc_default()}
 }
 \value{
 data.frame containg the imported data with the corresponding names and conc.

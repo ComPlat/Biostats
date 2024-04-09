@@ -2,8 +2,10 @@
 #'
 #' @export
 #' @param string is a xml file as string
+#' @param names is a data.frame which defines the names of the wells. This argument is optional. The default value can be checked using names_default()
+#' @param conc is a data.frame which defines the concentrations within the wells. This argument is optional. The default value can be checked using conc_default()
 #' @return data.frame containg the imported data with the corresponding names and conc. 
-XML2DF <- function(string) {
+XML2DF <- function(string, names, conc) {
   pg <- xml2::as_xml_document(string)
   test <- xml2::xml_child(pg, search = 4)
   test <- xml2::as_list(test)
@@ -25,6 +27,11 @@ XML2DF <- function(string) {
   )
   row.names(df) <- NULL
   df <- df[, -1]
+  names <- stack(names)
+  conc <- stack(conc)
+  df <- stack(df)
+  df <- data.frame(abs = df$values, names = names$values, conc = conc$values)
+  df <- df[!is.na(df[, 2]), ]
   df
 }
 
@@ -123,3 +130,23 @@ import <- function(path, names = names_default(), conc = conc_default()) {
 
 
 
+#' remove outliers
+#'
+#' @export
+#' @param df a data.frame from which the outliers should be removed
+#' @param l a list containing column indices which defines the different groups
+#' @param dep the column index which defines the dependent variable
+removeOutlier <- function(df, l, dep) {
+  int <- sapply(seq_along(1:length(df)), function(x) {
+    paste0(df[, l], collapse = "_")
+  })
+  intUnique <- unique(int)
+  dfor <- lapply(intUnique, function(x) {
+   temp <- df[int == x, ]
+   bs <- boxplot.stats(temp$abs)
+   if (length(bs$out) == 0) return(temp)
+   temp[temp$abs %in% bs$out, "abs"] <- NA
+   return(temp)
+  })
+  do.call(rbind, dfor)
+}
