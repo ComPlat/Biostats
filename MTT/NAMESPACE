@@ -3,6 +3,7 @@
 export(XML2DF)
 export(ic50)
 export(import)
+export(removeOutlier)
 export(report_pdf)
 export(save)
 import(drc)

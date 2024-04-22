@@ -3,5 +3,6 @@
 #/usr/bin/shiny-server
 sudo -u shiny /usr/bin/shiny-server
 
-# rstudio switch to terminal alt, shift, m
-# rstudio run command from script in terminal: strg, alt, enter
+#cd /srv/shiny-server
+
+#Rscript -e 'shiny::runApp(".", port = 3838)'

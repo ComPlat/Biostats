@@ -43,7 +43,9 @@ RUN install2.r --error --skipinstalled \
     ggpmisc \
     jose \
     R6 \
-    patchwork
+    patchwork \
+    cowplot \
+    quarto
     
 USER shiny
 COPY ./app/ ./myapp

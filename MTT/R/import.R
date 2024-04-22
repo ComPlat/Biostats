@@ -137,10 +137,12 @@ import <- function(path, names = names_default(), conc = conc_default()) {
 #' @param l a list containing column indices which defines the different groups
 #' @param dep the column index which defines the dependent variable
 removeOutlier <- function(df, l, dep) {
-  int <- sapply(seq_along(1:length(df)), function(x) {
-    paste0(df[, l], collapse = "_")
-  })
+  ps <- function(a, b) {
+    paste0(a, "_", b)
+  }
+  int <- Reduce(ps, as.list(df[, l]))
   intUnique <- unique(int)
+  
   dfor <- lapply(intUnique, function(x) {
    temp <- df[int == x, ]
    bs <- boxplot.stats(temp$abs)
@@ -148,5 +150,6 @@ removeOutlier <- function(df, l, dep) {
    temp[temp$abs %in% bs$out, "abs"] <- NA
    return(temp)
   })
-  do.call(rbind, dfor)
+  df <- do.call(rbind, dfor)
+  df[!is.na(df$abs), ]
 }
