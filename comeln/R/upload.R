@@ -17,14 +17,12 @@ upload <- function(session, filepath, new_name) {
 
   query <- getQueryString()
   url <- paste0(ipaddress)
-  token <- query$token 
   
   file_extension <- tools::file_ext(filepath)
-  request <- POST(paste0(
-      url,
-      "/api/v1/public_third_party_app/upload?token=", token),
-      body = list(file = upload_file(filepath), attachmentName = new_name,
-                  fileType = file_extension))             
+  request <- POST(
+    url,
+    body = list(file = upload_file(filepath), attachmentName = new_name,
+                  fileType = file_extension) )
   response <- content(request)
   showNotification(response, duration = 0)
 }

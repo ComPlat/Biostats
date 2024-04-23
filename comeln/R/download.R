@@ -17,11 +17,7 @@ download <- function(session, folder) {
 
   query <- getQueryString()
   url <- paste0(ipaddress)
-  token <- query$token 
-  response <- GET(paste0(
-    url,
-    "/api/v1/public_third_party_app/download?token=", token
-  ))
+  response <- GET(url)
   if(status_code(response)[[1]] != 200) {
     showNotification("File could not be downloaded from ELN", duration = 0)
     Sys.sleep(30)
