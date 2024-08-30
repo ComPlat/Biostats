@@ -4,7 +4,7 @@ This application provides a user-friendly interface for conducting basic data wr
 
 ## Usage
 
-Visit the app hosted as static website [Biostats](https://complat.github.io/shinychem/).
+Visit the app hosted as static website [Biostats](https://complat.github.io/Biostats/)
 
 ## Features
 
