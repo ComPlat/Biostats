@@ -1,5 +1,0 @@
-library(MTT)
-path <- system.file("data", package = "MTT")
-df <- read.csv(paste0(path, "/ExampleData.txt"))
-res <- ic50(df, "abs", "conc", "names", "neg", "pos")
-report_pdf(res, "blabla", "report.pdf")
