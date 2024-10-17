@@ -1,0 +1,18 @@
+---
+format: 
+  pdf:
+    code-fold: true
+---
+
+
+```{r}
+#| echo: false
+X <- model.matrix(uptake ~ conc * Type * Treatment, data = CO2)
+points <- data.frame(matrix(".", ncol = ncol(X), nrow = 3))
+names(points) <- colnames(X)
+df <- rbind(head(X), points, tail(X))
+knitr::kable(df, format = "latex", booktabs = TRUE) |>
+  kableExtra::kable_styling(
+    latex_options = "scale_down"
+  )
+```

@@ -3,60 +3,77 @@ testsSidebarUI <- function(id) {
     "Tests",
     textInput(NS(id, "dep"), "dependent Variable", value = "var1"),
     textInput(NS(id, "indep"), "independent Variable", value = "var2"),
-
     conditionalPanel(
       condition = "input.TestsConditionedPanels == 'Two groups'",
       sliderInput(NS(id, "confLevel"), "Confidence level of the interval",
-        min = 0, max = 1, value = 0.95),
-      selectInput(NS(id, "altHyp"), "Alternative hypothesis",
-        c("Two sided" = "two.sided",
-          "Less" = "less",
-          "Greater" = "greater")),
-      selectInput(NS(id, "paired"), "Paired or unpaired t-test",
-        c("Unpaired" = "up",
-          "Paired" = "p")),
-      selectInput(NS(id, "varEq"), "Are the two variances treated as equal or not?",
-        c("Equal" = "eq",
-          "Not equal" = "noeq")),
-      actionButton(NS(id, "tTest"), "t test")
+        min = 0, max = 1, value = 0.95
       ),
-
+      selectInput(
+        NS(id, "altHyp"), "Alternative hypothesis",
+        c(
+          "Two sided" = "two.sided",
+          "Less" = "less",
+          "Greater" = "greater"
+        )
+      ),
+      selectInput(
+        NS(id, "paired"), "Paired or unpaired t-test",
+        c(
+          "Unpaired" = "up",
+          "Paired" = "p"
+        )
+      ),
+      selectInput(
+        NS(id, "varEq"), "Are the two variances treated as equal or not?",
+        c(
+          "Equal" = "eq",
+          "Not equal" = "noeq"
+        )
+      ),
+      actionButton(NS(id, "tTest"), "t test")
+    ),
     conditionalPanel(
       condition = "input.TestsConditionedPanels == 'More than two groups'",
       actionButton(NS(id, "aovTest"), "anova"),
       actionButton(NS(id, "kruskalTest"), "kruskal wallis test"),
-      ),
-
+    ),
     conditionalPanel(
       selectInput(NS(id, "PostHocTests"), "Choose a Post Hoc test",
         choices = c(
           "Tukey HSD" = "HSD", "Kruskal Wallis post hoc test" = "kruskalTest",
           "Least significant difference test" = "LSD",
           "Scheffe post hoc test" = "scheffe", "REGW post hoc test" = "REGW"
-          )),
-
+        )
+      ),
       condition = "input.TestsConditionedPanels == 'Posthoc tests'",
       actionButton(NS(id, "PostHocTest"), "run test"),
       sliderInput(NS(id, "pval"), "P-value",
-        min = 0, max = 0.15, value = 0.05),
-      selectInput(NS(id, "design"), "Design",
-        c("Balanced" = "ba",
-          "Unbalanced" = "ub") ),
-
+        min = 0, max = 0.15, value = 0.05
+      ),
+      selectInput(
+        NS(id, "design"), "Design",
+        c(
+          "Balanced" = "ba",
+          "Unbalanced" = "ub"
+        )
+      ),
       conditionalPanel(
         condition = "input.PostHocTests == 'kruskalPHTest' || input.PostHocTests == 'lsdTest'",
         selectInput(NS(id, "padj"), "Adjusted p method",
-          c("Holm" = "holm",
+          c(
+            "Holm" = "holm",
             "Hommel" = "hommel",
             "Hochberg" = "hochberg",
             "Bonferroni" = "bonferroni",
             "BH" = "BH",
             "BY" = "BY",
-            "fdr" = "fdr"), selectize = FALSE ) 
-        )  
-
+            "fdr" = "fdr"
+          ),
+          selectize = FALSE
+        )
       )
     )
+  )
 }
 
 testsUI <- function(id) {
@@ -66,36 +83,35 @@ testsUI <- function(id) {
       tags$script(src = "https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"),
       tags$script(src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/0.4.1/html2canvas.min.js"),
       tags$script(src = "download.js")
-      ),
-
+    ),
     tabsetPanel(
-      tabPanel("Two groups",
+      tabPanel(
+        "Two groups",
         br(),
-        ),
-      tabPanel("More than two groups",
-        br(),
-        ),
-      tabPanel("Posthoc tests",
-        br(),
-        ),
-      id = "TestsConditionedPanels"   
       ),
-
+      tabPanel(
+        "More than two groups",
+        br(),
+      ),
+      tabPanel(
+        "Posthoc tests",
+        br(),
+      ),
+      id = "TestsConditionedPanels"
+    ),
     h4(strong("Results of test:")),
     tableOutput(NS(id, "test_result")),
     verbatimTextOutput(NS(id, "test_error")),
     actionButton(NS(id, "test_save"), "Add output to result-file"),
     actionButton(NS(id, "download_test"), "Save results"),
     checkboxGroupInput(NS(id, "TableSaved"), "Saved results to file", NULL)
-
-    )
+  )
 }
 
 testsServer <- function(id, data, listResults) {
-  moduleServer(id, function(input, output, session) {  
-
+  moduleServer(id, function(input, output, session) {
     tTest <- function() {
-      output$test_error <- renderText(NULL)    
+      output$test_error <- renderText(NULL)
       req(is.data.frame(data$df))
       df <- data$df
       req(input$indep)
@@ -118,7 +134,8 @@ testsServer <- function(id, data, listResults) {
         }
         fit <- broom::tidy(t.test(formula,
           data = df, conf.level = input$confLevel,
-          alternative = input$alt, paired = paired, var.equal = eq))
+          alternative = input$alt, paired = paired, var.equal = eq
+        ))
       })
       if (inherits(e, "try-error")) {
         err <- conditionMessage(attr(e, "condition"))
@@ -126,7 +143,7 @@ testsServer <- function(id, data, listResults) {
       } else {
         listResults$curr_data <- fit
         listResults$curr_name <- paste("Test Nr", length(listResults$all_names) + 1, "Conducted t-test")
-        output$test_result <- renderTable(fit, digits = 6)  
+        output$test_result <- renderTable(fit, digits = 6)
       }
     }
 
@@ -135,7 +152,7 @@ testsServer <- function(id, data, listResults) {
     })
 
     conductTests <- function(method) {
-      output$test_error <- renderText(NULL)    
+      output$test_error <- renderText(NULL)
       req(is.data.frame(data$df))
       df <- data$df
       req(input$indep)
@@ -148,7 +165,7 @@ testsServer <- function(id, data, listResults) {
       e <- try({
         formula <- as.formula(paste(dep, "~", indep))
         stopifnot(get_ast(formula) != "Error")
-        })
+      })
       if (inherits(e, "try-error")) {
         err <- conditionMessage(attr(e, "condition"))
         output$test_error <- renderText(err)
@@ -174,19 +191,19 @@ testsServer <- function(id, data, listResults) {
               fit <- agricolae::HSD.test(aov_res,
                 trt = indep,
                 alpha = input$pval, group = TRUE, unbalanced = bal
-                )$groups
+              )$groups
             },
             kruskalTest = {
               fit <- with(df, kruskal(df[, dep], df[, indep]),
                 alpha = input$pval, p.adj = input$padj, group = TRUE
-                )$groups
+              )$groups
             },
             LSD = {
               aov_res <- aov(formula, data = df)
               fit <- agricolae::LSD.test(aov_res,
                 trt = indep,
                 alpha = input$pval, p.adj = input$padj, group = TRUE
-                )$groups
+              )$groups
             },
             scheffe = {
               aov_res <- aov(formula, data = df)
@@ -196,19 +213,19 @@ testsServer <- function(id, data, listResults) {
               aov_res <- aov(formula, data = df)
               fit <- agricolae::REGW.test(aov_res, trt = indep, alpha = input$pval, group = TRUE)$groups
             }
-            )
+          )
         })
         if (inherits(e, "try-error")) {
           err <- conditionMessage(attr(e, "condition"))
           output$test_error <- renderText(err)
-        } else if(is.null(fit)) {
+        } else if (is.null(fit)) {
           output$test_error <- renderText("Result is NULL")
         } else {
           fit <- cbind(fit, row.names(fit))
           names(fit)[ncol(fit)] <- paste0(indep, collapse = ".")
           listResults$curr_data <- fit
           listResults$curr_name <- paste("Test Nr", length(listResults$all_names) + 1, "Conducted: ", method)
-          output$test_result <- renderTable(fit, digits = 6)  
+          output$test_result <- renderTable(fit, digits = 6)
         }
       }
     }
@@ -230,14 +247,17 @@ testsServer <- function(id, data, listResults) {
     })
 
     observeEvent(input$test_save, {
-      if(is.null(listResults$curr_name)) return(NULL)
-        if (!(listResults$curr_name %in% unlist(listResults$all_names)) ) {
-          listResults$all_data[[length(listResults$all_data) + 1]] <- listResults$curr_data
-          listResults$all_names[[length(listResults$all_names) + 1]] <- listResults$curr_name  
-        }
-        updateCheckboxGroupInput(session, "TableSaved",
-         choices = listResults$all_names)
-      })
+      if (is.null(listResults$curr_name)) {
+        return(NULL)
+      }
+      if (!(listResults$curr_name %in% unlist(listResults$all_names))) {
+        listResults$all_data[[length(listResults$all_data) + 1]] <- listResults$curr_data
+        listResults$all_names[[length(listResults$all_names) + 1]] <- listResults$curr_name
+      }
+      updateCheckboxGroupInput(session, "TableSaved",
+        choices = listResults$all_names
+      )
+    })
 
     observeEvent(input$download_test, {
       lr <- unlist(listResults$all_names)
@@ -247,17 +267,15 @@ testsServer <- function(id, data, listResults) {
       req(length(indices) >= 1)
       l <- listResults$all_data[indices]
       jsString <- createJSString(l)
-      session$sendCustomMessage(type = "downloadZip",
-        list(numberOfResults = length(jsString),
-         FileContent = jsString))
+      session$sendCustomMessage(
+        type = "downloadZip",
+        list(
+          numberOfResults = length(jsString),
+          FileContent = jsString
+        )
+      )
     })
-
   })
 
-return(listResults)
+  return(listResults)
 }
-
-
-
-
-
