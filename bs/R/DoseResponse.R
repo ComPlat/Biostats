@@ -127,7 +127,10 @@ DoseResponseServer <- function(id, data, listResults) {
       })
       req(length(indices) >= 1)
       l <- listResults$all_data[indices]
-      if (Sys.getenv("RUN_MODE") == "BROWSER") {
+      if (Sys.getenv("RUN_MODE") == "SERVER") {
+        excelFile <- createExcelFile(l)
+        upload(session, excelFile, new_name = "Results.xlsx") # TODO: add possibility for desired file name
+      } else {
         jsString <- createJSString(l)
         session$sendCustomMessage(
           type = "downloadZip",
@@ -136,9 +139,6 @@ DoseResponseServer <- function(id, data, listResults) {
             FileContent = jsString
           )
         )
-      } else if (Sys.getenv("RUN_MODE") == "SERVER") {
-        excelFile <- createExcelFile(l)
-        upload(session, excelFile, new_name = "Results.xlsx") # TODO: add possibility for desired file name
       }
     })
   })
