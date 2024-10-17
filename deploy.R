@@ -1,7 +1,7 @@
-setwd("/home/konrad/Documents/Biostats")
-shinylive::export("./BiostatsGithubPage", "docs", verbose = TRUE)
-httpuv::runStaticServer("docs")
+shinylive::export("./bs/R/", "docs")
+setwd("/home/konrad/Documents/Biostats/docs")
+httpuv::runStaticServer(".")
 
-setwd("/home/konrad/Documents/Biostats/BiostatsGithubPage")
-source("app.R")
-shinyApp(ui, server)
+# setwd("/home/konrad/Documents/Biostats/BiostatsGithubPage")
+# source("app.R")
+# shinyApp(ui, server)

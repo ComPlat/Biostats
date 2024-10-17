@@ -1,5 +1,5 @@
-/* Shinylive 0.2.3
-// Copyright 2023 RStudio, PBC */
+/* Shinylive 0.5.0
+// Copyright 2024 Posit, PBC */
 /* src/Components/App.css */
 :root {
   --colors-grey: grey;
@@ -49,6 +49,7 @@
 }
 .shinylive-container.viewer {
   --pad: 0;
+  min-width: unset;
 }
 .shinylive-container > div {
   border-radius: var(--panel-roundness);
@@ -107,6 +108,9 @@ button:disabled {
   color: #666;
 }
 .shinylive-container.editor-cell .editor-container {
+  padding: 0;
+}
+.shinylive-container.editor-cell .cm-scroller {
   padding: 12px 12px 4px 12px;
 }
 
@@ -942,7 +946,7 @@ button[aria-label][data-balloon-pos] {
   grid-template-areas: "header" "editor";
   position: relative;
 }
-.ResizableGrid.editor-viewer:not(.been-dragged) > .shinylive-editor {
+.ResizableGrid.editor-viewer.layout-vertical:not(.been-dragged) > .shinylive-editor {
   max-height: 800px;
 }
 .editor-header {

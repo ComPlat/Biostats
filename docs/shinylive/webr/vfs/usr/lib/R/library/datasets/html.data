@@ -12,7 +12,7 @@
 <div style="text-align: center;">
 <a href="../../../doc/html/packages.html"><img class="arrow" src="../../../doc/html/left.jpg" alt="[Up]" /></a>
 <a href="../../../doc/html/index.html"><img class="arrow" src="../../../doc/html/up.jpg" alt="[Top]" /></a>
-</div><h2>Documentation for package &lsquo;datasets&rsquo; version 4.3.0</h2>
+</div><h2>Documentation for package &lsquo;datasets&rsquo; version 4.4.1</h2>
 
 <ul><li><a href="../DESCRIPTION">DESCRIPTION file</a>.</li>
 </ul>
@@ -195,7 +195,7 @@
 <tr><td style="width: 25%;"><a href="LifeCycleSavings.html">LifeCycleSavings</a></td>
 <td>Intercountry Life-Cycle Savings Data</td></tr>
 <tr><td style="width: 25%;"><a href="Loblolly.html">Loblolly</a></td>
-<td>Growth of Loblolly pine trees</td></tr>
+<td>Growth of Loblolly Pine Trees</td></tr>
 <tr><td style="width: 25%;"><a href="longley.html">longley</a></td>
 <td>Longley's Economic Regression Data</td></tr>
 <tr><td style="width: 25%;"><a href="lynx.html">lynx</a></td>
@@ -319,7 +319,7 @@
 <tr><td style="width: 25%;"><a href="ToothGrowth.html">ToothGrowth</a></td>
 <td>The Effect of Vitamin C on Tooth Growth in Guinea Pigs</td></tr>
 <tr><td style="width: 25%;"><a href="treering.html">treering</a></td>
-<td>Yearly Treering Data, -6000-1979</td></tr>
+<td>Yearly Tree-Ring Data, -6000-1979</td></tr>
 <tr><td style="width: 25%;"><a href="trees.html">trees</a></td>
 <td>Diameter, Height and Volume for Black Cherry Trees</td></tr>
 </table>

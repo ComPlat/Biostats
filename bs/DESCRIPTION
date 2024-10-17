@@ -1,0 +1,38 @@
+Package: bs
+Type: Package
+Title: Statistical tools offered as app
+Version: 1.0
+Date: 2022-03-24
+Author: Konrad Krämer
+Maintainer: <konrad_kraemer@kit.edu>
+Description: Offers a shiny app to solve data wrangling; visualization and statistical testing tasks.
+License: GPL-3
+Imports: 
+  shiny,
+  DT,
+  bslib,
+  broom,
+  utils,
+  ggplot2,
+  base64enc,
+  shinyjs,
+  mgcv,
+  RColorBrewer,
+  tidyr,
+  purrr,
+  agricolae,
+  drc,
+  cowplot,
+  patchwork,
+  httr,
+  readxl,
+  openxlsx,
+  COMELN,
+  openssl,
+  jose,
+  png,
+  ggpmisc,
+  R6,
+  drc
+Encoding: UTF-8
+RoxygenNote: 7.3.2

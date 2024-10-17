@@ -178,12 +178,12 @@
 /dieresis /copyright /.notdef /guillemotleft /logicalnot /hyphen /registered /afii00208
 /degree /plusminus /twosuperior /threesuperior /tonos /mu /paragraph /periodcentered
 /Epsilontonos /Etatonos /Iotatonos /guillemotright /Omicrontonos /onehalf /Upsilontonos /Omegatonos
-/iotadieresistonos /Alpha /Beta /Gamma /Deltagreek /Epsilon /Zeta /Eta
+/iotadieresistonos /Alpha /Beta /Gamma /Delta /Epsilon /Zeta /Eta
 /Theta /Iota /Kappa /Lambda /Mu /Nu /Xi /Omicron
 /Pi /Rho /.notdef /Sigma /Tau /Upsilon /Phi /Chi
-/Psi /Omegagreek /Iotadieresis /Upsilondieresis /alphatonos /epsilontonos /etatonos /iotatonos
+/Psi /Omega /Iotadieresis /Upsilondieresis /alphatonos /epsilontonos /etatonos /iotatonos
 /upsilondieresistonos /alpha /beta /gamma /delta /epsilon /zeta /eta
-/theta /iota /kappa /lambda /mugreek /nu /xi /omicron
+/theta /iota /kappa /lambda /mu /nu /xi /omicron
 /pi /rho /sigma1 /sigma /tau /upsilon /phi /chi
 /psi /omega /iotadieresis /upsilondieresis /omicrontonos /upsilontonos /omegatonos /.notdef
 ]
@@ -291,13 +291,13 @@
 /dieresis /copyright /ordfeminine /guillemotleft /logicalnot /hyphen /registered /afii00208
 /degree /plusminus /twosuperior /threesuperior /tonos /dieresistonos /Alphatonos /periodcentered
 /Epsilontonos /Etatonos /Iotatonos /guillemotright /Omicrontonos /onehalf /Upsilontonos /Omegatonos
-/iotadieresistonos /Alpha /Beta /Gamma /Deltagreek /Epsilon /Zeta /Eta
+/iotadieresistonos /Alpha /Beta /Gamma /Delta /Epsilon /Zeta /Eta
 /Theta /Iota /Kappa /Lambda /Mu /Nu /Xi /Omicron
 /Pi /Rho /.notdef /Sigma /Tau /Upsilon /Phi /Chi
-/Psi /Omegagreek /Iotadieresis /Upsilondieresis /alphatonos /epsilontonos /etatonos /iotatonos
+/Psi /Omega /Iotadieresis /Upsilondieresis /alphatonos /epsilontonos /etatonos /iotatonos
 %% 0340
 /upsilondieresistonos /alpha /beta /gamma /delta /epsilon /zeta /eta
-/theta /iota /kappa /lambda /mugreek /nu /xi /omicron
+/theta /iota /kappa /lambda /mu /nu /xi /omicron
 /pi /rho /sigma1 /sigma /tau /upsilon /phi /chi
 /psi /omega /iotadieresis /upsilondieresis /omicrontonos /upsilontonos /omegatonos /.notdef
 ]
@@ -536,45 +536,6 @@
 /afii10039 /afii10026 /afii10027 /afii10028 /afii10029 /afii10030 /afii10031 /afii10032
 /afii10033 /afii10049 /afii10034 /afii10035 /afii10036 /afii10037 /afii10024 /afii10019
 /afii10046 /afii10045 /afii10025 /afii10042 /afii10047 /afii10043 /afii10041 /afii10044
-]
-%% As defined by PDF 1.3, but with /currency replaced by /Euro as per Apple
-/MacRomanEncoding [
-  /.notdef /.notdef   /.notdef   /.notdef /.notdef /.notdef  /.notdef /.notdef
-  /.notdef /.notdef   /.notdef   /.notdef /.notdef /.notdef  /.notdef /.notdef
-  /.notdef /.notdef   /.notdef   /.notdef /.notdef /.notdef  /.notdef /.notdef
-  /.notdef /.notdef   /.notdef   /.notdef /.notdef /.notdef  /.notdef /.notdef
-%%   040
-/space /exclam /quotedbl /numbersign /dollar /percent /ampersand 
-/quoteright /parenleft /parenright /asterisk /plus /comma /hyphen /period /slash
-%%   060
-/zero /one /two /three /four /five /six /seven /eight /nine 
-/colon /semicolon /less /equal /greater /question
-%%  0100
-/at /A /B /C /D /E /F /G /H /I /J /K /L /M /N /O /P /Q /R /S /T /U /V 
-/W /X /Y /Z /bracketleft /backslash /bracketright /asciicircum /underscore
-%%  0140
-/grave /a /b /c /d /e /f /g /h /i /j /k /l /m /n /o /p /q /r /s /t 
-/u /v /w /x /y /z /braceleft /bar /braceright /asciitilde /.notdef
-%%  0200
-/Adieresis /Aring /Ccedilla /Eacute /Ntilde /Odieresis /Udieresis /aacute 
-/agrave /acircumflex /adieresis /atilde /aring /ccedilla /eacute /egrave
-%%  0220
-/ecircumflex /edieresis /iacute /igrave /icircumflex /idieresis /ntilde /oacute
-/ograve /ocircumflex /odieresis /otilde /uacute /ugrave /ucircumflex /udieresis
-%%  0240
-/dagger /degree /cent /sterling /section /bullet /paragraph /germandbls
-/registered /copyright /trademark /acute /dieresis /.notdef /AE /Oslash
-/.notdef /plusminus /.notdef /.notdef /yen /mu /.notdef /.notdef
-/.notdef /.notdef /.notdef /ordfeminine /ordmasculine /.notdef /ae /oslash
-%%  0300
-/questiondown /exclamdown /logicalnot /.notdef /florin /.notdef /.notdef /guillemotleft
-/guillemotright /ellipsis /space /Agrave /Atilde /Otilde /OE /oe
-/endash /emdash /quotedblleft /quotedblright /quoteleft /quoteright /divide /.notdef
-/ydieresis /Ydieresis /fraction /Euro /guilsinglleft /guilsinglright /fi /fl
-/daggerdbl /periodcentered /quotesinglbase /quotedblbase  /perthousand /Acircumflex /Ecircumflex /Aacute
-/Edieresis /Egrave /Iacute /Icircumflex /Idieresis /Igrave /Oacute /Ocircumflex
-/.notdef /Ograve /Uacute /Ucircumflex /Ugrave /dotlessi /circumflex /tilde
-/macron /breve /dotaccent /ring /cedilla /hungarumlaut /ogonek /caron
 ]
 %% As used by PDF 1.3
 /PDFDocEncoding [
