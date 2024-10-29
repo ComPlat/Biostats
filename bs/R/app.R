@@ -577,3 +577,6 @@ server <- function(input, output, session) {
 shinyApp(ui, server)
 
 # run_app()
+# TODO: check if variable instead of environment variable can fix the issues when running the serverless app
+# Currently the code has to be extracted from the run_app
+# in order to run it correctly. Meaning that otherwise no upload field is available
