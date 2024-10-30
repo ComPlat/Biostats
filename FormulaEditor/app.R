@@ -20,10 +20,11 @@ ui <- fluidPage(
           .csv"
         )
       ),
-      actionButton("open_formula_editor", "Open formula editor")
+      uiOutput("open_formula_editor_ui"),
     ),
     mainPanel(
       tabsetPanel(
+        id = "tabs",
         tabPanel(
           "Data",
           tableOutput("head")
@@ -67,6 +68,24 @@ server <- function(input, output, session) {
     output$head <- renderTable({
       head(r_vals$df, 10)
     })
+  })
+
+  # UI output for the formula editor
+  output$open_formula_editor_ui <- renderUI({
+    actionButton("open_formula_editor",
+      "Open formula editor",
+      title = "Open the formula editor to create or modify a formula",
+      disabled = is.null(r_vals$df) || !is.data.frame(r_vals$df)
+    )
+  })
+
+  # Make "DataWrangling" tab clickable only when r_vals$df is a data frame
+  observe({
+    if (!is.null(r_vals$df) && is.data.frame(r_vals$df)) {
+      showTab(inputId = "tabs", target = "DataWrangling")
+    } else {
+      hideTab(inputId = "tabs", target = "DataWrangling")
+    }
   })
 
   OperationEditorServer("OP", r_vals)

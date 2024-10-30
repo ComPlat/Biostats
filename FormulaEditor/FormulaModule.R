@@ -1,4 +1,3 @@
-source("check_ast.R")
 library(shiny)
 
 FormulaEditorUI <- function(id) {
@@ -70,9 +69,11 @@ FormulaEditorUI <- function(id) {
           br(),
           div(
             h3("Arithmetic Operators"),
-            actionButton(NS(id, "add"), "+", class = "add-button"),
-            actionButton(NS(id, "mul"), "*", class = "add-button"),
-            # TODO: add Error as seperate function
+            actionButton(NS(id, "add"), "+", class = "add-button",
+              title = "Include an additional predictor variable in the model"),
+            actionButton(NS(id, "mul"), "*", class = "add-button",
+              title = "Multiply variables to assess interactions in the model"),
+            # TODO: add Error and / as seperate function
             class = "boxed-output"
           ),
           div(
@@ -113,7 +114,8 @@ FormulaEditorServer <- function(id, data) {
         actionButton(
           inputId = paste0("FO-colnames_", i, "_", r_vals$counter_id),
           label = paste(i),
-          class = "add-button"
+          class = "add-button",
+          title = paste("Select variable", i, "as a predictor for the model")
         )
       })
       do.call(tagList, button_list)
@@ -135,15 +137,23 @@ FormulaEditorServer <- function(id, data) {
     output[["colnames_dropdown"]] <- renderUI({
       req(!is.null(r_vals$df))
       req(is.data.frame(r_vals$df))
-
       colnames <- names(r_vals$df)
+      tooltip <- "Select the dependent variable for your statistical model. This is the outcome you want to predict based on the independent variables."
 
+      div(
+        tags$label(
+          "Dependent Variable",
+          class = "tooltip",
+          title = tooltip,
+          `data-toggle` = "tooltip"
+        ),
         selectInput(
           inputId = paste0("FO-colnames-dropdown_", r_vals$counter_id),
           label = "Dependent Variable",
           choices = colnames[1:length(colnames)],
           selected = NULL
         )
+      )
     })
 
     # React to colnames buttons

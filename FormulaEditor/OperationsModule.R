@@ -130,15 +130,28 @@ OperatorEditorUI <- function(id) {
         )
       ),
       mainPanel(
-        tableOutput(NS(id, "head")),
+        uiOutput(NS(id, "head")),
+        uiOutput(NS(id, "intermediate_results")),
         div(
           textAreaInput(NS(id, "editable_code"), "Operation:", value = "", rows = 12),
           class = "boxed-output"
         ),
         fluidRow(
           column(
+            7,
+            actionButton(NS(id, "run_op_intermediate"), "Run operation and store intermediate results"),
+
+          ),
+          column(
             4,
-            actionButton(NS(id, "run_op"), "Run operation")
+
+            textInput(NS(id, "iv"), "Intermediate variable name:", value = "")
+          )
+        ),
+        fluidRow(
+          column(
+            7,
+            actionButton(NS(id, "run_op"), "Run operation and append to dataset")
           ),
           column(
             4,
@@ -157,18 +170,99 @@ OperationEditorServer <- function(id, data) {
     r_vals <- reactiveValues(
       df = NULL,
       current_page = 1, total_pages = 1,
-      counter_id = 0
+      counter_id = 0,
+      intermediate_vars = list()
     )
 
     observe({
       req(is.data.frame(data$df))
       r_vals$df <- data$df
-      output$head <- renderTable({
-        head(r_vals$df)
+      output$head <- renderUI({
+        renderTable(head(r_vals$df))
       })
     })
 
-    # Run operation
+    # Observe intermeidate results
+    output$intermediate_results <- renderUI({
+      iv_list <- r_vals$intermediate_vars
+      iv_ui <- lapply(names(iv_list), function(name) {
+        div(
+          h4(name),
+          verbatimTextOutput(NS(id, paste0("iv_", name))),
+          actionButton(NS(id, paste0("remove_iv_", name)), "Remove", class = "btn-danger")
+        )
+      })
+      do.call(tagList, iv_ui)
+    })
+
+    observe({
+      iv_list <- r_vals$intermediate_vars
+      for (name in names(iv_list)) {
+        output[[paste0("iv_", name)]] <- renderPrint({
+          iv_list[[name]]
+        })
+      }
+    })
+
+    # Observe and render each intermediate result
+    observe({
+      iv_list <- r_vals$intermediate_vars
+      for (name in names(iv_list)) {
+        output[[paste0("iv_", name)]] <- renderPrint({
+          iv_list[[name]]
+        })
+        observeEvent(input[[paste0("remove_iv_", name)]], {
+          r_vals$intermediate_vars[[name]] <- NULL
+          showNotification(paste("Removed intermediate result:", name), type = "message")
+        }, ignoreInit = TRUE)
+      }
+    })
+
+    # Run operation and store in intermediate result
+    observeEvent(input$run_op_intermediate, {
+            req(!is.null(r_vals$df))
+      req(is.data.frame(r_vals$df))
+      req(input$iv != "")
+      df <- r_vals$df
+      var_name <- input$iv
+      code <- input$editable_code
+      op <- try(str2lang(code))
+      if (inherits(op, "try-error")) {
+        showNotification("Could not convert operation to R code",
+          type = "error"
+        )
+        return()
+      }
+      e <- try({
+        ast <- get_ast(op)
+        ast <- ast[[length(ast)]]
+      })
+      if (e == "Error") {
+        showNotification("Found unallowed function",
+          type = "error"
+        )
+        return()
+      } else if (inherits(e, "try-error")) {
+        showNotification(e, type = "error")
+        return()
+      }
+      e <- try({
+        eval_env <- new.env()
+        list2env(r_vals$intermediate_vars, envir = eval_env)
+        list2env(df, envir = eval_env)
+        new <- eval(parse(text = code), envir = eval_env)
+      })
+      if (inherits(e, "try-error")) {
+        err <- conditionMessage(attr(e, "condition"))
+        showNotification(err, type = "error")
+      }
+      # TODO: add check that only column names and ivs are used as variables
+      # This is only needed for a better user experience
+      # TODO: check that names are valid for variables
+      r_vals$intermediate_vars[[var_name]] <- new
+    })
+
+    # Run operation and append to df
     observeEvent(input$run_op, {
       req(!is.null(r_vals$df))
       req(is.data.frame(r_vals$df))
@@ -197,7 +291,10 @@ OperationEditorServer <- function(id, data) {
         return()
       }
       e <- try({
-        new <- with(df, eval(parse(text = code)))
+        eval_env <- new.env()
+        list2env(r_vals$intermediate_vars, envir = eval_env)
+        list2env(df, envir = eval_env)
+        new <- eval(parse(text = code), envir = eval_env)
         df[, new_col] <- new
       })
       if (inherits(e, "try-error")) {
