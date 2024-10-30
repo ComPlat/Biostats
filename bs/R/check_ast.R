@@ -23,13 +23,14 @@ get_ast <- function(inp) {
     "ppois", "rpois", "dunif", "punif", "qunif", "runif",
     "mean", "sd", "median", "quantile", "range",
     "sum", "diff", "min", "max", "scale",
-    "c", "vector", "length", "matrix", "~"
+    "c", "vector", "length", "matrix", "~",
+    "subset"
   )
 
   check <- deparse(fct)
 
   if ((check %in% allowed_fcts) == FALSE) {
-    return("Error")
+    stop("Error")
   }
 
   lapply(inp, get_ast)

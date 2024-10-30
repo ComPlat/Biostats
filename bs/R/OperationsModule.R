@@ -1,5 +1,130 @@
-source("check_ast.R")
-library(shiny)
+OperatorEditorSidebar <- function(id) {
+  ui <- fluidPage(
+    tags$head(
+      tags$style(HTML("
+        .boxed-output {
+        border: 2px solid #900C3F;
+        padding: 10px;
+        border-radius: 5px;
+        margin-top: 10px;
+        }
+        .add-button {
+        position: relative;
+        padding-right: 20px;
+        }
+        .add-button::after {
+        content: '\\2295';
+        position: absolute;
+        top: 1.1px;
+        right: 5px;
+        font-size: 16px;
+        font-weight: bold;
+        color: #900C3F;
+        background-color: white;
+        width: 15px;
+        height: 15px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        }
+        "))
+    ),
+
+    div(
+      uiOutput(NS(id, "colnames_list")),
+      class = "boxed-output"
+    ),
+    br(),
+    div(
+      h3("Arithmetic Operators"),
+      actionButton(NS(id, "add"), "+", class = "add-button"),
+      actionButton(NS(id, "sub"), "-", class = "add-button"),
+      actionButton(NS(id, "mul"), "*", class = "add-button"),
+      actionButton(NS(id, "div"), "/", class = "add-button"),
+      actionButton(NS(id, "bracket_open"), "(", class = "add-button"),
+      actionButton(NS(id, "bracket_close"), ")", class = "add-button"),
+      actionButton(NS(id, "bracket_close"), ",", class = "add-button"),
+      class = "boxed-output"
+    ),
+    div(
+      h3("Math Functions"),
+      actionButton(NS(id, "log"), "log", class = "add-button"),
+      actionButton(NS(id, "log10"), "log10", class = "add-button"),
+      actionButton(NS(id, "sqrt"), "sqrt", class = "add-button"),
+      actionButton(NS(id, "exp"), "exp", class = "add-button"),
+      actionButton(NS(id, "exponent"), "^", class = "add-button"),
+      actionButton(NS(id, "sin"), "sin", class = "add-button"),
+      actionButton(NS(id, "cos"), "cos", class = "add-button"),
+      actionButton(NS(id, "tan"), "tan", class = "add-button"),
+      actionButton(NS(id, "sinh"), "sinh", class = "add-button"),
+      actionButton(NS(id, "cosh"), "cosh", class = "add-button"),
+      actionButton(NS(id, "tanh"), "tanh", class = "add-button"),
+      actionButton(NS(id, "asin"), "asin", class = "add-button"),
+      actionButton(NS(id, "acos"), "acos", class = "add-button"),
+      actionButton(NS(id, "atan"), "atan", class = "add-button"),
+      actionButton(NS(id, "abs"), "abs", class = "add-button"),
+      actionButton(NS(id, "ceil"), "ceiling", class = "add-button"),
+      actionButton(NS(id, "floor"), "floor", class = "add-button"),
+      actionButton(NS(id, "trunc"), "trunc", class = "add-button"),
+      actionButton(NS(id, "round"), "round", class = "add-button"),
+      class = "boxed-output"
+    ),
+    div(
+      h3("Comparison Operators"),
+      actionButton(NS(id, "larger"), ">", class = "add-button"),
+      actionButton(NS(id, "smaller"), "<", class = "add-button"),
+      actionButton(NS(id, "larger_eq"), ">=", class = "add-button"),
+      actionButton(NS(id, "smaller_eq"), "<=", class = "add-button"),
+      actionButton(NS(id, "eq"), "==", class = "add-button"),
+      actionButton(NS(id, "not_eq"), "!=", class = "add-button"),
+      class = "boxed-output"
+    ),
+    div(
+      h3("String Functions"),
+      actionButton(NS(id, "grep"), "grep", class = "add-button"),
+      actionButton(NS(id, "substr"), "substr", class = "add-button"),
+      actionButton(NS(id, "sub"), "sub", class = "add-button"),
+      actionButton(NS(id, "paste"), "paste", class = "add-button"),
+      actionButton(NS(id, "paste0"), "paste0", class = "add-button"),
+      actionButton(NS(id, "strsplit"), "strsplit", class = "add-button"),
+      actionButton(NS(id, "tolower"), "tolower", class = "add-button"),
+      actionButton(NS(id, "toupper"), "toupper", class = "add-button"),
+      actionButton(NS(id, "subset"), "subset", class = "add-button",
+        title = 'Filter by row. For example subset(ColName == "Control")'),
+      class = "boxed-output"
+    ),
+    div(
+      h3("Statistical & Utils Functions"),
+      actionButton(NS(id, "mean"), "mean", class = "add-button"),
+      actionButton(NS(id, "sd"), "standard deviation", class = "add-button"),
+      actionButton(NS(id, "median"), "median", class = "add-button"),
+      actionButton(NS(id, "sum"), "sum", class = "add-button"),
+      actionButton(NS(id, "min"), "min", class = "add-button"),
+      actionButton(NS(id, "max"), "max", class = "add-button"),
+      actionButton(NS(id, "c"), "concatenate", class = "add-button"),
+      class = "boxed-output"
+    ),
+    div(
+      h3("Random number functions"),
+      actionButton(NS(id, "dnorm"), "dnorm", class = "add-button"),
+      actionButton(NS(id, "pnorm"), "pnorm", class = "add-button"),
+      actionButton(NS(id, "qnorm"), "qnorm", class = "add-button"),
+      actionButton(NS(id, "rnorm"), "rnorm", class = "add-button"),
+      actionButton(NS(id, "dbinom"), "dbinom", class = "add-button"),
+      actionButton(NS(id, "pbinom"), "pbinom", class = "add-button"),
+      actionButton(NS(id, "qbinom"), "qbinom", class = "add-button"),
+      actionButton(NS(id, "rbinom"), "rbinom", class = "add-button"),
+      actionButton(NS(id, "dpois"), "dpois", class = "add-button"),
+      actionButton(NS(id, "ppois"), "ppois", class = "add-button"),
+      actionButton(NS(id, "rpois"), "rpois", class = "add-button"),
+      actionButton(NS(id, "dunif"), "dunif", class = "add-button"),
+      actionButton(NS(id, "punif"), "punif", class = "add-button"),
+      actionButton(NS(id, "qunif"), "qunif", class = "add-button"),
+      actionButton(NS(id, "runif"), "runif", class = "add-button"),
+      class = "boxed-output"
+    )
+  )
+}
 
 OperatorEditorUI <- function(id) {
   ui <- fluidPage(
@@ -32,133 +157,33 @@ OperatorEditorUI <- function(id) {
         }
         "))
     ),
-    sidebarLayout(
-      sidebarPanel(
+    div(
+      textAreaInput(NS(id, "editable_code"), "Operation:", value = "", rows = 12),
+      class = "boxed-output"
+    ),
+    fluidRow(
+      column(
+        7,
+        actionButton(NS(id, "run_op_intermediate"), "Run operation and store intermediate results"),
 
-        div(
-          uiOutput(NS(id, "colnames_list")),
-          class = "boxed-output"
-        ),
-        br(),
-        div(
-          h3("Arithmetic Operators"),
-          actionButton(NS(id, "add"), "+", class = "add-button"),
-          actionButton(NS(id, "sub"), "-", class = "add-button"),
-          actionButton(NS(id, "mul"), "*", class = "add-button"),
-          actionButton(NS(id, "div"), "/", class = "add-button"),
-          actionButton(NS(id, "bracket_open"), "(", class = "add-button"),
-          actionButton(NS(id, "bracket_close"), ")", class = "add-button"),
-          actionButton(NS(id, "bracket_close"), ",", class = "add-button"),
-          class = "boxed-output"
-        ),
-        div(
-          h3("Math Functions"),
-          actionButton(NS(id, "log"), "log", class = "add-button"),
-          actionButton(NS(id, "log10"), "log10", class = "add-button"),
-          actionButton(NS(id, "sqrt"), "sqrt", class = "add-button"),
-          actionButton(NS(id, "exp"), "exp", class = "add-button"),
-          actionButton(NS(id, "exponent"), "^", class = "add-button"),
-          actionButton(NS(id, "sin"), "sin", class = "add-button"),
-          actionButton(NS(id, "cos"), "cos", class = "add-button"),
-          actionButton(NS(id, "tan"), "tan", class = "add-button"),
-          actionButton(NS(id, "sinh"), "sinh", class = "add-button"),
-          actionButton(NS(id, "cosh"), "cosh", class = "add-button"),
-          actionButton(NS(id, "tanh"), "tanh", class = "add-button"),
-          actionButton(NS(id, "asin"), "asin", class = "add-button"),
-          actionButton(NS(id, "acos"), "acos", class = "add-button"),
-          actionButton(NS(id, "atan"), "atan", class = "add-button"),
-          actionButton(NS(id, "abs"), "abs", class = "add-button"),
-          actionButton(NS(id, "ceil"), "ceiling", class = "add-button"),
-          actionButton(NS(id, "floor"), "floor", class = "add-button"),
-          actionButton(NS(id, "trunc"), "trunc", class = "add-button"),
-          actionButton(NS(id, "round"), "round", class = "add-button"),
-          class = "boxed-output"
-        ),
-        div(
-          h3("Comparison Operators"),
-          actionButton(NS(id, "larger"), ">", class = "add-button"),
-          actionButton(NS(id, "smaller"), "<", class = "add-button"),
-          actionButton(NS(id, "larger_eq"), ">=", class = "add-button"),
-          actionButton(NS(id, "smaller_eq"), "<=", class = "add-button"),
-          actionButton(NS(id, "eq"), "==", class = "add-button"),
-          actionButton(NS(id, "not_eq"), "!=", class = "add-button"),
-          class = "boxed-output"
-        ),
-        div(
-          h3("String Functions"),
-          actionButton(NS(id, "grep"), "grep", class = "add-button"),
-          actionButton(NS(id, "substr"), "substr", class = "add-button"),
-          actionButton(NS(id, "sub"), "sub", class = "add-button"),
-          actionButton(NS(id, "paste"), "paste", class = "add-button"),
-          actionButton(NS(id, "paste0"), "paste0", class = "add-button"),
-          actionButton(NS(id, "strsplit"), "strsplit", class = "add-button"),
-          actionButton(NS(id, "tolower"), "tolower", class = "add-button"),
-          actionButton(NS(id, "toupper"), "toupper", class = "add-button"),
-          actionButton(NS(id, "subset"), "subset", class = "add-button",
-            title = 'Filter by row. For example subset(ColName == "Control")'),
-          class = "boxed-output"
-        ),
-        div(
-          h3("Statistical & Utils Functions"),
-          actionButton(NS(id, "mean"), "mean", class = "add-button"),
-          actionButton(NS(id, "sd"), "standard deviation", class = "add-button"),
-          actionButton(NS(id, "median"), "median", class = "add-button"),
-          actionButton(NS(id, "sum"), "sum", class = "add-button"),
-          actionButton(NS(id, "min"), "min", class = "add-button"),
-          actionButton(NS(id, "max"), "max", class = "add-button"),
-          actionButton(NS(id, "c"), "concatenate", class = "add-button"),
-          class = "boxed-output"
-        ),
-        div(
-          h3("Random number functions"),
-          actionButton(NS(id, "dnorm"), "dnorm", class = "add-button"),
-          actionButton(NS(id, "pnorm"), "pnorm", class = "add-button"),
-          actionButton(NS(id, "qnorm"), "qnorm", class = "add-button"),
-          actionButton(NS(id, "rnorm"), "rnorm", class = "add-button"),
-          actionButton(NS(id, "dbinom"), "dbinom", class = "add-button"),
-          actionButton(NS(id, "pbinom"), "pbinom", class = "add-button"),
-          actionButton(NS(id, "qbinom"), "qbinom", class = "add-button"),
-          actionButton(NS(id, "rbinom"), "rbinom", class = "add-button"),
-          actionButton(NS(id, "dpois"), "dpois", class = "add-button"),
-          actionButton(NS(id, "ppois"), "ppois", class = "add-button"),
-          actionButton(NS(id, "rpois"), "rpois", class = "add-button"),
-          actionButton(NS(id, "dunif"), "dunif", class = "add-button"),
-          actionButton(NS(id, "punif"), "punif", class = "add-button"),
-          actionButton(NS(id, "qunif"), "qunif", class = "add-button"),
-          actionButton(NS(id, "runif"), "runif", class = "add-button"),
-          class = "boxed-output"
-        )
       ),
-      mainPanel(
-        div(
-          textAreaInput(NS(id, "editable_code"), "Operation:", value = "", rows = 12),
-          class = "boxed-output"
-        ),
-        fluidRow(
-          column(
-            7,
-            actionButton(NS(id, "run_op_intermediate"), "Run operation and store intermediate results"),
-
-          ),
-          column(
-            4,
-            textInput(NS(id, "iv"), "Intermediate variable name:", value = "")
-          )
-        ),
-        fluidRow(
-          column(
-            7,
-            actionButton(NS(id, "run_op"), "Run operation and append to dataset")
-          ),
-          column(
-            4,
-            textInput(NS(id, "nc"), "New column name:", value = "")
-          )
-        ),
-        uiOutput(NS(id, "head")),
-        uiOutput(NS(id, "intermediate_results"))
+      column(
+        4,
+        textInput(NS(id, "iv"), "Intermediate variable name:", value = "")
       )
-    )
+    ),
+    fluidRow(
+      column(
+        7,
+        actionButton(NS(id, "run_op"), "Run operation and append to dataset")
+      ),
+      column(
+        4,
+        textInput(NS(id, "nc"), "New column name:", value = "")
+      )
+    ),
+    uiOutput(NS(id, "head")),
+    uiOutput(NS(id, "intermediate_results"))
   )
 }
 
@@ -225,7 +250,7 @@ OperationEditorServer <- function(id, data) {
 
     # Run operation and store in intermediate result
     observeEvent(input$run_op_intermediate, {
-            req(!is.null(r_vals$df))
+      req(!is.null(r_vals$df))
       req(is.data.frame(r_vals$df))
       req(input$iv != "")
       df <- r_vals$df

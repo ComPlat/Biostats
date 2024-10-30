@@ -1,5 +1,3 @@
-library(shiny)
-
 FormulaEditorUI <- function(id) {
   ui <- fluidPage(
     tags$head(
@@ -93,7 +91,6 @@ FormulaEditorServer <- function(id, data) {
     # Reactive values
     r_vals <- reactiveValues(
       df = NULL,
-      current_page = 1, total_pages = 1,
       counter_id = 0
     )
 
@@ -110,9 +107,7 @@ FormulaEditorServer <- function(id, data) {
       req(!is.null(r_vals$df))
       req(is.data.frame(r_vals$df))
       colnames <- names(r_vals$df)
-      start <- (r_vals$current_page - 1) * 15 + 1
-      end <- min(r_vals$current_page * 15, length(colnames))
-      button_list <- lapply(colnames[start:end], function(i) {
+      button_list <- lapply(colnames[1:length(colnames)], function(i) {
         actionButton(
           inputId = paste0("FO-colnames_", i, "_", r_vals$counter_id),
           label = paste(i),

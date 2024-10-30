@@ -1,8 +1,9 @@
+source("FormulaModule.R")
+
 corrSidebarUI <- function(id) {
   tabPanel(
     "Correlation",
-    textInput(NS(id, "dep"), "dependent Variable", value = "var1"),
-    textInput(NS(id, "indep"), "independent Variable", value = "var2"),
+    uiOutput(NS(id, "open_formula_editor_corr")),
     actionButton(NS(id, "pear"), "Pearson correlation"),
     actionButton(NS(id, "spear"), "Spearman correlation"),
     actionButton(NS(id, "kendall"), "Kendall correlation"),
@@ -22,6 +23,7 @@ corrSidebarUI <- function(id) {
 
 corrUI <- function(id) {
   fluidRow(
+    # FIX: check what are those scripts. Needed?
     tags$head(
       tags$script(src = "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"),
       tags$script(src = "https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"),
@@ -39,14 +41,33 @@ corrUI <- function(id) {
 
 corrServer <- function(id, data, listResults) {
   moduleServer(id, function(input, output, session) {
+
+    output$open_formula_editor_corr <- renderUI({
+      actionButton(NS(id, "open_formula_editor"),
+        "Open formula editor",
+        title = "Open the formula editor to create or modify a formula",
+        disabled = is.null(data$df) || !is.data.frame(data$df)
+      )
+    })
+
+    observeEvent(input[["open_formula_editor"]], {
+      showModal(modalDialog(
+        title = "FormulaEditor",
+        FormulaEditorUI("FO"),
+        easyClose = TRUE,
+        size = "l",
+        footer = NULL
+      ))
+    })
+
     corr_fct <- function(method) {
       output$corr_error <- renderText(NULL)
       req(is.data.frame(data$df))
+      req(!is.null(data$formula))
+      f <- as.character(data$formula)
+      dep <- f[2]
+      indep <- f[3]
       df <- data$df
-      req(input$dep)
-      req(input$indep)
-      dep <- input$dep
-      indep <- input$indep
       d <- df
       fit <- NULL
       err <- NULL
