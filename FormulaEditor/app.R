@@ -49,7 +49,7 @@ server <- function(input, output, session) {
     # TODO: add the conversion to factor also in bs
     df <- lapply(df, function(x) {
       if (is.character(x)) {
-        return(as.factor(x))
+        return(as.factor(x)) # TODO: keep original names
       }
       return(x)
     })

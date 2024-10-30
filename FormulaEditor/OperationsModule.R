@@ -96,6 +96,8 @@ OperatorEditorUI <- function(id) {
           actionButton(NS(id, "strsplit"), "strsplit", class = "add-button"),
           actionButton(NS(id, "tolower"), "tolower", class = "add-button"),
           actionButton(NS(id, "toupper"), "toupper", class = "add-button"),
+          actionButton(NS(id, "subset"), "subset", class = "add-button",
+            title = 'Filter by row. For example subset(ColName == "Control")'),
           class = "boxed-output"
         ),
         div(
@@ -130,8 +132,6 @@ OperatorEditorUI <- function(id) {
         )
       ),
       mainPanel(
-        uiOutput(NS(id, "head")),
-        uiOutput(NS(id, "intermediate_results")),
         div(
           textAreaInput(NS(id, "editable_code"), "Operation:", value = "", rows = 12),
           class = "boxed-output"
@@ -157,7 +157,9 @@ OperatorEditorUI <- function(id) {
             4,
             textInput(NS(id, "nc"), "New column name:", value = "")
           )
-        )
+        ),
+        uiOutput(NS(id, "head")),
+        uiOutput(NS(id, "intermediate_results"))
       )
     )
   )
@@ -174,17 +176,23 @@ OperationEditorServer <- function(id, data) {
       intermediate_vars = list()
     )
 
+    # Data
     observe({
       req(is.data.frame(data$df))
       r_vals$df <- data$df
+      r_vals$intermediate_vars[["df"]] <- data$df
       output$head <- renderUI({
-        renderTable(head(r_vals$df))
+        div(
+          h4("df"),
+          renderTable(head(r_vals$df))
+        )
       })
     })
 
     # Observe intermeidate results
     output$intermediate_results <- renderUI({
       iv_list <- r_vals$intermediate_vars
+      iv_list <- iv_list[names(iv_list) != "df"]
       iv_ui <- lapply(names(iv_list), function(name) {
         div(
           h4(name),
@@ -235,14 +243,8 @@ OperationEditorServer <- function(id, data) {
       }
       e <- try({
         ast <- get_ast(op)
-        ast <- ast[[length(ast)]]
       })
-      if (e == "Error") {
-        showNotification("Found unallowed function",
-          type = "error"
-        )
-        return()
-      } else if (inherits(e, "try-error")) {
+      if (inherits(e, "try-error")) {
         showNotification(e, type = "error")
         return()
       }
@@ -259,6 +261,7 @@ OperationEditorServer <- function(id, data) {
       # TODO: add check that only column names and ivs are used as variables
       # This is only needed for a better user experience
       # TODO: check that names are valid for variables
+      # And the name "df" is reserved for the dataset
       r_vals$intermediate_vars[[var_name]] <- new
     })
 
@@ -279,14 +282,8 @@ OperationEditorServer <- function(id, data) {
       }
       e <- try({
         ast <- get_ast(op)
-        ast <- ast[[length(ast)]]
       })
-      if (e == "Error") {
-        showNotification("Found unallowed function",
-          type = "error"
-        )
-        return()
-      } else if (inherits(e, "try-error")) {
+      if (inherits(e, "try-error")) {
         showNotification(e, type = "error")
         return()
       }
@@ -564,6 +561,11 @@ OperationEditorServer <- function(id, data) {
     observeEvent(input$toupper, {
       current_text <- input$editable_code
       updated_text <- paste(current_text, "toupper(", sep = " ")
+      updateTextAreaInput(session, "editable_code", value = updated_text)
+    })
+    observeEvent(input$subset, {
+      current_text <- input$editable_code
+      updated_text <- paste(current_text, "subset(", sep = " ")
       updateTextAreaInput(session, "editable_code", value = updated_text)
     })
     observeEvent(input$mean, {
