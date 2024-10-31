@@ -136,6 +136,20 @@ OperatorEditorUI <- function(id) {
         border-radius: 5px;
         margin-top: 10px;
         }
+        .var-output {
+        border: 2px solid #900C3F;
+        padding: 10px;
+        border-radius: 5px;
+        margin-top: 10px;
+        display: inline-block;
+        width: auto;
+        }
+        .var-box-output {
+        border: 2px solid #900C3F;
+        padding: 10px;
+        border-radius: 5px;
+        margin-top: 10px;
+        }
         .add-button {
         position: relative;
         padding-right: 20px;
@@ -205,7 +219,12 @@ OperationEditorServer <- function(id, data) {
       r_vals$intermediate_vars[["df"]] <- data$df
       output$head <- renderUI({
         div(
-          h4("df"),
+          class = "var-box-output",
+          h4("df",
+            title =
+            "This is the dataset. Using the text df you can access the entire dataset.
+             If you only want to work with one of the column you can use the respective column title",
+            class = "var-output"),
           renderTable(head(r_vals$df))
         )
       })
@@ -217,7 +236,8 @@ OperationEditorServer <- function(id, data) {
       iv_list <- iv_list[names(iv_list) != "df"]
       iv_ui <- lapply(names(iv_list), function(name) {
         div(
-          h4(name),
+          class = "var-box-output",
+          h4(name, title = paste("This is the variable", name, ". You can use it by entering:", name, " within the Operation text field."), class = "var-output"),
           verbatimTextOutput(NS(id, paste0("iv_", name))),
           actionButton(NS(id, paste0("remove_iv_", name)), "Remove", class = "btn-danger")
         )
@@ -285,7 +305,7 @@ OperationEditorServer <- function(id, data) {
       e <- try({
         eval_env <- new.env()
         list2env(r_vals$intermediate_vars, envir = eval_env)
-        list2env(df, envir = eval_env)
+        list2env(df, envir = eval_env) # NOTE: this adds each column as own variable
         new <- eval(parse(text = code), envir = eval_env)
       })
       if (inherits(e, "try-error")) {
@@ -322,7 +342,7 @@ OperationEditorServer <- function(id, data) {
       e <- try({
         eval_env <- new.env()
         list2env(r_vals$intermediate_vars, envir = eval_env)
-        list2env(df, envir = eval_env)
+        list2env(df, envir = eval_env)  # NOTE: this adds each column as own variable
         new <- eval(parse(text = code), envir = eval_env)
         df[, new_col] <- new
       })

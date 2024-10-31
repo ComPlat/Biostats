@@ -1,21 +1,4 @@
-library(shiny)
-library(DT)
-library(bslib)
-library(broom)
-library(ggplot2)
-library(base64enc)
-library(shinyjs)
-library(mgcv)
-library(RColorBrewer)
-library(tidyr)
-library(purrr)
-library(agricolae)
-library(drc)
-library(cowplot)
-library(MASS)
-library(Matrix)
-library(shinyjs)
-
+source("loadLibraries.R")
 source("check_ast.R")
 source("utils.R")
 source("plottingInternally.R")
@@ -30,7 +13,7 @@ source("FormulaModule.R")
 
 ui <- fluidPage(
   useShinyjs(),
-  includeScript("www/download.js"), # NOTE: would be better located in inst folder but the serverless version cannot handle this
+  includeScript("www/download.js"),
   sidebarLayout(
     sidebarPanel(
       conditionalPanel(
@@ -229,9 +212,7 @@ server <- function(input, output, session) {
   testsServer("TESTS", dataSet, listResults)
   DoseResponseServer("DOSERESPONSE", dataSet, listResults)
   FormulaEditorServer("FO", dataSet)
-
 }
 
 Sys.setenv(RUN_MODE = "BROWSER") # SERVER
-shinyApp(ui, server)
 shinyApp(ui, server)

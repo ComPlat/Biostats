@@ -2,8 +2,7 @@ assSidebarUI <- function(id) {
   tabPanel(
     "Assumption",
     tags$hr(),
-    textInput(NS(id, "dep"), "dependent Variable", value = "var1"),
-    textInput(NS(id, "indep"), "independent Variable", value = "var2"),
+    uiOutput(NS(id, "open_formula_editor_corr")),
     tags$hr(),
     tags$div(
       class = "header", checked = NA,
@@ -60,14 +59,32 @@ assUI <- function(id) {
 
 assServer <- function(id, data, listResults) {
   moduleServer(id, function(input, output, session) {
+
+    
+    output$open_formula_editor_corr <- renderUI({
+      actionButton(NS(id, "open_formula_editor"),
+        "Open formula editor",
+        title = "Open the formula editor to create or modify a formula",
+        disabled = is.null(data$df) || !is.data.frame(data$df)
+      )
+    })
+
+    observeEvent(input[["open_formula_editor"]], {
+      showModal(modalDialog(
+        title = "FormulaEditor",
+        FormulaEditorUI("FO"),
+        easyClose = TRUE,
+        size = "l",
+        footer = NULL
+      ))
+    })
+
     runShapiro <- function() {
       output$ass_error <- renderText(NULL)
-      req(input$indep)
-      req(input$dep)
-      indep <- input$indep
-      dep <- input$dep
       df <- data$df
       req(is.data.frame(df))
+      req(!is.null(data$formula))
+      formula <- data$formula
       check <- TRUE
       res <- NULL
       temp <- NULL
@@ -75,8 +92,6 @@ assServer <- function(id, data, listResults) {
       if (isTRUE(check)) {
         res <- list()
         e <- try({
-          formula <- as.formula(paste(dep, "~", indep))
-          stopifnot(get_ast(formula) != "Error")
           dat <- splitData(df, formula)
           for (i in unique(dat[, 2])) {
             tempDat <- dat[dat[, 2] == i, ]
@@ -105,18 +120,13 @@ assServer <- function(id, data, listResults) {
 
     runShapiroResiduals <- function() {
       output$ass_error <- renderText(NULL)
-      req(input$indep)
-      indep <- input$indep
-      req(input$dep)
-      dep <- input$dep
       df <- data$df
       req(is.data.frame(df))
-      formula <- NULL
+      req(!is.null(data$formula))
+      formula <- data$formula
       err <- NULL
       res <- NULL
       e <- try({
-        formula <- as.formula(paste(dep, "~", indep))
-        stopifnot(get_ast(formula) != "Error")
         fit <- lm(formula, data = df)
         r <- resid(fit)
         res <- broom::tidy(shapiro.test(r))
@@ -137,18 +147,13 @@ assServer <- function(id, data, listResults) {
 
     runLevene <- function() {
       output$ass_error <- renderText(NULL)
-      req(input$indep)
-      indep <- input$indep
-      req(input$dep)
-      dep <- input$dep
       df <- data$df
       req(is.data.frame(df))
-      formula <- NULL
+      req(!is.null(data$formula))
+      formula <- data$formula
       err <- NULL
       fit <- NULL
       e <- try({
-        formula <- as.formula(paste(dep, "~", indep))
-        stopifnot(get_ast(formula) != "Error")
         fit <- broom::tidy(car::leveneTest(formula, data = df, center = input$center))
       })
       if (inherits(e, "try-error")) {
@@ -177,18 +182,13 @@ assServer <- function(id, data, listResults) {
 
     runDiagnosticPlot <- function() {
       output$ass_error <- renderText(NULL)
-      req(input$indep)
-      indep <- input$indep
-      req(input$dep)
-      dep <- input$dep
       df <- data$df
       req(is.data.frame(df))
-      formula <- NULL
+      req(!is.null(data$formula))
+      formula <- data$formula
       err <- NULL
       f <- NULL
       e <- try({
-        formula <- as.formula(paste(dep, "~", indep))
-        stopifnot(get_ast(formula) != "Error")
         f <- diagnosticPlot(df, formula)
       })
       if (inherits(e, "try-error")) {

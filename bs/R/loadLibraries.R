@@ -1,0 +1,21 @@
+library(shiny)
+library(DT)
+library(bslib)
+library(broom)
+library(ggplot2)
+library(base64enc)
+library(shinyjs)
+library(mgcv)
+library(RColorBrewer)
+library(tidyr)
+library(purrr)
+library(agricolae)
+library(drc)
+library(cowplot)
+library(MASS)
+library(Matrix)
+library(shinyjs)
+
+if (Sys.getenv("RUN_MODE") == "SERVER") {
+  library(COMELN)
+}

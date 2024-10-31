@@ -4,6 +4,7 @@ corrSidebarUI <- function(id) {
   tabPanel(
     "Correlation",
     uiOutput(NS(id, "open_formula_editor_corr")),
+    br(),
     actionButton(NS(id, "pear"), "Pearson correlation"),
     actionButton(NS(id, "spear"), "Spearman correlation"),
     actionButton(NS(id, "kendall"), "Kendall correlation"),
@@ -23,7 +24,7 @@ corrSidebarUI <- function(id) {
 
 corrUI <- function(id) {
   fluidRow(
-    # FIX: check what are those scripts. Needed?
+    #TODO: check what are those scripts. Needed?
     tags$head(
       tags$script(src = "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"),
       tags$script(src = "https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"),
