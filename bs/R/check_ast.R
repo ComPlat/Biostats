@@ -15,7 +15,7 @@ allowed_fcts <- function() {
     "mean", "sd", "median", "quantile", "range",
     "sum", "diff", "min", "max", "scale",
     "c", "vector", "length", "matrix", "~",
-    "subset"
+    "get_rows", "get_cols"
   )
 }
 

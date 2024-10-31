@@ -1,6 +1,6 @@
-# TODO: draw boxes around intermediate results & append to df in order to seperate them
-# TODO: rename subset in rows and add cols function. cols(df, colName); cols(intermeidate_var_df, colName)
+# TODO: the names of hte columns the new ones have to be modified by makenames
 
+# TODO: store original dataset. Add option to reset dataset 
 
 OperatorEditorSidebar <- function(id) {
   ui <- fluidPage(
@@ -47,7 +47,7 @@ OperatorEditorSidebar <- function(id) {
       actionButton(NS(id, "div"), "/", class = "add-button"),
       actionButton(NS(id, "bracket_open"), "(", class = "add-button"),
       actionButton(NS(id, "bracket_close"), ")", class = "add-button"),
-      actionButton(NS(id, "bracket_close"), ",", class = "add-button"),
+      actionButton(NS(id, "comma"), ",", class = "add-button"),
       class = "boxed-output"
     ),
     div(
@@ -93,8 +93,11 @@ OperatorEditorSidebar <- function(id) {
       actionButton(NS(id, "strsplit"), "strsplit", class = "add-button"),
       actionButton(NS(id, "tolower"), "tolower", class = "add-button"),
       actionButton(NS(id, "toupper"), "toupper", class = "add-button"),
-      actionButton(NS(id, "subset"), "subset", class = "add-button",
-        title = 'Filter by row. For example subset(df, ColName == "Control") or subset(df, colName == 10)'),
+      actionButton(NS(id, "get_rows"), "get_rows", class = "add-button",
+        title = 'Filter by row. For example get_rows(df, ColName == "Control") or get_rows(df, colName == 10)'),
+      actionButton(NS(id, "get_cols"), "get_cols", class = "add-button",
+        title = 'Extract column from a data frame (a table).
+                 For example get_cols(df, ColName) or get_cols(df, ColName1, ColName2)'),
       class = "boxed-output"
     ),
     div(
@@ -179,25 +182,34 @@ OperatorEditorUI <- function(id) {
       textAreaInput(NS(id, "editable_code"), "Operation:", value = "", rows = 12),
       class = "boxed-output"
     ),
-    fluidRow(
-      column(
-        7,
-        actionButton(NS(id, "run_op_intermediate"), "Run operation and store intermediate results"),
+    br(),
+    div(
+      class = "boxed-output",
+      fluidRow(
+        column(
+          7,
+          actionButton(NS(id, "run_op_intermediate"), "Run operation and store intermediate results"),
 
-      ),
-      column(
-        4,
-        textInput(NS(id, "iv"), "Intermediate variable name:", value = "")
+        ),
+        column(
+          4,
+          textInput(NS(id, "iv"), "Intermediate variable name:", value = "")
+        )
       )
     ),
-    fluidRow(
-      column(
-        7,
-        actionButton(NS(id, "run_op"), "Run operation and append to dataset")
-      ),
-      column(
-        4,
-        textInput(NS(id, "nc"), "New column name:", value = "")
+    br(),
+    div(
+      class = "boxed-output",
+      fluidRow(
+
+        column(
+          7,
+          actionButton(NS(id, "run_op"), "Run operation and append to dataset")
+        ),
+        column(
+          4,
+          textInput(NS(id, "nc"), "New column name:", value = "")
+        )
       )
     ),
     uiOutput(NS(id, "head")),
@@ -225,9 +237,10 @@ OperationEditorServer <- function(id, data) {
         div(
           class = "var-box-output",
           h4("df",
-            title = # TODO: add that only an excerpt is shown of the dataset
+            title =
             "This is the dataset. Using the text df you can access the entire dataset.
-             If you only want to work with one of the column you can use the respective column title",
+             If you only want to work with one of the column you can use the respective column title.
+             As a side note only the first 6 rows of the data table are shown.",
             class = "var-output"),
           renderTable(head(r_vals$df))
         )
@@ -237,11 +250,13 @@ OperationEditorServer <- function(id, data) {
     # Observe intermeidate results
     output$intermediate_results <- renderUI({
       iv_list <- r_vals$intermediate_vars
+      if (length(iv_list) == 1) return()
       iv_list <- iv_list[names(iv_list) != "df"]
       iv_ui <- lapply(names(iv_list), function(name) {
         div(
           class = "var-box-output",
-          h4(name, title = paste("This is the variable", name, ". You can use it by entering:", name, " within the Operation text field."), class = "var-output"),
+          h4(name, title = paste("This is the variable", name,
+            ". You can use it by entering:", name, " within the Operation text field."), class = "var-output"),
           verbatimTextOutput(NS(id, paste0("iv_", name))),
           actionButton(NS(id, paste0("remove_iv_", name)), "Remove", class = "btn-danger")
         )
@@ -249,16 +264,19 @@ OperationEditorServer <- function(id, data) {
       do.call(tagList, iv_ui)
     })
 
+    # Show intermediate variables
     observe({
       iv_list <- r_vals$intermediate_vars
-      for (name in names(iv_list)) {
-        output[[paste0("iv_", name)]] <- renderPrint({
-          iv_list[[name]]
-        })
-      }
+      lapply(names(iv_list), function(name) {
+        observeEvent(r_vals$intermediate_vars[[name]], {
+          output[[paste0("iv_", name)]] <- renderPrint({
+            r_vals$intermediate_vars[[name]]
+          })
+        }, ignoreInit = TRUE)
+      })
     })
 
-    # Observe and render each intermediate result
+    # Observe remove of intermediate variables
     observe({
       iv_list <- r_vals$intermediate_vars
       for (name in names(iv_list)) {
@@ -370,7 +388,7 @@ OperationEditorServer <- function(id, data) {
     output[["colnames_list"]] <- renderUI({
       req(!is.null(r_vals$df))
       req(is.data.frame(r_vals$df))
-      colnames <- names(r_vals$df)
+      colnames <- c("df", names(r_vals$df)) # TODO: what is the case if one of the column is named df?
       button_list <- lapply(colnames[1:length(colnames)], function(i) {
         actionButton(
           inputId = paste0("OP-colnames_", i, "_", r_vals$counter_id),
@@ -384,7 +402,7 @@ OperationEditorServer <- function(id, data) {
     # React to colnames buttons
     observe({
       req(r_vals$df)
-      colnames <- names(r_vals$df)
+      colnames <- c("df", names(r_vals$df))
       lapply(colnames, function(col) {
         observeEvent(input[[paste0("colnames_", col, "_", r_vals$counter_id)]], {
           current_text <- input[["editable_code"]]
@@ -423,10 +441,14 @@ OperationEditorServer <- function(id, data) {
       updated_text <- paste(current_text, "(", sep = " ")
       updateTextAreaInput(session, "editable_code", value = updated_text)
     })
-
     observeEvent(input$bracket_close, {
       current_text <- input$editable_code
       updated_text <- paste(current_text, ")", sep = " ")
+      updateTextAreaInput(session, "editable_code", value = updated_text)
+    })
+    observeEvent(input$comma, {
+      current_text <- input$editable_code
+      updated_text <- paste(current_text, ",", sep = " ")
       updateTextAreaInput(session, "editable_code", value = updated_text)
     })
 
@@ -595,9 +617,14 @@ OperationEditorServer <- function(id, data) {
       updated_text <- paste(current_text, "toupper(", sep = " ")
       updateTextAreaInput(session, "editable_code", value = updated_text)
     })
-    observeEvent(input$subset, {
+    observeEvent(input$get_rows, {
       current_text <- input$editable_code
-      updated_text <- paste(current_text, "subset(", sep = " ")
+      updated_text <- paste(current_text, "get_rows(", sep = " ")
+      updateTextAreaInput(session, "editable_code", value = updated_text)
+    })
+    observeEvent(input$get_cols, {
+      current_text <- input$editable_code
+      updated_text <- paste(current_text, "get_cols(", sep = " ")
       updateTextAreaInput(session, "editable_code", value = updated_text)
     })
     observeEvent(input$mean, {

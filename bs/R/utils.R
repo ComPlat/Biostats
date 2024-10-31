@@ -211,3 +211,20 @@ diagnosticPlot <- function(df, formula) {
   dev.off()
   return(f)
 }
+
+get_cols <- function(df, ...) {
+  stopifnot("Expected dataframe" = is.data.frame(df))
+  s <- substitute(list(...))
+  args <- as.list(s[-1])
+  lapply(args, function(x) {
+    name <- deparse(x)
+    stopifnot("Column not found" = name %in% names(df))
+  })
+  args <- as.character(args)
+  df[,args]
+}
+
+get_rows <- function(df, expr) {
+  stopifnot("Expected dataframe" = is.data.frame(df))
+  subset(df, expr)
+}

@@ -10,6 +10,7 @@ source("statisticalTests.R")
 source("DoseResponse.R")
 source("OperationsModule.R")
 source("FormulaModule.R")
+source("SplitByGroup.R")
 
 ui <- fluidPage(
   useShinyjs(),
@@ -83,7 +84,10 @@ ui <- fluidPage(
 )
 
 server <- function(input, output, session) {
-  dataSet <- reactiveValues(df = NULL, formula = NULL)
+  dataSet <- reactiveValues(
+    df = NULL, formula = NULL,
+    backup_df = NULL, filter_col = NULL, filter_group = NULL
+  )
 
   output$conditional_data_ui <- renderUI({
     if (Sys.getenv("RUN_MODE") != "SERVER") {
@@ -212,6 +216,8 @@ server <- function(input, output, session) {
   testsServer("TESTS", dataSet, listResults)
   DoseResponseServer("DOSERESPONSE", dataSet, listResults)
   FormulaEditorServer("FO", dataSet)
+  SplitByGroupServer("SG", dataSet)
+
 }
 
 Sys.setenv(RUN_MODE = "BROWSER") # SERVER
