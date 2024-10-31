@@ -13,6 +13,13 @@ DoseResponseSidebarUI <- function(id) {
       ),
       uiOutput(NS(id,"open_formula_editor_corr")),
       br(),
+      div(
+        class = "boxed-output",
+        uiOutput(NS(id, "open_split_by_group")),
+        uiOutput(NS(id, "data_splitted")),
+        verbatimTextOutput(NS(id, "applied_filter"))
+      ),
+      br(),
       textInput(NS(id, "substanceNames"), "Names column of dependent Variable", value = "names"),
       textInput(NS(id, "negIdentifier"), "Identifier for the negative control", value = "neg"),
       textInput(NS(id, "posIdentifier"), "Identifier for the positive control", value = "pos"),
@@ -41,6 +48,55 @@ DoseResponseUI <- function(id) {
 
 DoseResponseServer <- function(id, data, listResults) {
   moduleServer(id, function(input, output, session) {
+
+    # Render split by group
+    output$open_split_by_group <- renderUI({
+      actionButton(NS(id, "open_split_by_group"),
+        "Open the split by group functionality",
+        title = "Open the split by group helper window",
+        disabled = is.null(data$df) || !is.data.frame(data$df)
+      )
+    })
+
+    observeEvent(input[["open_split_by_group"]], {
+      showModal(modalDialog(
+        title = "SplitByGroup",
+        SplitByGroupUI("SG"),
+        easyClose = TRUE,
+        size = "l",
+        footer = NULL
+      ))
+    })
+
+    # check if data is splitted
+    output$data_splitted <- renderUI({
+      actionButton(NS(id, "remove_filter"),
+        "Remove the filter from the dataset",
+        title = "remove the filter of the dataset",
+        disabled = is.null(data$backup_df) || !is.data.frame(data$backup_df)
+      )
+    })
+
+    observe({
+      output$applied_filter <- renderText(NULL)
+      req(!is.null(data$filter_col))
+      req(!is.null(data$filter_group))
+      output$applied_filter <- renderText({
+        paste0(
+          "The dataset is splitted by the variable ",
+          data$filter_col,
+          " and the group is ",
+          data$filter_group)
+      })
+    })
+
+    # Remove filter
+    observeEvent(input[["remove_filter"]], {
+      data$df <- data$backup_df
+      data$backup_df <- NULL
+      data$filter_col <- NULL
+      data$filter_group <- NULL
+    })
 
     observeEvent(input[["df_help_icon"]], {
       showModal(modalDialog(

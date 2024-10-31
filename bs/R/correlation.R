@@ -3,10 +3,12 @@ corrSidebarUI <- function(id) {
     "Correlation",
     uiOutput(NS(id, "open_formula_editor_corr")),
     br(),
-    uiOutput(NS(id, "open_split_by_group")),
-    br(),
-    uiOutput(NS(id, "data_splitted")),
-    verbatimTextOutput(NS(id, "applied_filter")),
+    div(
+      class = "boxed-output",
+      uiOutput(NS(id, "open_split_by_group")),
+      uiOutput(NS(id, "data_splitted")),
+      verbatimTextOutput(NS(id, "applied_filter"))
+    ),
     br(),
     actionButton(NS(id, "pear"), "Pearson correlation"),
     actionButton(NS(id, "spear"), "Spearman correlation"),
@@ -44,7 +46,6 @@ corrUI <- function(id) {
 
 corrServer <- function(id, data, listResults) {
   moduleServer(id, function(input, output, session) {
-
     # Render split by group
     output$open_split_by_group <- renderUI({
       actionButton(NS(id, "open_split_by_group"),
@@ -82,7 +83,8 @@ corrServer <- function(id, data, listResults) {
           "The dataset is splitted by the variable ",
           data$filter_col,
           " and the group is ",
-          data$filter_group)
+          data$filter_group
+        )
       })
     })
 
