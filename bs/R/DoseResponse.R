@@ -1,24 +1,23 @@
-# df
-# abs_col
-# conc_col
-# substance_name_col,
-# negative_identifier,
-# positive_identifier
-# path <- system.file("data", package = "MTT")
-# df <- read.csv(paste0(path, "/ExampleData.txt"))
-# ic50(df, "abs", "conc", "names", "neg", "pos")
-
-
-
+# TODO: add everywhere the ? documentation.
+# In an analogous way to the DoseResponse tab
 DoseResponseSidebarUI <- function(id) {
   tabPanel(
     "Dose Response analysis",
-    textInput(NS(id, "dep"), "dependent Variable", value = "abs"),
-    textInput(NS(id, "indep"), "independent Variable", value = "conc"),
-    textInput(NS(id, "substanceNames"), "names colum of dependent Variable", value = "names"),
-    textInput(NS(id, "negIdentifier"), "identifier for the negative control", value = "neg"),
-    textInput(NS(id, "posIdentifier"), "identifier for the positive control", value = "pos"),
-    actionButton(NS(id, "ic50"), "conduct analysis")
+    div(
+      style = "position: relative;",
+      actionButton(
+        NS(id, "df_help_icon"),
+        label = NULL,
+        icon = icon("question-circle"),
+        style = "position: absolute; top: 10px; right: 10px; z-index: 1000;"
+      ),
+      uiOutput(NS(id,"open_formula_editor_corr")),
+      br(),
+      textInput(NS(id, "substanceNames"), "Names column of dependent Variable", value = "names"),
+      textInput(NS(id, "negIdentifier"), "Identifier for the negative control", value = "neg"),
+      textInput(NS(id, "posIdentifier"), "Identifier for the positive control", value = "pos"),
+      actionButton(NS(id, "ic50"), "Conduct analysis")
+    )
   )
 }
 
@@ -42,26 +41,54 @@ DoseResponseUI <- function(id) {
 
 DoseResponseServer <- function(id, data, listResults) {
   moduleServer(id, function(input, output, session) {
+
+    observeEvent(input[["df_help_icon"]], {
+      showModal(modalDialog(
+        title = "Example Dataframe",
+         includeHTML("www/df_excerpt_dose_response.html"),
+        easyClose = TRUE,
+        footer = NULL
+      ))
+    })
+
+    output$open_formula_editor_corr <- renderUI({
+      actionButton(NS(id, "open_formula_editor"),
+        "Open formula editor",
+        title = "Open the formula editor to create or modify a formula",
+        disabled = is.null(data$df) || !is.data.frame(data$df)
+      )
+    })
+
+    observeEvent(input[["open_formula_editor"]], {
+      showModal(modalDialog(
+        title = "FormulaEditor",
+        FormulaEditorUI("FO"),
+        easyClose = TRUE,
+        size = "l",
+        footer = NULL
+      ))
+    })
+
     drFct <- function() {
       output$dr_error <- renderText(NULL)
       req(is.data.frame(data$df))
       df <- data$df
-      req(input$dep)
-      req(input$indep)
-      dep <- input$dep
-      indep <- input$indep
       req(input$substanceNames)
       names <- input$substanceNames
       req(input$negIdentifier)
       neg <- input$negIdentifier
       req(input$posIdentifier)
       pos <- input$posIdentifier
+      req(!is.null(data$formula))
+      f <- as.character(data$formula)
+      dep <- f[2]
+      indep <- f[3]
       err <- NULL
       resDF <- NULL
       resPlot <- NULL
       e <- try({
-        stopifnot(get_ast(str2lang(indep)) != "Error")
-        stopifnot(get_ast(str2lang(dep)) != "Error")
+        check_ast(str2lang(indep), colnames(df))
+        check_ast(str2lang(dep), colnames(df))
         res <- ic50(df, dep, indep, names, neg, pos)
         stopifnot(!inherits(res, "errorClass"))
         resDF <- lapply(res, function(x) {
