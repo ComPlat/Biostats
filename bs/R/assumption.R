@@ -60,7 +60,6 @@ assUI <- function(id) {
 assServer <- function(id, data, listResults) {
   moduleServer(id, function(input, output, session) {
 
-    
     output$open_formula_editor_corr <- renderUI({
       actionButton(NS(id, "open_formula_editor"),
         "Open formula editor",

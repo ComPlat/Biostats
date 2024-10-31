@@ -24,7 +24,6 @@ corrSidebarUI <- function(id) {
 
 corrUI <- function(id) {
   fluidRow(
-    #TODO: check what are those scripts. Needed?
     tags$head(
       tags$script(src = "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"),
       tags$script(src = "https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"),
@@ -42,7 +41,6 @@ corrUI <- function(id) {
 
 corrServer <- function(id, data, listResults) {
   moduleServer(id, function(input, output, session) {
-
     output$open_formula_editor_corr <- renderUI({
       actionButton(NS(id, "open_formula_editor"),
         "Open formula editor",
@@ -73,8 +71,8 @@ corrServer <- function(id, data, listResults) {
       fit <- NULL
       err <- NULL
       e <- try({
-        stopifnot(get_ast(str2lang(indep)) != "Error")
-        stopifnot(get_ast(str2lang(dep)) != "Error")
+        check_ast(str2lang(indep), colnames(df)) # NOTE: check_ast throws error
+        check_ast(str2lang(dep), colnames(df))
         fit <- broom::tidy(
           cor.test(d[, dep], d[, indep],
             method = method,

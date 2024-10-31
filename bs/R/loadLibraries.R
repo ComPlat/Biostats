@@ -15,6 +15,7 @@ library(cowplot)
 library(MASS)
 library(Matrix)
 library(shinyjs)
+library(equatiomatic)
 
 if (Sys.getenv("RUN_MODE") == "SERVER") {
   library(COMELN)

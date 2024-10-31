@@ -1,8 +1,8 @@
 testsSidebarUI <- function(id) {
   tabPanel(
     "Tests",
-    textInput(NS(id, "dep"), "dependent Variable", value = "var1"),
-    textInput(NS(id, "indep"), "independent Variable", value = "var2"),
+    uiOutput(NS(id, "open_formula_editor_corr")),
+    br(),
     conditionalPanel(
       condition = "input.TestsConditionedPanels == 'Two groups'",
       sliderInput(NS(id, "confLevel"), "Confidence level of the interval",
@@ -110,20 +110,34 @@ testsUI <- function(id) {
 
 testsServer <- function(id, data, listResults) {
   moduleServer(id, function(input, output, session) {
+
+    output$open_formula_editor_corr <- renderUI({
+      actionButton(NS(id, "open_formula_editor"),
+        "Open formula editor",
+        title = "Open the formula editor to create or modify a formula",
+        disabled = is.null(data$df) || !is.data.frame(data$df)
+      )
+    })
+
+    observeEvent(input[["open_formula_editor"]], {
+      showModal(modalDialog(
+        title = "FormulaEditor",
+        FormulaEditorUI("FO"),
+        easyClose = TRUE,
+        size = "l",
+        footer = NULL
+      ))
+    })
+
     tTest <- function() {
       output$test_error <- renderText(NULL)
       req(is.data.frame(data$df))
       df <- data$df
-      req(input$indep)
-      indep <- input$indep
-      req(input$dep)
-      dep <- input$dep
-      formula <- NULL
+      req(!is.null(data$formula))
+      formula <- data$formula
       err <- NULL
       fit <- NULL
       e <- try({
-        formula <- as.formula(paste(dep, "~", indep))
-        stopifnot(get_ast(formula) != "Error")
         paired <- FALSE
         if (input$paired == "p") {
           paired <- TRUE
@@ -155,16 +169,15 @@ testsServer <- function(id, data, listResults) {
       output$test_error <- renderText(NULL)
       req(is.data.frame(data$df))
       df <- data$df
-      req(input$indep)
-      indep <- input$indep
-      req(input$dep)
-      dep <- input$dep
-      formula <- NULL
+      req(!is.null(data$formula))
+      formula <- data$formula
       err <- NULL
       fit <- NULL
+      indep <- NULL
+      dep <- NULL
       e <- try({
-        formula <- as.formula(paste(dep, "~", indep))
-        stopifnot(get_ast(formula) != "Error")
+        indep <- as.character(formula)[3]
+        dep <- as.character(formula)[2]
       })
       if (inherits(e, "try-error")) {
         err <- conditionMessage(attr(e, "condition"))

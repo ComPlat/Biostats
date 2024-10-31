@@ -1,3 +1,9 @@
+# TODO: Adjastent to formula Editor button show formula. Thus, the user knwos the current value of the formula or whehter he has to create one
+
+
+# TODO: by group --> open popup --> choose column(e.g. substance column) --> choose level(compound x1234)  --> work with this subset
+# --> correlation, assumptions, visulaisation and Tests
+
 FormulaEditorUI <- function(id) {
   ui <- fluidPage(
     tags$head(
@@ -175,9 +181,17 @@ FormulaEditorServer <- function(id, data) {
         current_text <- input[["editable_code"]]
         formula <- paste(selected_col, " ~ ", current_text)
         formula <- as.formula(formula)
+        # check formula
+        e <- try({
+          check_ast(formula, colnames(r_vals$df))
+        })
+        if (inherits(e, "try-error")) {
+          showNotification(e, type = "error")
+          return()
+        }
         data$formula <- formula
         model <- lm(formula, data = r_vals$df)
-        model_latex <- equatiomatic::extract_eq(model, wrap = TRUE) # TODO: add equatiomatic to DESCRIPTION
+        model_latex <- extract_eq(model, wrap = TRUE)
         output$model <- renderUI({
           withMathJax(HTML(paste0("$$", model_latex, "$$")))
         })

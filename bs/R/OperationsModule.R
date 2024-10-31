@@ -1,3 +1,7 @@
+# TODO: draw boxes around intermediate results & append to df in order to seperate them
+# TODO: rename subset in rows and add cols function. cols(df, colName); cols(intermeidate_var_df, colName)
+
+
 OperatorEditorSidebar <- function(id) {
   ui <- fluidPage(
     tags$head(
@@ -90,7 +94,7 @@ OperatorEditorSidebar <- function(id) {
       actionButton(NS(id, "tolower"), "tolower", class = "add-button"),
       actionButton(NS(id, "toupper"), "toupper", class = "add-button"),
       actionButton(NS(id, "subset"), "subset", class = "add-button",
-        title = 'Filter by row. For example subset(ColName == "Control")'),
+        title = 'Filter by row. For example subset(df, ColName == "Control") or subset(df, colName == 10)'),
       class = "boxed-output"
     ),
     div(
@@ -221,7 +225,7 @@ OperationEditorServer <- function(id, data) {
         div(
           class = "var-box-output",
           h4("df",
-            title =
+            title = # TODO: add that only an excerpt is shown of the dataset
             "This is the dataset. Using the text df you can access the entire dataset.
              If you only want to work with one of the column you can use the respective column title",
             class = "var-output"),
@@ -296,7 +300,11 @@ OperationEditorServer <- function(id, data) {
         return()
       }
       e <- try({
-        ast <- get_ast(op)
+        vars <- c("df", names(df))
+        if (length(r_vals$intermediate_vars) >= 1) {
+          vars <- c(vars, names(r_vals$intermediate_vars))
+        }
+        check_ast(op, vars)
       })
       if (inherits(e, "try-error")) {
         showNotification(e, type = "error")
@@ -312,8 +320,6 @@ OperationEditorServer <- function(id, data) {
         err <- conditionMessage(attr(e, "condition"))
         showNotification(err, type = "error")
       }
-      # TODO: add check that only column names and ivs are used as variables
-      # This is only needed for a better user experience
       r_vals$intermediate_vars[[var_name]] <- new
     })
 
@@ -333,7 +339,11 @@ OperationEditorServer <- function(id, data) {
         return()
       }
       e <- try({
-        ast <- get_ast(op)
+        vars <- c("df", names(df))
+        if (length(r_vals$intermediate_vars) >= 1) {
+          vars <- c(vars,names(r_vals$intermediate_vars))
+        }
+        check_ast(op, vars)
       })
       if (inherits(e, "try-error")) {
         showNotification(e, type = "error")
@@ -350,8 +360,6 @@ OperationEditorServer <- function(id, data) {
         err <- conditionMessage(attr(e, "condition"))
         showNotification(err, type = "error")
       }
-      # TODO: add check that only column names are used as variables
-      # This is only needed for a better user experience
       r_vals$df <- df
       data$df <- df
       output$head <- renderTable(head(r_vals$df, 10))

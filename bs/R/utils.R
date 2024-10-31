@@ -129,7 +129,7 @@ createJSString <- function(l) {
       jsString <- c(jsString, paste0("data:image/png;base64,", base64enc::base64encode(fn)))
       unlink(fn)
     } else if (inherits(l[[i]], "diagnosticPlot")) {
-      jsString <- c(jsString, aste0("data:image/png;base64,", base64enc::base64encode(l[[i]]@p)))
+      jsString <- c(jsString, paste0("data:image/png;base64,", base64enc::base64encode(l[[i]]@p)))
       unlink(l[[i]]@p)
     } else if (inherits(l[[i]], "doseResponse")) {
       p <- l[[i]]@p

@@ -1,14 +1,5 @@
-get_ast <- function(inp) {
-  if (!is.call(inp)) {
-    return(inp)
-  }
-
-  inp <- as.list(inp)
-
-  # check if is function
-  fct <- inp[[1]]
-
-  allowed_fcts <- c(
+allowed_fcts <- function() {
+  c(
     "-", "+", "*", "/",
     "log", "log10", "sqrt", "exp", "^",
     "sin", "cos", "tan", "tanh", "sinh", "cosh", "acos", "asin", "atan",
@@ -26,12 +17,28 @@ get_ast <- function(inp) {
     "c", "vector", "length", "matrix", "~",
     "subset"
   )
+}
 
-  check <- deparse(fct)
-
-  if ((check %in% allowed_fcts) == FALSE) {
-    stop("Error")
+check_ast <- function(inp, allowed_variables) {
+  if (!is.call(inp)) {
+    return(inp)
   }
-
-  lapply(inp, get_ast)
+  inp <- as.list(inp)
+  # check fct
+  fct <- inp[[1]]
+  check <- deparse(fct)
+  if ((check %in% allowed_fcts()) == FALSE) {
+    stop(paste("Found unallowed function: ", check))
+  }
+  # check variables
+  lapply(inp, function(x) {
+    if (!is.list(x) && is.symbol(x) && !(deparse(x) %in% allowed_fcts())) {
+      if (!(deparse(x) %in% allowed_variables)) {
+        stop(paste0("Found unknown variable:", deparse(x)))
+      }
+    }
+  })
+  lapply(inp, function(x) {
+    check_ast(x, allowed_variables)
+  })
 }
