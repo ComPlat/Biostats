@@ -112,6 +112,19 @@ OperatorEditorSidebar <- function(id) {
       class = "boxed-output"
     ),
     div(
+      h3("Convert types of columns"),
+      actionButton(NS(id, "as.char"), "convert to character",
+        title = "Convert a column of the dataset or an intermediate variable to character. For example as.char(ColName)",
+        class = "add-button"),
+      actionButton(NS(id, "as.int"), "convert to integer",
+        title = "Convert a column of the dataset or an intermediate variable to integer. For example as.int(ColName)",
+        class = "add-button"),
+      actionButton(NS(id, "as.double"), "convert to real number",
+        title = "Convert a column of the dataset or an intermediate variable to a real number. For example as.real(ColName)",
+        class = "add-button"),
+      class = "boxed-output"
+    ),
+    div(
       h3("Random number functions"),
       actionButton(NS(id, "dnorm"), "dnorm", class = "add-button"),
       actionButton(NS(id, "pnorm"), "pnorm", class = "add-button"),
@@ -235,13 +248,25 @@ OperationEditorServer <- function(id, data) {
       r_vals$df_name <- create_df_name(r_vals$df_name, names(data$df))
       r_vals$intermediate_vars[[r_vals$df_name]] <- data$df
       output$head <- renderUI({
+        col_info <- sapply(data$df, function(col) class(col)[1]) |>
+          t() |>
+          as.data.frame()
+        names(col_info) <- names(r_vals$df)
         div(
           class = "var-box-output",
           h4("df",
             title =
             "This is the dataset. Using the text df you can access the entire dataset. If you only want to work with one of the column you can use the respective column title. As a side note only the first 6 rows of the data table are shown.",
             class = "var-output"),
-          renderTable(head(r_vals$df))
+          div(
+            title = "This displays the current types for each column",
+            renderTable({
+              col_info
+            })
+          ),
+          renderTable({
+            head(r_vals$df)
+          })
         )
       })
     })
@@ -668,6 +693,21 @@ OperationEditorServer <- function(id, data) {
     observeEvent(input$c, {
       current_text <- input$editable_code
       updated_text <- paste(current_text, "c(", sep = " ")
+      updateTextAreaInput(session, "editable_code", value = updated_text)
+    })
+    observeEvent(input$as.char, {
+      current_text <- input$editable_code
+      updated_text <- paste(current_text, "as.char(", sep = " ")
+      updateTextAreaInput(session, "editable_code", value = updated_text)
+    })
+    observeEvent(input$as.int, {
+      current_text <- input$editable_code
+      updated_text <- paste(current_text, "as.int(", sep = " ")
+      updateTextAreaInput(session, "editable_code", value = updated_text)
+    })
+    observeEvent(input$as.real, {
+      current_text <- input$editable_code
+      updated_text <- paste(current_text, "as.real(", sep = " ")
       updateTextAreaInput(session, "editable_code", value = updated_text)
     })
     observeEvent(input$dnorm, {

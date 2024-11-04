@@ -242,3 +242,15 @@ create_df_name <- function(current_df_name, column_names) {
     }
   }
 }
+
+as.char <- function(v) {
+  return(as.character(v))
+}
+
+as.int <- function(v) {
+  return(as.integer(v))
+}
+
+as.real <- function(v) {
+  return(as.numeric(v))
+}
