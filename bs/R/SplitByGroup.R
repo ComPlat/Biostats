@@ -1,6 +1,3 @@
-# TODO: by group --> open popup --> choose column(e.g. substance column) --> choose level(compound x1234)  --> work with this subset
-# --> correlation, assumptions, visulaisation and Tests
-
 SplitByGroupUI <- function(id) {
   ui <- fluidPage(
     tags$head(
@@ -98,7 +95,7 @@ SplitByGroupServer <- function(id, data) {
       req(!is.null(r_vals$df))
       req(is.data.frame(r_vals$df))
       selected_col <- input[[paste0("colnames-dropdown_")]]
-       if (is.null(selected_col) || selected_col == "") {
+      if (is.null(selected_col) || selected_col == "") {
         return(NULL)
       }
       vals <- unique(r_vals$df[, selected_col])
@@ -127,7 +124,7 @@ SplitByGroupServer <- function(id, data) {
         selected_col <- input[[paste0("colnames-dropdown_")]]
         selected_group <- input[[paste0("levels-dropdown_")]]
         data$backup_df <- r_vals$df
-        data$df <- r_vals$df[r_vals$df[ ,selected_col] == selected_group, ]
+        data$df <- r_vals$df[r_vals$df[, selected_col] == selected_group, ]
         data$filter_col <- selected_col
         data$filter_group <- selected_group
       })
@@ -135,8 +132,5 @@ SplitByGroupServer <- function(id, data) {
         showNotification("Invalid formula", type = "error")
       }
     })
-
-    # TODO: If data is split a button called remove filter has to appear
-
   })
 }

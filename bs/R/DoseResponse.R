@@ -11,7 +11,11 @@ DoseResponseSidebarUI <- function(id) {
         icon = icon("question-circle"),
         style = "position: absolute; top: 10px; right: 10px; z-index: 1000;"
       ),
-      uiOutput(NS(id,"open_formula_editor_corr")),
+      div(
+        class = "boxed-output",
+        uiOutput(NS(id, "open_formula_editor_corr")),
+        verbatimTextOutput(NS(id, "formula"))
+      ),
       br(),
       div(
         class = "boxed-output",
@@ -123,6 +127,12 @@ DoseResponseServer <- function(id, data, listResults) {
         size = "l",
         footer = NULL
       ))
+    })
+
+    # display current formula
+    observe({
+      req(!is.null(data$formula))
+      output$formula <- renderText({deparse(data$formula)})
     })
 
     drFct <- function() {

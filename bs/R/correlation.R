@@ -1,7 +1,11 @@
 corrSidebarUI <- function(id) {
   tabPanel(
     "Correlation",
-    uiOutput(NS(id, "open_formula_editor_corr")),
+    div(
+      class = "boxed-output",
+      uiOutput(NS(id, "open_formula_editor_corr")),
+      verbatimTextOutput(NS(id, "formula"))
+    ),
     br(),
     div(
       class = "boxed-output",
@@ -96,6 +100,7 @@ corrServer <- function(id, data, listResults) {
       data$filter_group <- NULL
     })
 
+    # render formula button
     output$open_formula_editor_corr <- renderUI({
       actionButton(NS(id, "open_formula_editor"),
         "Open formula editor",
@@ -112,6 +117,12 @@ corrServer <- function(id, data, listResults) {
         size = "l",
         footer = NULL
       ))
+    })
+
+    # display current formula
+    observe({
+      req(!is.null(data$formula))
+      output$formula <- renderText({deparse(data$formula)})
     })
 
     corr_fct <- function(method) {

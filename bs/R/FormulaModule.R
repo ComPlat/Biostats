@@ -1,9 +1,3 @@
-# TODO: Adjastent to formula Editor button show formula. Thus, the user knwos the current value of the formula or whehter he has to create one
-
-
-# TODO: by group --> open popup --> choose column(e.g. substance column) --> choose level(compound x1234)  --> work with this subset
-# --> correlation, assumptions, visulaisation and Tests
-
 FormulaEditorUI <- function(id) {
   ui <- fluidPage(
     tags$head(

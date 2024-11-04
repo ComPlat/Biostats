@@ -2,7 +2,11 @@ assSidebarUI <- function(id) {
   tabPanel(
     "Assumption",
     tags$hr(),
-    uiOutput(NS(id, "open_formula_editor_corr")),
+    div(
+      class = "boxed-output",
+      uiOutput(NS(id, "open_formula_editor_corr")),
+      verbatimTextOutput(NS(id, "formula"))
+    ),
     div(
       class = "boxed-output",
       uiOutput(NS(id, "open_split_by_group")),
@@ -132,6 +136,12 @@ assServer <- function(id, data, listResults) {
         size = "l",
         footer = NULL
       ))
+    })
+
+    # display current formula
+    observe({
+      req(!is.null(data$formula))
+      output$formula <- renderText({deparse(data$formula)})
     })
 
     runShapiro <- function() {
