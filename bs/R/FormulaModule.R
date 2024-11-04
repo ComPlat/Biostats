@@ -69,11 +69,34 @@ FormulaEditorUI <- function(id) {
               class = "add-button",
               title = "Include an additional predictor variable in the model"
             ),
+            actionButton(NS(id, "minus"), "-",
+              class = "add-button",
+              title = "Removes an additional predictor variable in the model"
+            ),
             actionButton(NS(id, "mul"), "*",
               class = "add-button",
               title = "Multiply variables to assess interactions in the model"
             ),
-            # TODO: add Error and / as seperate function
+            actionButton(NS(id, "colon"), ":",
+              class = "add-button",
+              title = "Includes the interaction between two variables in the model"
+            ),
+            actionButton(NS(id, "div"), "/",
+              class = "add-button",
+              title = "Includes nested effects (both variable levels) in the model"
+            ),
+            actionButton(NS(id, "nested"), "%in%",
+              class = "add-button",
+              title = "Includes nested effects (both variable levels) without including the main level"
+            ),
+            actionButton(NS(id, "interaction_level"), "interaction_level",
+              class = "add-button",
+              title = "Specifies the interaction level in the model"
+            ),
+            actionButton(NS(id, "I"), "Add arithmetic operations in the model",
+              class = "add-button",
+              title = "Specifies arithmetic operations within I() which are interpreted as normal arithmetic operations"
+            ),
             class = "boxed-output"
           ),
           div(
@@ -163,6 +186,42 @@ FormulaEditorServer <- function(id, data) {
     observeEvent(input$mul, {
       current_text <- input$editable_code
       updated_text <- paste(current_text, "*", sep = " ")
+      updateTextAreaInput(session, "editable_code", value = updated_text)
+    })
+
+    observeEvent(input$minus, {
+      current_text <- input$editable_code
+      updated_text <- paste(current_text, "-", sep = " ")
+      updateTextAreaInput(session, "editable_code", value = updated_text)
+    })
+
+    observeEvent(input$colon, {
+      current_text <- input$editable_code
+      updated_text <- paste(current_text, ":", sep = " ")
+      updateTextAreaInput(session, "editable_code", value = updated_text)
+    })
+
+    observeEvent(input$div, {
+      current_text <- input$editable_code
+      updated_text <- paste(current_text, "/", sep = " ")
+      updateTextAreaInput(session, "editable_code", value = updated_text)
+    })
+
+    observeEvent(input$nested, {
+      current_text <- input$editable_code
+      updated_text <- paste(current_text, "%in%", sep = " ")
+      updateTextAreaInput(session, "editable_code", value = updated_text)
+    })
+
+    observeEvent(input$interaction_level, {
+      current_text <- input$editable_code
+      updated_text <- paste(current_text, "^", sep = " ")
+      updateTextAreaInput(session, "editable_code", value = updated_text)
+    })
+
+    observeEvent(input$I, {
+      current_text <- input$editable_code
+      updated_text <- paste(current_text, "I(", sep = " ")
       updateTextAreaInput(session, "editable_code", value = updated_text)
     })
 

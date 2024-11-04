@@ -3,12 +3,13 @@ visSidebarUI <- function(id) {
     "Visualisation",
     div(
       class = "boxed-output",
-    uiOutput(NS(id, "open_split_by_group")),
+      uiOutput(NS(id, "open_split_by_group")),
       uiOutput(NS(id, "data_splitted")),
       verbatimTextOutput(NS(id, "applied_filter"))
     ),
-    textInput(NS(id, "yVar"), "Y variable", value = "y"),
-    textInput(NS(id, "xVar"), "X variable", value = "x"),
+
+    uiOutput(NS(id, "yVar")),
+    uiOutput(NS(id, "xVar")),
     radioButtons(NS(id, "xType"), "Type of x",
       choices = c(
         factor = "factor",
@@ -34,7 +35,7 @@ visSidebarUI <- function(id) {
     ),
     conditionalPanel(
       condition = "input.VisConditionedPanels == 'Boxplot'",
-      textInput(NS(id, "fill"), "Fill variable"),
+      uiOutput(NS(id, "fill")),
       textInput(NS(id, "legendTitleFill"), "Legend title for fill", value = "Title fill"),
       selectInput(NS(id, "themeFill"), "Choose a 'fill' theme",
         c(
@@ -50,7 +51,7 @@ visSidebarUI <- function(id) {
         selectize = FALSE
       )
     ),
-    textInput(NS(id, "col"), "Colour variable"),
+    uiOutput(NS(id, "col")),
     textInput(NS(id, "legendTitleCol"), "Legend title for colour", value = "Title colour"),
     selectInput(NS(id, "theme"), "Choose a 'colour' theme",
       c(
@@ -65,11 +66,7 @@ visSidebarUI <- function(id) {
       ),
       selectize = FALSE
     ),
-    radioButtons(NS(id, "facetMode"),
-      "Choose Facet Mode:",
-      choices = c("none", "facet_wrap", "facet_grid")
-    ),
-    textInput(NS(id, "facetBy"), "split plot by")
+    uiOutput(NS(id, "facetBy"))
   )
 }
 
@@ -128,6 +125,112 @@ visUI <- function(id) {
 
 visServer <- function(id, data, listResults) {
   moduleServer(id, function(input, output, session) {
+
+    # Render x and y selectInput
+    output[["yVar"]] <- renderUI({
+      req(!is.null(data$df))
+      req(is.data.frame(data$df))
+      colnames <- names(data$df)
+      tooltip <- "Select the value of the Y variable"
+      div(
+        tags$label(
+          "Dependent Variable",
+          class = "tooltip",
+          title = tooltip,
+          `data-toggle` = "tooltip"
+        ),
+        selectInput(
+          inputId = paste0("VIS-yVar"),
+          label = "Y Variable",
+          choices = colnames[1:length(colnames)],
+          selected = NULL
+        )
+      )
+    })
+
+    output[["xVar"]] <- renderUI({
+      req(!is.null(data$df))
+      req(is.data.frame(data$df))
+      colnames <- names(data$df)
+      tooltip <- "Select the value of the X variable"
+      div(
+        tags$label(
+          "Dependent Variable",
+          class = "tooltip",
+          title = tooltip,
+          `data-toggle` = "tooltip"
+        ),
+        selectInput(
+          inputId = paste0("VIS-xVar"),
+          label = "X Variable",
+          choices = colnames[1:length(colnames)],
+          selected = NULL
+        )
+      )
+    })
+
+    output[["col"]] <- renderUI({
+      req(!is.null(data$df))
+      req(is.data.frame(data$df))
+      colnames <- c("", names(data$df))
+      tooltip <- "Select the value of the colour variable"
+      div(
+        tags$label(
+          "Dependent Variable",
+          class = "tooltip",
+          title = tooltip,
+          `data-toggle` = "tooltip"
+        ),
+        selectInput(
+          inputId = paste0("VIS-col"),
+          label = "Colour Variable",
+          choices = colnames[1:length(colnames)],
+          selected = NULL
+        )
+      )
+    })
+
+    output[["fill"]] <- renderUI({
+      req(!is.null(data$df))
+      req(is.data.frame(data$df))
+      colnames <- c("", names(data$df))
+      tooltip <- "Select the value of the fill variable"
+      div(
+        tags$label(
+          "Dependent Variable",
+          class = "tooltip",
+          title = tooltip,
+          `data-toggle` = "tooltip"
+        ),
+        selectInput(
+          inputId = paste0("VIS-fill"),
+          label = "Fill Variable",
+          choices = colnames[1:length(colnames)],
+          selected = NULL
+        )
+      )
+    })
+
+    output[["facetBy"]] <- renderUI({
+      req(!is.null(data$df))
+      req(is.data.frame(data$df))
+      colnames <- c("", names(data$df))
+      tooltip <- "Split plot in panels based on which variable"
+      div(
+        tags$label(
+          "Dependent Variable",
+          class = "tooltip",
+          title = tooltip,
+          `data-toggle` = "tooltip"
+        ),
+        selectInput(
+          inputId = paste0("VIS-facetBy"),
+          label = "Split Variable",
+          choices = colnames[1:length(colnames)],
+          selected = NULL
+        )
+      )
+    })
 
     # Render split by group
     output$open_split_by_group <- renderUI({
@@ -224,10 +327,13 @@ visServer <- function(id, data, listResults) {
       xtype <- input$xType
       theme <- input$theme
       themeFill <- input$themeFill
-      facetMode <- input$facetMode
-      facet <- input$facetBy
+      facetMode <- "none"
+      facet <- ""
+      if (input$facetBy != "") {
+        facet <- input$facetBy
+        facetMode <- "facet_wrap"
+      }
       fitMethod <- input$fitMethod
-
       xd <- NULL
       if (xtype == "numeric") {
         xd <- as.numeric(df[, x])

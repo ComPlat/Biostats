@@ -34,18 +34,20 @@ calcParams <- function(df, formula, method) {
       round(coefficients[2], 2), "* X"
     )
     p_value <- summary(model)$coefficients[, 4]
-    p_value <- paste(p_value, collapse = " ")
+    p_value <- round(p_value, 6)
+    p_value <- paste(p_value, collapse = ", ")
     n <- nrow(df)
     annotations <- paste(
       "R-squared:", round(r_squared, 2),
       "F-value:", round(f_value, 2), "\n",
       "Equation:", equation, "\n",
       "Sample Size (n):", n, "\n",
-      "p-values Intercept & x:", round(p_value, 6)
+      "p-values Intercept & x:", p_value
     )
     df$annotation <- annotations
     df$xPos <- mean(df$x)
     df$yPos <- max(df$y)
+    df$xPos <- mean(df$x)
     return(df)
   } else if (method == "glm") {
     model <- glm(formula, data = df)
@@ -188,31 +190,17 @@ DotplotFct <- function(df, x, y, xLabel, yLabel,
   }
   if (fitMethod == "gam") {
     p <- ggplot(data = df, aes(!!!aes, !!!aesColour)) +
-      geom_point() +
+      geom_point(data = df, aes(shape = annotation)) +
       geom_smooth(
         method = fitMethod,
         formula = y ~ s(x, bs = "cs", k = k)
       ) +
-      geom_text(
-        aes(
-          x = xPos, y = yPos,
-          label = annotation
-        ),
-        size = 3,
-        show.legend = FALSE, position = position_dodge(width = .9)
-      )
+      theme(legend.position = "bottom")
   } else {
     p <- ggplot(data = df, aes(!!!aes, !!!aesColour)) +
-      geom_point() +
+      geom_point(data = df, aes(shape = annotation)) +
       geom_smooth(method = fitMethod) +
-      geom_text(
-        aes(
-          x = xPos, y = yPos,
-          label = annotation
-        ),
-        size = 3,
-        show.legend = FALSE, position = position_dodge(width = .9)
-      )
+      theme(legend.position = "bottom")
   }
 
   # Add labels

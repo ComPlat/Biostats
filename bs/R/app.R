@@ -87,10 +87,6 @@ server <- function(input, output, session) {
   dataSet <- reactiveValues(
     df = NULL, formula = NULL,
     backup_df = NULL, filter_col = NULL, filter_group = NULL
-    # TODO: 1. for the visual formular editor add here the stuff like x, y variable, type of x ...
-    # TODO: 2. write visual formula editor which fills the entries in dataSet
-    # TODO: 3. adapt the visualisation tab code to use the values stored in dataSet
-    # NOTE: alternative use https://github.com/grantmcdermott/tinyplot ?
   )
 
   output$conditional_data_ui <- renderUI({
