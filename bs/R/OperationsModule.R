@@ -119,7 +119,7 @@ OperatorEditorSidebar <- function(id) {
       actionButton(NS(id, "as.int"), "convert to integer",
         title = "Convert a column of the dataset or an intermediate variable to integer. For example as.int(ColName)",
         class = "add-button"),
-      actionButton(NS(id, "as.double"), "convert to real number",
+      actionButton(NS(id, "as.real"), "convert to real number",
         title = "Convert a column of the dataset or an intermediate variable to a real number. For example as.real(ColName)",
         class = "add-button"),
       class = "boxed-output"
