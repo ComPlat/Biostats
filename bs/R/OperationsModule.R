@@ -222,7 +222,7 @@ OperationEditorServer <- function(id, data) {
   moduleServer(id, function(input, output, session) {
     # Reactive values
     r_vals <- reactiveValues(
-      df = NULL,
+      df = NULL, df_name = "df",
       current_page = 1, total_pages = 1,
       counter_id = 0,
       intermediate_vars = list()
@@ -232,18 +232,57 @@ OperationEditorServer <- function(id, data) {
     observe({
       req(is.data.frame(data$df))
       r_vals$df <- data$df
-      r_vals$intermediate_vars[["df"]] <- data$df
+      r_vals$df_name <- create_df_name(r_vals$df_name, names(data$df))
+      r_vals$intermediate_vars[[r_vals$df_name]] <- data$df
       output$head <- renderUI({
         div(
           class = "var-box-output",
           h4("df",
             title =
-            "This is the dataset. Using the text df you can access the entire dataset.
-             If you only want to work with one of the column you can use the respective column title.
-             As a side note only the first 6 rows of the data table are shown.",
+            "This is the dataset. Using the text df you can access the entire dataset. If you only want to work with one of the column you can use the respective column title. As a side note only the first 6 rows of the data table are shown.",
             class = "var-output"),
           renderTable(head(r_vals$df))
         )
+      })
+    })
+
+    # Create colnames button
+    output[["colnames_list"]] <- renderUI({
+      req(!is.null(r_vals$df))
+      req(is.data.frame(r_vals$df))
+      r_vals$df_name <- create_df_name(r_vals$df_name, names(data$df))
+      colnames <- c(r_vals$df_name, names(r_vals$df))
+      button_list <- lapply(colnames[1:length(colnames)], function(i) {
+        if (i == r_vals$df_name) {
+          return(actionButton(
+            inputId = paste0("OP-colnames_", i, "_", r_vals$counter_id),
+            label = paste(i),
+            title = paste0("Click button if you want to use the entire dataset"),
+            class = "add-button"
+          ))
+        } else {
+          return(actionButton(
+            inputId = paste0("OP-colnames_", i, "_", r_vals$counter_id),
+            label = paste(i),
+            title = paste0("Click button if you want to use the column: ", i),
+            class = "add-button"
+          ))
+        }
+      })
+      do.call(tagList, button_list)
+    })
+
+    # React to colnames buttons
+    observe({
+      req(r_vals$df)
+      r_vals$df_name <- create_df_name(r_vals$df_name, names(data$df))
+      colnames <- c(r_vals$df_name, names(r_vals$df))
+      lapply(colnames, function(col) {
+        observeEvent(input[[paste0("colnames_", col, "_", r_vals$counter_id)]], {
+          current_text <- input[["editable_code"]]
+          updated_text <- paste(current_text, col, sep = " ")
+          updateTextAreaInput(session, "editable_code", value = updated_text)
+        })
       })
     })
 
@@ -251,12 +290,12 @@ OperationEditorServer <- function(id, data) {
     output$intermediate_results <- renderUI({
       iv_list <- r_vals$intermediate_vars
       if (length(iv_list) == 1) return()
-      iv_list <- iv_list[names(iv_list) != "df"]
+      iv_list <- iv_list[names(iv_list) != r_vals$df_name]
       iv_ui <- lapply(names(iv_list), function(name) {
         div(
           class = "var-box-output",
-          h4(name, title = paste("This is the variable", name,
-            ". You can use it by entering:", name, " within the Operation text field."), class = "var-output"),
+          h4(name, title = paste0("This is the variable ", name,
+            ". You can use it by entering: ", name, " within the Operation text field."), class = "var-output"),
           verbatimTextOutput(NS(id, paste0("iv_", name))),
           actionButton(NS(id, paste0("remove_iv_", name)), "Remove", class = "btn-danger")
         )
@@ -295,7 +334,6 @@ OperationEditorServer <- function(id, data) {
       req(!is.null(r_vals$df))
       req(is.data.frame(r_vals$df))
       req(input$iv != "")
-      df <- r_vals$df
       var_name <- input$iv |> make.names()
       if (var_name %in% names(r_vals$df)) {
         showNotification("Found invalid variable name",
@@ -303,7 +341,7 @@ OperationEditorServer <- function(id, data) {
         )
         return()
       }
-      if (var_name == "df") {
+      if (var_name == r_vals$df_name) {
         showNotification("Found invalid variable name df. This name is reserved for the dataset",
           type = "error"
         )
@@ -318,7 +356,7 @@ OperationEditorServer <- function(id, data) {
         return()
       }
       e <- try({
-        vars <- c("df", names(df))
+        vars <- c(r_vals$df_name, names(r_vals$df))
         if (length(r_vals$intermediate_vars) >= 1) {
           vars <- c(vars, names(r_vals$intermediate_vars))
         }
@@ -331,7 +369,7 @@ OperationEditorServer <- function(id, data) {
       e <- try({
         eval_env <- new.env()
         list2env(r_vals$intermediate_vars, envir = eval_env)
-        list2env(df, envir = eval_env) # NOTE: this adds each column as own variable
+        list2env(r_vals$df, envir = eval_env) # NOTE: this adds each column as own variable
         new <- eval(parse(text = code), envir = eval_env)
       })
       if (inherits(e, "try-error")) {
@@ -346,7 +384,6 @@ OperationEditorServer <- function(id, data) {
       req(!is.null(r_vals$df))
       req(is.data.frame(r_vals$df))
       req(input$nc != "")
-      df <- r_vals$df
       new_col <- input$nc
       code <- input$editable_code
       op <- try(str2lang(code))
@@ -357,7 +394,7 @@ OperationEditorServer <- function(id, data) {
         return()
       }
       e <- try({
-        vars <- c("df", names(df))
+        vars <- c(r_vals$df_name, names(r_vals$df))
         if (length(r_vals$intermediate_vars) >= 1) {
           vars <- c(vars,names(r_vals$intermediate_vars))
         }
@@ -370,46 +407,17 @@ OperationEditorServer <- function(id, data) {
       e <- try({
         eval_env <- new.env()
         list2env(r_vals$intermediate_vars, envir = eval_env)
-        list2env(df, envir = eval_env)  # NOTE: this adds each column as own variable
+        list2env(r_vals$df, envir = eval_env)  # NOTE: this adds each column as own variable
         new <- eval(parse(text = code), envir = eval_env)
-        df[, new_col] <- new
+        r_vals$df[, new_col] <- new
       })
       if (inherits(e, "try-error")) {
         err <- conditionMessage(attr(e, "condition"))
         showNotification(err, type = "error")
       }
-      r_vals$df <- df
-      data$df <- df
+      data$df <- r_vals$df
       output$head <- renderTable(head(r_vals$df, 10))
       r_vals$counter_id <- r_vals$counter_id + 1
-    })
-
-    # Create colnames button
-    output[["colnames_list"]] <- renderUI({
-      req(!is.null(r_vals$df))
-      req(is.data.frame(r_vals$df))
-      colnames <- c("df", names(r_vals$df)) # TODO: what is the case if one of the column is named df?
-      button_list <- lapply(colnames[1:length(colnames)], function(i) {
-        actionButton(
-          inputId = paste0("OP-colnames_", i, "_", r_vals$counter_id),
-          label = paste(i),
-          class = "add-button"
-        )
-      })
-      do.call(tagList, button_list)
-    })
-
-    # React to colnames buttons
-    observe({
-      req(r_vals$df)
-      colnames <- c("df", names(r_vals$df))
-      lapply(colnames, function(col) {
-        observeEvent(input[[paste0("colnames_", col, "_", r_vals$counter_id)]], {
-          current_text <- input[["editable_code"]]
-          updated_text <- paste(current_text, col, sep = " ")
-          updateTextAreaInput(session, "editable_code", value = updated_text)
-        })
-      })
     })
 
     observeEvent(input$add, {

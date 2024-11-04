@@ -221,10 +221,24 @@ get_cols <- function(df, ...) {
     stopifnot("Column not found" = name %in% names(df))
   })
   args <- as.character(args)
-  df[,args]
+  df[, args]
 }
 
 get_rows <- function(df, expr) {
   stopifnot("Expected dataframe" = is.data.frame(df))
   subset(df, expr)
+}
+
+create_df_name <- function(current_df_name, column_names) {
+  if (!(current_df_name %in% column_names)) {
+    return(current_df_name)
+  }
+  counter <- 1
+  while (TRUE) {
+    current_df_name <- paste0(current_df_name, counter)
+    counter <- counter + 1
+    if (!(current_df_name %in% column_names)) {
+      return(current_df_name)
+    }
+  }
 }
