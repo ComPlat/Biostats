@@ -44,8 +44,16 @@ DoseResponseUI <- function(id) {
     actionButton(NS(id, "dr_save"), "Add output to result-file"),
     actionButton(NS(id, "download_dr"), "Save results"),
     checkboxGroupInput(NS(id, "TableSaved"), "Saved results to file", NULL),
-    tableOutput(NS(id, "dr_result")),
-    plotOutput(NS(id, "dr_result_plot")),
+    tabsetPanel(
+      id = NS(id, "results_tabs"), 
+      tabPanel("Results Table", 
+               tableOutput(NS(id, "dr_result"))),
+      tabPanel("Results Plot", 
+               plotOutput(NS(id, "dr_result_plot")))
+    ),
+
+    # tableOutput(NS(id, "dr_result")),
+    # plotOutput(NS(id, "dr_result_plot")),
     verbatimTextOutput(NS(id, "dr_error"))
   )
 }

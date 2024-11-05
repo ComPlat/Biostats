@@ -83,7 +83,6 @@ visUI <- function(id) {
       ),
       id = "VisConditionedPanels"
     ),
-    plotOutput(NS(id, "plotResult")),
     actionButton(NS(id, "plotSave"), "Add output to result-file"),
     checkboxGroupInput(NS(id, "TableSaved"), "Saved results to file", NULL),
     fluidRow(
@@ -105,7 +104,8 @@ visUI <- function(id) {
         12,
         actionButton(NS(id, "downloadViss"), "Save results")
       )
-    )
+    ),
+    plotOutput(NS(id, "plotResult"))
   )
 }
 
