@@ -85,7 +85,8 @@ SplitByGroupServer <- function(id, data) {
           inputId = paste0("SG-colnames-dropdown_"),
           label = "Variable",
           choices = colnames[1:length(colnames)],
-          selected = NULL
+          selected = NULL,
+          multiple = TRUE
         )
       )
     })
@@ -95,7 +96,7 @@ SplitByGroupServer <- function(id, data) {
       req(!is.null(r_vals$df))
       req(is.data.frame(r_vals$df))
       selected_col <- input[[paste0("colnames-dropdown_")]]
-      if (is.null(selected_col) || selected_col == "") {
+      if (is.null(selected_col)) {
         return(NULL)
       }
       vals <- unique(r_vals$df[, selected_col])
@@ -111,7 +112,8 @@ SplitByGroupServer <- function(id, data) {
           inputId = paste0("SG-levels-dropdown_"),
           label = "Variable levels",
           choices = vals[1:length(vals)],
-          selected = NULL
+          selected = NULL,
+          multiple = TRUE
         )
       )
     })
@@ -121,12 +123,12 @@ SplitByGroupServer <- function(id, data) {
       req(!is.null(r_vals$df))
       req(is.data.frame(r_vals$df))
       e <- try({
-        selected_col <- input[[paste0("colnames-dropdown_")]]
-        selected_group <- input[[paste0("levels-dropdown_")]]
+        selected_cols <- input[[paste0("colnames-dropdown_")]]
+        selected_groups <- input[[paste0("levels-dropdown_")]]
         data$backup_df <- r_vals$df
-        data$df <- r_vals$df[r_vals$df[, selected_col] == selected_group, ]
-        data$filter_col <- selected_col
-        data$filter_group <- selected_group
+        data$df <- split(r_vals$df, selected_cols, selected_groups)
+        data$filter_col <- selected_cols
+        data$filter_group <- selected_groups
       })
       if (inherits(e, "try-error")) {
         showNotification("Invalid formula", type = "error")

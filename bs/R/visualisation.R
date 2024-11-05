@@ -105,7 +105,9 @@ visUI <- function(id) {
         actionButton(NS(id, "downloadViss"), "Save results")
       )
     ),
-    plotOutput(NS(id, "plotResult"))
+    plotOutput(
+      NS(id, "plotResult")
+    )
   )
 }
 
@@ -251,11 +253,13 @@ visServer <- function(id, data, listResults) {
       req(!is.null(data$filter_col))
       req(!is.null(data$filter_group))
       output$applied_filter <- renderText({
-        paste0(
-          "The dataset is splitted by the variable ",
-          data$filter_col,
-          " and the group is ",
-          data$filter_group)
+        paste(
+          "The dataset is splitted by the variable(s): [",
+          paste(data$filter_col, collapse = ", "),
+          "] group(s) are set to: [",
+          paste(data$filter_group, collapse = ", "),
+          "]"
+        )
       })
     })
 

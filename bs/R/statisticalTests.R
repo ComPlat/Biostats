@@ -120,7 +120,6 @@ testsUI <- function(id) {
 
 testsServer <- function(id, data, listResults) {
   moduleServer(id, function(input, output, session) {
-
     # Render split by group
     output$open_split_by_group <- renderUI({
       actionButton(NS(id, "open_split_by_group"),
@@ -154,11 +153,13 @@ testsServer <- function(id, data, listResults) {
       req(!is.null(data$filter_col))
       req(!is.null(data$filter_group))
       output$applied_filter <- renderText({
-        paste0(
-          "The dataset is splitted by the variable ",
-          data$filter_col,
-          " and the group is ",
-          data$filter_group)
+        paste(
+          "The dataset is splitted by the variable(s): [",
+          paste(data$filter_col, collapse = ", "),
+          "] group(s) are set to: [",
+          paste(data$filter_group, collapse = ", "),
+          "]"
+        )
       })
     })
 
@@ -191,7 +192,9 @@ testsServer <- function(id, data, listResults) {
     # display current formula
     observe({
       req(!is.null(data$formula))
-      output$formula <- renderText({deparse(data$formula)})
+      output$formula <- renderText({
+        deparse(data$formula)
+      })
     })
 
     tTest <- function() {

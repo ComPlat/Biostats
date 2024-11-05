@@ -254,3 +254,18 @@ as.int <- function(v) {
 as.real <- function(v) {
   return(as.numeric(v))
 }
+
+# Split groups
+split <- function(df, cols, levels) {
+  df_res <- NULL
+  levels_temp <- NULL
+  for (i in seq_along(cols)) {
+    if (i == 1) {
+      levels_temp <- levels[levels %in% unique(df[, cols[i]])]
+    } else {
+      levels_temp <- levels[levels %in% unique(df_res[, cols[i]])]
+    }
+    df_res <- rbind(df_res, df[df[, cols[i]] == levels_temp, ])
+  }
+  return(df_res)
+}
