@@ -91,6 +91,7 @@ DoseResponseServer <- function(id, data, listResults) {
     output[["negIdentifier"]] <- renderUI({
       req(!is.null(data$df))
       req(is.data.frame(data$df))
+      req(input$`substanceNames`)
       choices <- unique(data$df[[input$substanceNames]])
       req(length(choices) >= 1)
       tooltip <- "Select the name used for the negative control"
@@ -113,6 +114,7 @@ DoseResponseServer <- function(id, data, listResults) {
     output[["posIdentifier"]] <- renderUI({
       req(!is.null(data$df))
       req(is.data.frame(data$df))
+      req(input$`substanceNames`)
       choices <- unique(data$df[[input$substanceNames]])
       req(length(choices) >= 1)
       tooltip <- "Select the name used for the positive control"
@@ -226,6 +228,7 @@ DoseResponseServer <- function(id, data, listResults) {
       neg <- input$negIdentifier
       req(input$posIdentifier)
       pos <- input$posIdentifier
+      print_noti(!is.null(data$formula), "You have to set a formula")
       req(!is.null(data$formula))
       r_vals$plots <- NULL # reset
       f <- as.character(data$formula)
