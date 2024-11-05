@@ -20,20 +20,6 @@ visSidebarUI <- function(id) {
     textInput(NS(id, "xaxisText"), "X axis label", value = "x label"),
     textInput(NS(id, "yaxisText"), "Y axis label", value = "y label"),
     conditionalPanel(
-      condition = "input.VisConditionedPanels == 'Scatterplot'",
-      selectInput(NS(id, "fitMethod"), "Choose a fitting method",
-        c(
-          "none" = "none",
-          "lm" = "lm",
-          "glm" = "glm",
-          "gam" = "gam",
-          "loess" = "loess"
-        ),
-        selectize = FALSE
-      ),
-      numericInput(NS(id, "k"), "number of knots used by spline for gam", value = 10)
-    ),
-    conditionalPanel(
       condition = "input.VisConditionedPanels == 'Boxplot'",
       uiOutput(NS(id, "fill")),
       textInput(NS(id, "legendTitleFill"), "Legend title for fill", value = "Title fill"),
@@ -281,6 +267,7 @@ visServer <- function(id, data, listResults) {
       data$filter_group <- NULL
     })
 
+    # Plot stuff
     plotFct <- function(method) {
       req(is.data.frame(data$df))
       df <- data$df
@@ -333,7 +320,7 @@ visServer <- function(id, data, listResults) {
         facet <- input$facetBy
         facetMode <- "facet_wrap"
       }
-      fitMethod <- input$fitMethod
+      fitMethod <- "none"
       xd <- NULL
       if (xtype == "numeric") {
         xd <- as.numeric(df[, x])
