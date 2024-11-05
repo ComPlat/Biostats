@@ -45,21 +45,26 @@ DoseResponseUI <- function(id) {
     actionButton(NS(id, "download_dr"), "Save results"),
     checkboxGroupInput(NS(id, "TableSaved"), "Saved results to file", NULL),
     tabsetPanel(
-      id = NS(id, "results_tabs"), 
-      tabPanel("Results Table", 
+      id = NS(id, "results_tabs"),
+      tabPanel("Results Table",
                tableOutput(NS(id, "dr_result"))),
-      tabPanel("Results Plot", 
-               plotOutput(NS(id, "dr_result_plot")))
+      tabPanel("Results Plot",
+        plotOutput(NS(id, "dr_result_plot")),
+        actionButton(NS(id, "previousPage"), "Previous plot"),
+        actionButton(NS(id, "nextPage"), "Next plot")
+      )
     ),
-
-    # tableOutput(NS(id, "dr_result")),
-    # plotOutput(NS(id, "dr_result_plot")),
     verbatimTextOutput(NS(id, "dr_error"))
   )
 }
 
 DoseResponseServer <- function(id, data, listResults) {
   moduleServer(id, function(input, output, session) {
+
+    r_vals <- reactiveValues(
+      plots = NULL,
+      currentPage = 1
+    )
 
     # Render split by group
     output$open_split_by_group <- renderUI({
@@ -156,6 +161,7 @@ DoseResponseServer <- function(id, data, listResults) {
       req(input$posIdentifier)
       pos <- input$posIdentifier
       req(!is.null(data$formula))
+      r_vals$plots <- NULL # reset
       f <- as.character(data$formula)
       dep <- f[2]
       indep <- f[3]
@@ -184,16 +190,8 @@ DoseResponseServer <- function(id, data, listResults) {
         })
         resP <- resP[!is.null(resP)]
         resP <- resP[!sapply(resP, is.null)]
-        resPlot <- resP[[1]]
-        if (length(resP) >= 2) {
-          for (i in seq_along(2:length(resP))) {
-            # if (i %% 4 == 0) {
-            # resPlot <- resPlot / resP[[i]]
-            # } else {
-            resPlot <- resPlot + resP[[i]]
-            # }
-          }
-        }
+        r_vals$plots <- resP
+        resPlot <- plot_grid(plotlist = resP, ncol = 3)
       })
       if (inherits(e, "try-error")) {
         err <- conditionMessage(attr(e, "condition"))
@@ -202,12 +200,36 @@ DoseResponseServer <- function(id, data, listResults) {
         listResults$curr_data <- new("doseResponse", df = resDF, p = resPlot)
         listResults$curr_name <- paste("Test Nr", length(listResults$all_names) + 1, "Conducted dose response analysis")
         output$dr_result <- renderTable(resDF, digits = 6)
-        output$dr_result_plot <- renderPlot(resPlot)
       }
     }
 
     observeEvent(input$ic50, {
       drFct()
+    })
+
+    # Display plots
+    observe({
+      req(!is.null(r_vals$plots))
+      req(is.list(r_vals$plots))
+      output$dr_result_plot <- renderPlot(r_vals$plots[[r_vals$currentPage]])
+    })
+
+    observeEvent(input$nextPage, {
+      req(!is.null(r_vals$plots))
+      req(is.list(r_vals$plots))
+      req(length(r_vals$plots) > 1)
+      if (r_vals$currentPage < length(r_vals$plots)) {
+        r_vals$currentPage <- r_vals$currentPage + 1
+      }
+    })
+
+    observeEvent(input$previousPage, {
+      req(!is.null(r_vals$plots))
+      req(is.list(r_vals$plots))
+      req(length(r_vals$plots) > 1)
+      if (r_vals$currentPage > 1) {
+        r_vals$currentPage <- r_vals$currentPage - 1
+      }
     })
 
     observeEvent(input$dr_save, {
