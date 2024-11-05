@@ -24,9 +24,9 @@ DoseResponseSidebarUI <- function(id) {
         verbatimTextOutput(NS(id, "applied_filter"))
       ),
       br(),
-      textInput(NS(id, "substanceNames"), "Names column of dependent Variable", value = "names"),
-      textInput(NS(id, "negIdentifier"), "Identifier for the negative control", value = "neg"),
-      textInput(NS(id, "posIdentifier"), "Identifier for the positive control", value = "pos"),
+      uiOutput(NS(id, "substanceNames")),
+      uiOutput(NS(id, "negIdentifier")),
+      uiOutput(NS(id, "posIdentifier")),
       actionButton(NS(id, "ic50"), "Conduct analysis")
     )
   )
@@ -65,6 +65,72 @@ DoseResponseServer <- function(id, data, listResults) {
       plots = NULL,
       currentPage = 1
     )
+
+    # Render names, conc and abs column
+    output[["substanceNames"]] <- renderUI({
+      req(!is.null(data$df))
+      req(is.data.frame(data$df))
+      colnames <- names(data$df)
+      tooltip <- "Select the column which contains the names of the different substances"
+      div(
+        tags$label(
+          "Dependent Variable",
+          class = "tooltip",
+          title = tooltip,
+          `data-toggle` = "tooltip"
+        ),
+        selectInput(
+          inputId = paste0("DOSERESPONSE-substanceNames"),
+          label = "Column containing the names",
+          choices = colnames[1:length(colnames)],
+          selected = NULL
+        )
+      )
+    })
+
+    output[["negIdentifier"]] <- renderUI({
+      req(!is.null(data$df))
+      req(is.data.frame(data$df))
+      choices <- unique(data$df[[input$substanceNames]])
+      req(length(choices) >= 1)
+      tooltip <- "Select the name used for the negative control"
+      div(
+        tags$label(
+          "Dependent Variable",
+          class = "tooltip",
+          title = tooltip,
+          `data-toggle` = "tooltip"
+        ),
+        selectInput(
+          inputId = paste0("DOSERESPONSE-negIdentifier"),
+          label = "Name of the negative control",
+          choices = choices[1:length( choices)],
+          selected = NULL
+        )
+      )
+    })
+
+    output[["posIdentifier"]] <- renderUI({
+      req(!is.null(data$df))
+      req(is.data.frame(data$df))
+      choices <- unique(data$df[[input$substanceNames]])
+      req(length(choices) >= 1)
+      tooltip <- "Select the name used for the positive control"
+      div(
+        tags$label(
+          "Dependent Variable",
+          class = "tooltip",
+          title = tooltip,
+          `data-toggle` = "tooltip"
+        ),
+        selectInput(
+          inputId = paste0("DOSERESPONSE-posIdentifier"),
+          label = "Name of the positive control",
+          choices = choices[1:length( choices)],
+          selected = NULL
+        )
+      )
+    })
 
     # Render split by group
     output$open_split_by_group <- renderUI({
