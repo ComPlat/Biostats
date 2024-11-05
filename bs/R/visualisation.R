@@ -7,52 +7,66 @@ visSidebarUI <- function(id) {
       uiOutput(NS(id, "data_splitted")),
       verbatimTextOutput(NS(id, "applied_filter"))
     ),
-
-    uiOutput(NS(id, "yVar")),
-    uiOutput(NS(id, "xVar")),
-    radioButtons(NS(id, "xType"), "Type of x",
-      choices = c(
-        factor = "factor",
-        numeric = "numeric"
+    div(
+      class = "boxed-output",
+      uiOutput(NS(id, "yVar")),
+      uiOutput(NS(id, "xVar")),
+      actionButton(NS(id, "ToggleAxisOptions"), "Show/Hide axis Options"),
+      div(
+        id = NS(id, "AxisOptionsDiv"),
+        class = "boxed-output",
+        radioButtons(NS(id, "xType"), "Type of x",
+          choices = c(
+            factor = "factor",
+            numeric = "numeric"
+          ),
+          selected = "factor"
+        ),
+        textInput(NS(id, "xaxisText"), "X axis label", value = "x label"),
+        textInput(NS(id, "yaxisText"), "Y axis label", value = "y label"),
+        uiOutput(NS(id, "MinXAxis")),
+        uiOutput(NS(id, "MaxXAxis")),
+        uiOutput(NS(id, "MinYAxis")),
+        uiOutput(NS(id, "MaxYAxis"))
       ),
-      selected = "factor"
     ),
-    textInput(NS(id, "xaxisText"), "X axis label", value = "x label"),
-    textInput(NS(id, "yaxisText"), "Y axis label", value = "y label"),
-    conditionalPanel(
-      condition = "input.VisConditionedPanels == 'Boxplot'",
-      uiOutput(NS(id, "fill")),
-      textInput(NS(id, "legendTitleFill"), "Legend title for fill", value = "Title fill"),
-      selectInput(NS(id, "themeFill"), "Choose a 'fill' theme",
+    div(
+      class = "boxed-output",
+      conditionalPanel(
+        condition = "input.VisConditionedPanels == 'Boxplot'",
+        uiOutput(NS(id, "fill")),
+        textInput(NS(id, "legendTitleFill"), "Legend title for fill", value = "Title fill"),
+        selectInput(NS(id, "themeFill"), "Choose a 'fill' theme",
+          c(
+            "BuGn" = "BuGn",
+            "PuRd" = "PuRd",
+            "YlOrBr" = "YlOrBr",
+            "Greens" = "Greens",
+            "GnBu" = "GnBu",
+            "Reds" = "Reds",
+            "Oranges" = "Oranges",
+            "Greys" = "Greys"
+          ),
+          selectize = FALSE
+        )
+      ),
+      uiOutput(NS(id, "col")),
+      textInput(NS(id, "legendTitleCol"), "Legend title for colour", value = "Title colour"),
+      selectInput(NS(id, "theme"), "Choose a 'colour' theme",
         c(
-          "BuGn" = "BuGn",
-          "PuRd" = "PuRd",
-          "YlOrBr" = "YlOrBr",
-          "Greens" = "Greens",
-          "GnBu" = "GnBu",
-          "Reds" = "Reds",
-          "Oranges" = "Oranges",
-          "Greys" = "Greys"
+          "Accent" = "Accent",
+          "Dark2" = "Dark2",
+          "Paired" = "Paired",
+          "Pastel1" = "Pastel1",
+          "Pastel2" = "Pastel2",
+          "Set1" = "Set1",
+          "Set2" = "Set2",
+          "Set3" = "Set3"
         ),
         selectize = FALSE
-      )
-    ),
-    uiOutput(NS(id, "col")),
-    textInput(NS(id, "legendTitleCol"), "Legend title for colour", value = "Title colour"),
-    selectInput(NS(id, "theme"), "Choose a 'colour' theme",
-      c(
-        "Accent" = "Accent",
-        "Dark2" = "Dark2",
-        "Paired" = "Paired",
-        "Pastel1" = "Pastel1",
-        "Pastel2" = "Pastel2",
-        "Set1" = "Set1",
-        "Set2" = "Set2",
-        "Set3" = "Set3"
       ),
-      selectize = FALSE
-    ),
-    uiOutput(NS(id, "facetBy"))
+      uiOutput(NS(id, "facetBy"))
+    )
   )
 }
 
@@ -113,6 +127,111 @@ visUI <- function(id) {
 
 visServer <- function(id, data, listResults) {
   moduleServer(id, function(input, output, session) {
+
+    # Show axis options
+    observeEvent(input$ToggleAxisOptions, {
+      toggle("AxisOptionsDiv")
+    })
+    # Render axis limits
+    output[["MinXAxis"]] <- renderUI({
+      req(!is.null(data$df))
+      req(is.data.frame(data$df))
+      req(input$xVar)
+      x <- input$xVar
+      df <- data$df
+      if (is.numeric(df[, x])) {
+        x_min <- min(df[[x]], na.rm = TRUE)
+        padded_min <- x_min * 0.95
+        return(numericInput(
+          inputId = "VIS-MinXAxis",
+          label = "Min X axis",
+          value = padded_min
+        ))
+      } else {
+        choices <- unique(df[[x]])
+        return(selectInput(
+          inputId = "VIS-MinXAxis",
+          label = "Min X axis",
+          choices = choices,
+          selected = choices[1]
+        ))
+      }
+    })
+
+    output[["MaxXAxis"]] <- renderUI({
+      req(!is.null(data$df))
+      req(is.data.frame(data$df))
+      req(input$xVar)
+      x <- input$xVar
+      df <- data$df
+      if (is.numeric(df[, x])) {
+        x_max <- max(df[[x]], na.rm = TRUE)
+        padded_max <- x_max * 1.05
+        return(numericInput(
+          inputId = "VIS-MaxXAxis",
+          label = "Max X axis",
+          value = padded_max
+        ))
+      } else {
+        choices <- unique(df[[x]])
+        return(selectInput(
+          inputId = "VIS-MaxXAxis",
+          label = "Max X axis",
+          choices = choices,
+          selected = choices[length(choices)]
+        ))
+      }
+    })
+
+    output[["MinYAxis"]] <- renderUI({
+      req(!is.null(data$df))
+      req(is.data.frame(data$df))
+      req(input$yVar)
+      y <- input$yVar
+      df <- data$df
+      if (is.numeric(df[, y])) {
+        y_min <- min(df[[y]], na.rm = TRUE)
+        padded_min <- y_min * 0.95
+        return(numericInput(
+          inputId = "VIS-MinYAxis",
+          label = "Min Y axis",
+          value = padded_min
+        ))
+      } else {
+        choices <- unique(df[[y]])
+        return(selectInput(
+          inputId = "VIS-MinYAxis",
+          label = "Min Y axis",
+          choices = choices,
+          selected = choices[1]
+        ))
+      }
+    })
+
+    output[["MaxYAxis"]] <- renderUI({
+      req(!is.null(data$df))
+      req(is.data.frame(data$df))
+      req(input$yVar)
+      y <- input$yVar
+      df <- data$df
+      if (is.numeric(df[, y])) {
+        y_max <- max(df[[y]], na.rm = TRUE)
+        padded_max <- y_max * 1.05
+        return(numericInput(
+          inputId = "VIS-MaxYAxis",
+          label = "Max Y axis",
+          value = padded_max
+        ))
+      } else {
+        choices <- unique(df[[y]])
+        return(selectInput(
+          inputId = "VIS-MaxYAxis",
+          label = "Max Y axis",
+          choices = choices,
+          selected = choices[length(choices)]
+        ))
+      }
+    })
 
     # Render x and y selectInput
     output[["yVar"]] <- renderUI({
@@ -280,31 +399,19 @@ visServer <- function(id, data, listResults) {
       x <- input$xVar
       y <- input$yVar
       colNames <- names(df)
-      checkX <- x %in% colNames
-      checkY <- y %in% colNames
-      if (!checkX) showNotification("X variable not found", duration = 0)
-      if (!checkY) showNotification("Y variable not found", duration = 0)
-      req(checkX)
-      req(checkY)
+      print_noti(x %in% colNames, "X variable not found")
+      print_noti(y %in% colNames, "Y variable not found")
       width <- input$widthPlot
       height <- input$heightPlot
       resolution <- input$resPlot
-      if (width <= 0) {
-        showNotification(paste("width has to be a positive number is changed to 10 cm"), duration = 0)
-        width <- 10
-      }
-      if (height <= 0) {
-        showNotification(paste("height has to be a positive number is changed to 10 cm"), duration = 0)
-        height <- 10
-      }
-      if (width > 100) {
-        showNotification(paste("width exceeds max value of 100 cm. Is set to 100 cm."), duration = 0)
-        width <- 100
-      }
-      if (height > 100) {
-        showNotification(paste("height exceeds max value of 100 cm. Is set to 100 cm."), duration = 0)
-        height <- 100
-      }
+      print_noti(width > 0, "width has to be a positive number; It is changed to 10 cm")
+      if (width <= 0) width <- 10
+      print_noti(height > 0, "height has to be a positive number; It is changed to 10 cm")
+      if (height <= 0) height <- 10
+      print_noti(width < 100, "width exceeds max value of 100; It is changed to 100 cm")
+      if (width > 100) width <- 100
+      print_noti(height < 100, "height exceeds max value of 100; It is changed to 100 cm")
+      if (height > 100) height <- 100
       col <- input$col
       fill <- input$fill
       if (!(fill %in% names(df)) && (fill != "")) showNotification("fill variable not found", duration = 0)
@@ -336,7 +443,14 @@ visServer <- function(id, data, listResults) {
         showNotification("Fit method will be ignored as X variable is not numerical", duration = 0)
         fitMethod <- "none"
       }
-
+      e <- try({
+        check_axis_limits(df[, x], input$MinXAxis, input$MaxXAxis)
+        check_axis_limits(df[, y], input$MinYAxis, input$MaxYAxis)
+      }, silent = TRUE)
+      if (inherits(e, "try-error")) {
+        showNotification(attr(e, "condition")$message)
+        return()
+      }
       p <- tryCatch(
         {
           if (method == "box") {
@@ -344,7 +458,8 @@ visServer <- function(id, data, listResults) {
               df, x, y, xlabel, ylabel,
               fill, fillTitle, themeFill,
               col, colTitle, theme,
-              facetMode, facet
+              facetMode, facet,
+              input$MinXAxis, input$MaxXAxis, input$MinYAxis, input$MaxYAxis
             )
           } else if (method == "dot") {
             k <- NULL
@@ -360,13 +475,15 @@ visServer <- function(id, data, listResults) {
               df, x, y, xlabel, ylabel,
               fitMethod,
               col, colTitle, theme,
-              facetMode, facet, k
+              facetMode, facet, k,
+              input$MinXAxis, input$MaxXAxis, input$MinYAxis, input$MaxYAxis
             )
           } else if (method == "line") {
             p <- LineplotFct(
               df, x, y, xlabel, ylabel,
               col, colTitle, theme,
-              facetMode, facet
+              facetMode, facet,
+              input$MinXAxis, input$MaxXAxis, input$MinYAxis, input$MaxYAxis
             )
           }
         },

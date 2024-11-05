@@ -163,7 +163,7 @@ server <- function(input, output, session) {
     }
     tryCatch(
       {
-        system(paste("rm -r ", file))
+        unlink(file)
       },
       warning = function(warn) {
         showNotification(paste("A warning occurred: ", conditionMessage(warn)), duration = 0)

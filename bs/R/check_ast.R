@@ -16,7 +16,7 @@ allowed_fcts <- function() {
     "sum", "diff", "min", "max", "scale",
     "c", "vector", "length", "matrix", "~",
     "get_rows", "get_cols",
-    "as.char", "as.int", "as.real"
+    "as.char", "as.int", "as.real", "as.fact"
   )
 }
 

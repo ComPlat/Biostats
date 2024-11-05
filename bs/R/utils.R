@@ -255,6 +255,10 @@ as.real <- function(v) {
   return(as.numeric(v))
 }
 
+as.fact <- function(v) {
+  return(as.factor(v))
+}
+
 # Split groups
 split <- function(df, cols, levels) {
   df_res <- NULL
@@ -268,4 +272,34 @@ split <- function(df, cols, levels) {
     df_res <- rbind(df_res, df[df[, cols[i]] == levels_temp, ])
   }
   return(df_res)
+}
+
+# check and print notifications
+print_noti <- function(expr, message) {
+  if (!expr) {
+    showNotification(message)
+  }
+  req(expr)
+}
+
+# Check axis limits
+check_axis_limits <- function(col, min, max) {
+  if (is.numeric(col)) {
+    if (!is.numeric(min) || !is.numeric(max)) {
+      stop("Found invalid axis limits")
+    }
+    if (max <= min) {
+      stop("Found invalid axis limits: max <= min")
+    }
+    return()
+  } else {
+    choices <- unique(col)
+    if (!(min %in% choices) || !(max %in% choices)) {
+      stop("Found invalid axis limits")
+    }
+    if (which(max == choices) <= which(min == choices)) {
+      stop("Found invalid axis limits. The max value is found before the min value")
+    }
+    return()
+  }
 }

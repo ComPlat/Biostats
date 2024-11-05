@@ -16,6 +16,7 @@ library(MASS)
 library(Matrix)
 library(shinyjs)
 library(equatiomatic)
+# TODO: add missing libraries to the Dockerfile
 
 if (Sys.getenv("RUN_MODE") == "SERVER") {
   library(COMELN)

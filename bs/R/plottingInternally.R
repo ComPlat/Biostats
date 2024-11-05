@@ -1,3 +1,33 @@
+addFacet <- function(p, facetVar, facetMode) {
+  if (facetMode == "facet_wrap") {
+    return(p + facet_wrap(. ~ .data[[facetVar]], scales = "free"))
+  } else if (facetMode == "facet_grid") {
+    return(p + facet_grid(. ~ .data[[facetVar]], scales = "free"))
+  }
+}
+
+addInterval <- function(p, df, xCol, yCol, xMin, xMax, yMin, yMax) {
+  x <- df[ , xCol]
+  y <- df[ , yCol]
+  if (is.numeric(x)) {
+    p <- p + scale_x_continuous(limits = c(xMin, xMax))
+  } else {
+    choices <- unique(x)
+    xStart <- which(xMin == choices)
+    xEnd <- which(xMax == choices)
+    p <- p + scale_x_discrete(limits = choices[xStart:xEnd])
+  }
+  if (is.numeric(y)) {
+    p <- p + scale_y_continuous(limits = c(yMin, yMax))
+  } else {
+    choices <- unique(y)
+    yStart <- which(yMin == choices)
+    yEnd <- which(yMax == choices)
+    p <- p + scale_y_discrete(limits = choices[yStart:yEnd])
+  }
+  return(p)
+}
+
 annotateDF <- function(p, method, level = 2) {
   pB <- ggplot_build(p)
   df <- pB$data[[1]]
@@ -107,18 +137,11 @@ calcParams <- function(df, formula, method) {
   }
 }
 
-addFacet <- function(p, facetVar, facetMode) {
-  if (facetMode == "facet_wrap") {
-    return(p + facet_wrap(. ~ .data[[facetVar]], scales = "free"))
-  } else if (facetMode == "facet_grid") {
-    return(p + facet_grid(. ~ .data[[facetVar]], scales = "free"))
-  }
-}
-
 DotplotFct <- function(df, x, y, xLabel, yLabel,
                        fitMethod,
                        colourVar, legendTitleColour,
-                       colourTheme, facetMode, facetVar, k = 10) {
+                       colourTheme, facetMode, facetVar, k = 10,
+                       xMin, xMax, yMin, yMax) {
   # create plot
   # ==========================================
   aes <- aes(x = .data[[x]], y = .data[[y]])
@@ -144,7 +167,7 @@ DotplotFct <- function(df, x, y, xLabel, yLabel,
 
   p <- p + xlab(xLabel)
   p <- p + ylab(yLabel)
-
+  p <- addInterval(p, df, x, y, xMin, xMax, yMin, yMax)
   if (colourVar != "") {
     p <- p + guides(colour = guide_legend(title = legendTitleColour))
     p <- p + scale_color_brewer(palette = colourTheme)
@@ -221,7 +244,8 @@ DotplotFct <- function(df, x, y, xLabel, yLabel,
 BoxplotFct <- function(df, x, y, xLabel, yLabel,
                        fillVar, legendTitleFill, fillTheme,
                        colourVar, legendTitleColour,
-                       colourTheme, facetMode, facetVar) {
+                       colourTheme, facetMode, facetVar,
+                       xMin, xMax, yMin, yMax) {
   aes <- aes(x = .data[[x]], y = .data[[y]])
   aesColour <- NULL
   aesFill <- NULL
@@ -252,6 +276,7 @@ BoxplotFct <- function(df, x, y, xLabel, yLabel,
   p <- p + guides(colour = guide_legend(title = legendTitleColour))
   p <- p + scale_fill_brewer(palette = fillTheme)
   p <- p + scale_color_brewer(palette = colourTheme)
+  p <- addInterval(p, df, x, y, xMin, xMax, yMin, yMax)
   if (facetMode != "none") {
     p <- addFacet(p, facetVar, facetMode)
   }
@@ -260,7 +285,8 @@ BoxplotFct <- function(df, x, y, xLabel, yLabel,
 
 LineplotFct <- function(df, x, y, xLabel, yLabel,
                         colourVar, legendTitleColour,
-                        colourTheme, facetMode, facetVar) {
+                        colourTheme, facetMode, facetVar,
+                        xMin, xMax, yMin, yMax) {
   aes <- aes(x = .data[[x]], y = .data[[y]])
   aesColour <- NULL
   p <- NULL
@@ -283,6 +309,7 @@ LineplotFct <- function(df, x, y, xLabel, yLabel,
   p <- p + ylab(yLabel)
   p <- p + guides(colour = guide_legend(title = legendTitleColour))
   p <- p + scale_color_brewer(palette = colourTheme)
+  p <- addInterval(p, df, x, y, xMin, xMax, yMin, yMax)
   if (facetMode != "none") {
     p <- addFacet(p, facetVar, facetMode)
   }

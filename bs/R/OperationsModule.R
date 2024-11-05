@@ -122,6 +122,9 @@ OperatorEditorSidebar <- function(id) {
       actionButton(NS(id, "as.real"), "convert to real number",
         title = "Convert a column of the dataset or an intermediate variable to a real number. For example as.real(ColName)",
         class = "add-button"),
+      actionButton(NS(id, "as.fact"), "convert to factors",
+        title = "Convert a column of the dataset or an intermediate variable to a factor. For example as.fact(ColName)",
+        class = "add-button"),
       class = "boxed-output"
     ),
     div(
@@ -708,6 +711,11 @@ OperationEditorServer <- function(id, data) {
     observeEvent(input$as.real, {
       current_text <- input$editable_code
       updated_text <- paste(current_text, "as.real(", sep = " ")
+      updateTextAreaInput(session, "editable_code", value = updated_text)
+    })
+    observeEvent(input$as.fact, {
+      current_text <- input$editable_code
+      updated_text <- paste(current_text, "as.fact(", sep = " ")
       updateTextAreaInput(session, "editable_code", value = updated_text)
     })
     observeEvent(input$dnorm, {
