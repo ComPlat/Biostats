@@ -10,25 +10,7 @@ visSidebarUI <- function(id) {
     div(
       class = "boxed-output",
       uiOutput(NS(id, "yVar")),
-      uiOutput(NS(id, "xVar")),
-      actionButton(NS(id, "ToggleAxisOptions"), "Show/Hide axis Options"),
-      div(
-        id = NS(id, "AxisOptionsDiv"),
-        class = "boxed-output",
-        radioButtons(NS(id, "xType"), "Type of x",
-          choices = c(
-            factor = "factor",
-            numeric = "numeric"
-          ),
-          selected = "factor"
-        ),
-        textInput(NS(id, "xaxisText"), "X axis label", value = "x label"),
-        textInput(NS(id, "yaxisText"), "Y axis label", value = "y label"),
-        uiOutput(NS(id, "MinXAxis")),
-        uiOutput(NS(id, "MaxXAxis")),
-        uiOutput(NS(id, "MinYAxis")),
-        uiOutput(NS(id, "MaxYAxis"))
-      ),
+      uiOutput(NS(id, "xVar"))
     ),
     div(
       class = "boxed-output",
@@ -65,7 +47,22 @@ visSidebarUI <- function(id) {
         ),
         selectize = FALSE
       ),
-      uiOutput(NS(id, "facetBy"))
+      class = "boxed-output",
+      radioButtons(NS(id, "xType"), "Type of x",
+        choices = c(
+          factor = "factor",
+          numeric = "numeric"
+        ),
+        selected = "factor"
+      ),
+      textInput(NS(id, "xaxisText"), "X axis label", value = "x label"),
+      textInput(NS(id, "yaxisText"), "Y axis label", value = "y label"),
+      uiOutput(NS(id, "MinXAxis")),
+      uiOutput(NS(id, "MaxXAxis")),
+      uiOutput(NS(id, "MinYAxis")),
+      uiOutput(NS(id, "MaxYAxis")),
+      uiOutput(NS(id, "facetBy")),
+      uiOutput(NS(id, "facetScales"))
     )
   )
 }
@@ -128,10 +125,6 @@ visUI <- function(id) {
 visServer <- function(id, data, listResults) {
   moduleServer(id, function(input, output, session) {
 
-    # Show axis options
-    observeEvent(input$ToggleAxisOptions, {
-      toggle("AxisOptionsDiv")
-    })
     # Render axis limits
     output[["MinXAxis"]] <- renderUI({
       req(!is.null(data$df))
@@ -141,7 +134,7 @@ visServer <- function(id, data, listResults) {
       df <- data$df
       if (is.numeric(df[, x])) {
         x_min <- min(df[[x]], na.rm = TRUE)
-        padded_min <- x_min * 0.95
+        padded_min <- x_min * 0.5 # Needed for boxplots
         return(numericInput(
           inputId = "VIS-MinXAxis",
           label = "Min X axis",
@@ -166,7 +159,7 @@ visServer <- function(id, data, listResults) {
       df <- data$df
       if (is.numeric(df[, x])) {
         x_max <- max(df[[x]], na.rm = TRUE)
-        padded_max <- x_max * 1.05
+        padded_max <- x_max * 1.25
         return(numericInput(
           inputId = "VIS-MaxXAxis",
           label = "Max X axis",
@@ -339,6 +332,30 @@ visServer <- function(id, data, listResults) {
       )
     })
 
+    output[["facetScales"]] <- renderUI({
+      req(!is.null(data$df))
+      req(is.data.frame(data$df))
+      colnames <- c("", names(data$df))
+      tooltip <- "Do you want to scale the Y axis"
+      div(
+        tags$label(
+          "Dependent Variable",
+          class = "tooltip",
+          title = tooltip,
+          `data-toggle` = "tooltip"
+        ),
+        radioButtons(
+          "VIS-facetScales",
+          "Scaling of y axis",
+          choices = c(
+            free = "free",
+            fixed = "fixed"
+          ),
+          selected = "free"
+        )
+      )
+    })
+
     # Render split by group
     output$open_split_by_group <- renderUI({
       actionButton(NS(id, "open_split_by_group"),
@@ -427,6 +444,7 @@ visServer <- function(id, data, listResults) {
       themeFill <- input$themeFill
       facetMode <- "none"
       facet <- ""
+      facetScales <- input$facetScales
       if (input$facetBy != "") {
         facet <- input$facetBy
         facetMode <- "facet_wrap"
@@ -458,7 +476,7 @@ visServer <- function(id, data, listResults) {
               df, x, y, xlabel, ylabel,
               fill, fillTitle, themeFill,
               col, colTitle, theme,
-              facetMode, facet,
+              facetMode, facet, facetScales,
               input$MinXAxis, input$MaxXAxis, input$MinYAxis, input$MaxYAxis
             )
           } else if (method == "dot") {
@@ -475,14 +493,14 @@ visServer <- function(id, data, listResults) {
               df, x, y, xlabel, ylabel,
               fitMethod,
               col, colTitle, theme,
-              facetMode, facet, k,
+              facetMode, facet, facetScales, k,
               input$MinXAxis, input$MaxXAxis, input$MinYAxis, input$MaxYAxis
             )
           } else if (method == "line") {
             p <- LineplotFct(
               df, x, y, xlabel, ylabel,
               col, colTitle, theme,
-              facetMode, facet,
+              facetMode, facet, facetScales,
               input$MinXAxis, input$MaxXAxis, input$MinYAxis, input$MaxYAxis
             )
           }

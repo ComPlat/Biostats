@@ -1,8 +1,8 @@
-addFacet <- function(p, facetVar, facetMode) {
+addFacet <- function(p, facetVar, facetMode, facetScales) {
   if (facetMode == "facet_wrap") {
-    return(p + facet_wrap(. ~ .data[[facetVar]], scales = "free"))
+    return(p + facet_wrap(. ~ .data[[facetVar]], scales = facetScales))
   } else if (facetMode == "facet_grid") {
-    return(p + facet_grid(. ~ .data[[facetVar]], scales = "free"))
+    return(p + facet_grid(. ~ .data[[facetVar]], scales = facetScales))
   }
 }
 
@@ -140,7 +140,8 @@ calcParams <- function(df, formula, method) {
 DotplotFct <- function(df, x, y, xLabel, yLabel,
                        fitMethod,
                        colourVar, legendTitleColour,
-                       colourTheme, facetMode, facetVar, k = 10,
+                       colourTheme, facetMode, facetVar, facetScales,
+                       k = 10,
                        xMin, xMax, yMin, yMax) {
   # create plot
   # ==========================================
@@ -235,7 +236,7 @@ DotplotFct <- function(df, x, y, xLabel, yLabel,
     p <- p + scale_color_brewer(palette = colourTheme)
   }
   if (facetMode != "none") {
-    p <- addFacet(p, "Panel", facetMode)
+    p <- addFacet(p, "Panel", facetMode, facetScales)
   }
 
   return(p)
@@ -244,7 +245,7 @@ DotplotFct <- function(df, x, y, xLabel, yLabel,
 BoxplotFct <- function(df, x, y, xLabel, yLabel,
                        fillVar, legendTitleFill, fillTheme,
                        colourVar, legendTitleColour,
-                       colourTheme, facetMode, facetVar,
+                       colourTheme, facetMode, facetVar, facetScales,
                        xMin, xMax, yMin, yMax) {
   aes <- aes(x = .data[[x]], y = .data[[y]])
   aesColour <- NULL
@@ -278,14 +279,14 @@ BoxplotFct <- function(df, x, y, xLabel, yLabel,
   p <- p + scale_color_brewer(palette = colourTheme)
   p <- addInterval(p, df, x, y, xMin, xMax, yMin, yMax)
   if (facetMode != "none") {
-    p <- addFacet(p, facetVar, facetMode)
+    p <- addFacet(p, facetVar, facetMode, facetScales)
   }
   return(p)
 }
 
 LineplotFct <- function(df, x, y, xLabel, yLabel,
                         colourVar, legendTitleColour,
-                        colourTheme, facetMode, facetVar,
+                        colourTheme, facetMode, facetVar, facetScales,
                         xMin, xMax, yMin, yMax) {
   aes <- aes(x = .data[[x]], y = .data[[y]])
   aesColour <- NULL
@@ -311,7 +312,7 @@ LineplotFct <- function(df, x, y, xLabel, yLabel,
   p <- p + scale_color_brewer(palette = colourTheme)
   p <- addInterval(p, df, x, y, xMin, xMax, yMin, yMax)
   if (facetMode != "none") {
-    p <- addFacet(p, facetVar, facetMode)
+    p <- addFacet(p, facetVar, facetMode, facetScales)
   }
   return(p)
 }
