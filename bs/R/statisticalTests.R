@@ -33,7 +33,7 @@ testsSidebarUI <- function(id) {
           "Paired" = "p"
         )
       ),
-      selectInput(
+      selectInputt(
         NS(id, "varEq"), "Are the two variances treated as equal or not?",
         c(
           "Equal" = "eq",

@@ -5,12 +5,6 @@ DoseResponseSidebarUI <- function(id) {
     "Dose Response analysis",
     div(
       style = "position: relative;",
-      actionButton(
-        NS(id, "df_help_icon"),
-        label = NULL,
-        icon = icon("question-circle"),
-        style = "position: absolute; top: 10px; right: 10px; z-index: 1000;"
-      ),
       div(
         class = "boxed-output",
         uiOutput(NS(id, "open_formula_editor_corr")),
@@ -183,15 +177,6 @@ DoseResponseServer <- function(id, data, listResults) {
       data$backup_df <- NULL
       data$filter_col <- NULL
       data$filter_group <- NULL
-    })
-
-    observeEvent(input[["df_help_icon"]], {
-      showModal(modalDialog(
-        title = "Example Dataframe",
-         includeHTML("www/df_excerpt_dose_response.html"),
-        easyClose = TRUE,
-        footer = NULL
-      ))
     })
 
     output$open_formula_editor_corr <- renderUI({

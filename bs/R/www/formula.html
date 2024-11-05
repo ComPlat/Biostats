@@ -1,0 +1,91 @@
+<!-- df_excerpt_dose_response.html -->
+<style>
+  table, th, td {
+    border: 1px solid black;
+    border-collapse: collapse;
+    padding: 8px;
+    text-align: center;
+  }
+  th {
+    background-color: #f2f2f2;
+  }
+  .info-container {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+  }
+  .documentation {
+    max-width: 200px;
+  }
+</style>
+<div class="info-container">
+<div class="boxed-output">
+  <h4><strong>1. Overview</strong></h4>
+  <p>
+    A formula describes how the columns of your dataset are mapped in the statistical model.
+    For example the table shows three columns: CO2Uptake, Fertilization, and waterStress.
+    Here the CO2Uptake would be the response variable i.e. the left side of your model.
+    The Fertilization and WaterStress would be the predictors i.e. the right side of the model.
+    The idea is to see how the predictors affect the response variable. Here the aim is to see
+    how the CO2Uptake depends on sufficient Fertilization and WaterStress.
+  </p>
+</div>
+    <table>
+    <tr> <th>CO2Uptake</th> <th>Fertilization</th>       <th>WaterStress</th>       </tr>
+    <tr> <td>0.01</td>       <td>0.5</td>                 <td>yes</td>              </tr>
+    <tr> <td>0.01</td>       <td>0.5</td>                 <td>yes</td>              </tr>
+    <tr> <td>0.6</td>        <td>0.5</td>                 <td>no</td>               </tr>
+    <tr> <td>0.6</td>        <td>0.5</td>                 <td>no</td>               </tr>
+    <tr> <td>0.3</td>        <td>10</td>                  <td>yes</td>              </tr>
+    <tr> <td>0.2</td>        <td>10</td>                  <td>yes</td>              </tr>
+    <tr> <td>0.01</td>       <td>10</td>                  <td>no</td>               </tr>
+    <tr> <td>0.01</td>       <td>10</td>                  <td>no</td>               </tr>
+  </table>
+</div>
+
+<div class="boxed-output">
+  <h4><strong>2. Getting Started</strong></h4>
+  <p>To create your statistical model:</p>
+  <ol>
+    <li>Select a variable from the dropdown for the left side of your model.</li>
+    <li>Choose predictor variables from the right side using the buttons provided.</li>
+    <li>Add any necessary arithmetic operations using the operator buttons.</li>
+    <li>Click the <strong>Create Statistical Model</strong> button to build your model.</li>
+  </ol>
+</div>
+
+
+<div class="boxed-output">
+  <h4><strong>3. Left Side of Statistical Model</strong></h4>
+  <p>This section allows you to define the left side of your statistical model, which typically represents the dependent variable (the outcome you want to predict).</p>
+  
+  <h5><strong>Features:</strong></h5>
+  <ul>
+    <li><strong>Variable Selection:</strong> Use the dropdown menu to choose a variable for your model.</li>
+    <li><strong>Create Model Button:</strong> Click this button to build the statistical model once you have selected your variables.</li>
+  </ul>
+</div>
+
+<div class="boxed-output">
+  <h4><strong>4. Right Side of Statistical Model</strong></h4>
+  <p>The right side represents the independent variables (predictors) that explain the outcome.</p>
+  
+  <h5><strong>Features:</strong></h5>
+  <ul>
+    <li><strong>Variable buttons:</strong> Displays the selected predictor variables for your model.</li>
+    <li><strong>Arithmetic Operators:</strong> Use the provided buttons to include mathematical operations between variables. Each operator button serves a specific purpose:</li>
+    <ul>
+      <li><strong>Add (+):</strong> Include an additional predictor variable.</li>
+      <li><strong>Subtract (-):</strong> Remove a predictor variable from the model.</li>
+      <li><strong>Multiply (*):</strong> Assess interactions between variables.</li>
+      <li><strong>Colon (:):</strong> Include interactions between two variables.</li>
+      <li><strong>Divide (/):</strong> Include nested effects that consider both variable levels.</li>
+      <li><strong>Nested (%in%):</strong> Include nested effects without including the main level.</li>
+      <li><strong>Interaction Level:</strong> Specify the interaction level in the model.</li>
+      <li><strong>Add Arithmetic Operations (I()):</strong> Perform normal arithmetic operations within the <code>I()</code> function.</li>
+    </ul>
+    <li><strong>Editable Code Area:</strong> A text area where you can manually edit the right side of the model if needed. This is useful for users who want to refine their formulas directly.</li>
+  </ul>
+</div>
+
+

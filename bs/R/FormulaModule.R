@@ -57,6 +57,14 @@ FormulaEditorUI <- function(id) {
         width = 6,
         div(
           class = "model",
+          div(
+            style = "position: relative",
+            actionButton(
+              NS(id, "formula_docu"),
+              label = NULL,
+              icon = icon("question-circle")
+            )
+          ),
           h3(class = "title", "Right Side of Statistical Model"),
           div(
             uiOutput(NS(id, "colnames_list")),

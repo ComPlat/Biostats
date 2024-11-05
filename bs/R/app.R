@@ -17,34 +17,92 @@ ui <- fluidPage(
   includeScript("www/download.js"),
   sidebarLayout(
     sidebarPanel(
-      conditionalPanel(
-        condition = "input.conditionedPanels == 'Data'",
-        uiOutput("conditional_data_ui"),
-        tags$hr()
-      ),
-      conditionalPanel(
-        condition = "input.conditionedPanels == 'DataWrangling'",
-        OperatorEditorSidebar("OP")
-      ),
-      conditionalPanel(
-        condition = "input.conditionedPanels == 'Correlation'",
-        corrSidebarUI("CORR")
-      ),
-      conditionalPanel(
-        condition = "input.conditionedPanels == 'Visualisation'",
-        visSidebarUI("VIS")
-      ),
-      conditionalPanel(
-        condition = "input.conditionedPanels == 'Assumption'",
-        assSidebarUI("ASS")
-      ),
-      conditionalPanel(
-        condition = "input.conditionedPanels == 'Tests'",
-        testsSidebarUI("TESTS")
-      ),
-      conditionalPanel(
-        condition = "input.conditionedPanels == 'Dose Response analysis'",
-        DoseResponseSidebarUI("DOSERESPONSE")
+      div(
+        conditionalPanel(
+          condition = "input.conditionedPanels == 'Data'",
+          div(
+            style = "position: relative",
+            actionButton(
+              "data_docu",
+              label = NULL,
+              icon = icon("question-circle")
+            )
+          ),
+          uiOutput("conditional_data_ui"),
+          tags$hr()
+        ),
+        conditionalPanel(
+          condition = "input.conditionedPanels == 'DataWrangling'",
+          div(
+            style = "position: relative",
+            actionButton(
+              "datawrangling_docu",
+              label = NULL,
+              icon = icon("question-circle")
+            )
+          ),
+          OperatorEditorSidebar("OP")
+        ),
+        conditionalPanel(
+          condition = "input.conditionedPanels == 'Correlation'",
+          div(
+            style = "position: relative",
+            actionButton(
+              "corr_docu",
+              label = NULL,
+              icon = icon("question-circle")
+            )
+          ),
+          corrSidebarUI("CORR")
+        ),
+        conditionalPanel(
+          condition = "input.conditionedPanels == 'Visualisation'",
+          div(
+            style = "position: relative;",
+            actionButton(
+              "visualization_docu",
+              label = NULL,
+              icon = icon("question-circle")
+            )
+          ),
+          visSidebarUI("VIS")
+        ),
+        conditionalPanel(
+          condition = "input.conditionedPanels == 'Assumption'",
+          div(
+            style = "position: relative",
+            actionButton(
+              "ass_docu",
+              label = NULL,
+              icon = icon("question-circle")
+            )
+          ),
+          assSidebarUI("ASS")
+        ),
+        conditionalPanel(
+          condition = "input.conditionedPanels == 'Tests'",
+          div(
+            style = "position: relative",
+            actionButton(
+              "test_docu",
+              label = NULL,
+              icon = icon("question-circle")
+            )
+          ),
+          testsSidebarUI("TESTS")
+        ),
+        conditionalPanel(
+          condition = "input.conditionedPanels == 'Dose Response analysis'",
+          div(
+            style = "position: relative;",
+            actionButton(
+              "doseresponse_docu",
+              label = NULL,
+              icon = icon("question-circle")
+            )
+          ),
+          DoseResponseSidebarUI("DOSERESPONSE")
+        )
       )
     ),
     mainPanel(
@@ -88,6 +146,75 @@ server <- function(input, output, session) {
     df = NULL, formula = NULL,
     backup_df = NULL, filter_col = NULL, filter_group = NULL
   )
+
+  # docu data
+  observeEvent(input[["data_docu"]], {
+    showModal(modalDialog(
+      title = "Example Dataframe",
+      includeHTML("www/data.html"),
+      easyClose = TRUE,
+      footer = NULL
+    ))
+  })
+  observeEvent(input[["datawrangling_docu"]], {
+    showModal(modalDialog(
+      title = "Data wrangling",
+      includeHTML("www/operations.html"),
+      easyClose = TRUE,
+      footer = NULL
+    ))
+  })
+  observeEvent(input[["corr_docu"]], {
+    showModal(modalDialog(
+      title = "Correlation",
+      includeHTML("www/correlation.html"),
+      easyClose = TRUE,
+      footer = NULL
+    ))
+  })
+  observeEvent(input[["ass_docu"]], {
+    showModal(modalDialog(
+      title = "Testing assumptions",
+      includeHTML("www/assumptions.html"),
+      easyClose = TRUE,
+      footer = NULL
+    ))
+  })
+  observeEvent(input[["test_docu"]], {
+    showModal(modalDialog(
+      title = "Statistical tests",
+      includeHTML("www/tests.html"),
+      easyClose = TRUE,
+      footer = NULL
+    ))
+  })
+  # docu dose response
+  observeEvent(input[["doseresponse_docu"]], {
+    showModal(modalDialog(
+      title = "Doseresponse analysis",
+      includeHTML("www/doseresponse.html"),
+      easyClose = TRUE,
+      footer = NULL
+    ))
+  })
+  # docu visualisation
+  observeEvent(input[["visualization_docu"]], {
+    showModal(modalDialog(
+      title = "Visualization",
+      includeHTML("www/visualization.html"),
+      easyClose = TRUE,
+      footer = NULL
+    ))
+  })
+  # docu formula editor
+  observeEvent(input[["FO-formula_docu"]], {
+    showModal(modalDialog(
+      title = "Defining the formula",
+      includeHTML("www/formula.html"),
+      easyClose = TRUE,
+      footer = NULL
+    ))
+  })
 
   output$conditional_data_ui <- renderUI({
     if (Sys.getenv("RUN_MODE") != "SERVER") {
