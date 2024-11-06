@@ -87,7 +87,6 @@ OperatorEditorSidebar <- function(id) {
       h3("String Functions"),
       actionButton(NS(id, "grep"), "grep", class = "add-button"),
       actionButton(NS(id, "substr"), "substr", class = "add-button"),
-      actionButton(NS(id, "sub"), "sub", class = "add-button"),
       actionButton(NS(id, "paste"), "paste", class = "add-button"),
       actionButton(NS(id, "paste0"), "paste0", class = "add-button"),
       actionButton(NS(id, "strsplit"), "strsplit", class = "add-button"),
@@ -621,11 +620,6 @@ OperationEditorServer <- function(id, data) {
     observeEvent(input$substr, {
       current_text <- input$editable_code
       updated_text <- paste(current_text, "substr(", sep = " ")
-      updateTextAreaInput(session, "editable_code", value = updated_text)
-    })
-    observeEvent(input$sub, {
-      current_text <- input$editable_code
-      updated_text <- paste(current_text, "sub(", sep = " ")
       updateTextAreaInput(session, "editable_code", value = updated_text)
     })
     observeEvent(input$paste, {
