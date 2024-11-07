@@ -150,7 +150,11 @@ DotplotFct <- function(df, x, y, xLabel, yLabel,
   p <- NULL
 
   if (colourVar != "") {
-    aesColour <- aes(colour = .data[[colourVar]])
+    if (is.numeric(df[[colourVar]])) {
+      aesColour <- aes(colour = factor(.data[[colourVar]]))
+    } else {
+      aesColour <- aes(colour = .data[[colourVar]])
+    }
   }
   if (colourVar == "") {
     p <- ggplot(
@@ -254,12 +258,20 @@ BoxplotFct <- function(df, x, y, xLabel, yLabel,
   if (colourVar == "") {
     aesColour <- aes()
   } else {
-    aesColour <- aes(colour = .data[[colourVar]])
+    if (is.numeric(df[[colourVar]])) {
+      aesColour <- aes(colour = factor(.data[[colourVar]]))
+    } else {
+      aesColour <- aes(colour = .data[[colourVar]])
+    }
   }
   if (fillVar == "") {
     aesFill <- aes()
   } else {
-    aesFill <- aes(fill = .data[[fillVar]])
+    if (is.numeric(df[[fillVar]])) {
+      aesFill <- aes(fill = factor(.data[[fillVar]]))
+    } else {
+      aesFill <- aes(fill = .data[[fillVar]])
+    }
   }
   p <- ggplot() +
     geom_boxplot(
@@ -294,7 +306,11 @@ LineplotFct <- function(df, x, y, xLabel, yLabel,
   if (colourVar == "") {
     aesColour <- aes()
   } else {
-    aesColour <- aes(colour = .data[[colourVar]])
+    if (is.numeric(df[[colourVar]])) {
+      aesColour <- aes(colour = factor(.data[[colourVar]]))
+    } else {
+      aesColour <- aes(colour = .data[[colourVar]])
+    }
   }
   p <- ggplot() +
     geom_line(

@@ -285,7 +285,7 @@ visServer <- function(id, data, listResults) {
           inputId = paste0("VIS-col"),
           label = "Colour Variable",
           choices = colnames[1:length(colnames)],
-          selected = NULL
+          selected = character(0)
         )
       )
     })

@@ -304,7 +304,6 @@ server <- function(input, output, session) {
     return(df)
   })
 
-
   output$df <- renderDT({
     if (Sys.getenv("RUN_MODE") == "SERVER") {
       isolate({
