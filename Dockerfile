@@ -1,4 +1,4 @@
-FROM rocker/shiny:4.3.1
+FROM rocker/shiny:4.4.2
 
 RUN apt-get update && apt-get install -y \
     --no-install-recommends \
@@ -17,14 +17,10 @@ ENV SHINY_LOG_STDERR=1
 
 RUN install2.r --error --skipinstalled \
     shiny \
-    shinydashboard \
-    shinyWidgets \
     shinyjs \
-    forecast \
     jsonlite \
     ggplot2 \
     htmltools \
-    plotly \
     drc \
     DT \
     httr \
@@ -33,7 +29,6 @@ RUN install2.r --error --skipinstalled \
     readxl \
     openxlsx \
     purrr \
-    pheatmap \
     png \
     RColorBrewer \
     remotes \
@@ -43,12 +38,12 @@ RUN install2.r --error --skipinstalled \
     ggpmisc \
     jose \
     R6 \
-    patchwork \
     cowplot \
+    equatiomatic \
     quarto
-    
+
 USER shiny
-COPY ./app/ ./myapp
+COPY ./bs/R ./myapp
 RUN mkdir /home/shiny/results
 
 COPY ./MTT/ /home/MTT
@@ -58,7 +53,7 @@ RUN bash -c "cd /home/MTT; R CMD INSTALL ."
 RUN bash -c "cd /home/comeln; R CMD INSTALL ."
 
 EXPOSE 4001
-COPY ./app/ /srv/shiny-server/
+COPY ./bs/R /srv/shiny-server/
 COPY ./run.sh .
 
 ENV SHINY_LOG_STDERR=1

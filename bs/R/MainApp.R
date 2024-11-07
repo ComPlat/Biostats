@@ -212,7 +212,8 @@ server <- function(input, output, session) {
       title = "Defining the formula",
       includeHTML("www/formula.html"),
       easyClose = TRUE,
-      footer = NULL
+      footer = NULL,
+      size = "l"
     ))
   })
 

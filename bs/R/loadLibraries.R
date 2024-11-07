@@ -18,6 +18,7 @@ library(shinyjs)
 library(equatiomatic)
 # TODO: add missing libraries to the Dockerfile
 
-if (Sys.getenv("RUN_MODE") == "SERVER") {
-  library(COMELN)
-}
+library(COMELN)
+library(httr)
+library(jose)
+library(openssl)

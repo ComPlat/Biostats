@@ -21,9 +21,9 @@ show <- function(formula, data) {
   model_table <- kable(broom::tidy(model), format = "html", table.attr = "style='display: inline-block; vertical-align: top;'")
   html_output <- tags$table(
     tags$tr(
-      tags$td(HTML(data_table)),
-      tags$td(HTML(formula_table)),
-      tags$td(HTML(model_table))
+      tags$td(data_table),
+      tags$td(formula_table),
+      tags$td(model_table)
     )
   )
   html_output
@@ -31,6 +31,7 @@ show <- function(formula, data) {
 
 show_model <- function(f, data) {
   model_latex <- extract_eq(lm(f, data = data), wrap = TRUE)
+  print(model_latex)
   model <- data.frame(Model = model_latex)
   knitr::kable(model)
 }
@@ -54,7 +55,8 @@ m$term <- terms[m$term]
 names(m)[names(m) == "estimate"] <- "ßs"
 names(m)[names(m) == "std.error"] <- "Standard error of ßs"
 names(m)[names(m) == "statistic"] <- "t-statistic = ßs / Standard error of ßs"
-knitr::kable(m)
+table <- knitr::kable(m, format = "html", table.attr = "style='display: inline-block; vertical-align: top;'")
+tags$table(tags$td(table))
 ```
 
 ##  Adding multiple predictors with +
@@ -82,7 +84,9 @@ m$term <- terms[m$term]
 names(m)[names(m) == "estimate"] <- "ßs"
 names(m)[names(m) == "std.error"] <- "Standard error of ßs"
 names(m)[names(m) == "statistic"] <- "t-statistic = ßs / Standard error of ßs"
-knitr::kable(m)
+table <- knitr::kable(m, format = "html", table.attr = "style='display: inline-block; vertical-align: top;'")
+tags$table(tags$td(table))
+
 ```
 ##  Model with main effects and interaction using *
 
@@ -108,7 +112,8 @@ m$term <- terms[m$term]
 names(m)[names(m) == "estimate"] <- "ßs"
 names(m)[names(m) == "std.error"] <- "Standard error of ßs"
 names(m)[names(m) == "statistic"] <- "t-statistic = ßs / Standard error of ßs"
-knitr::kable(m)
+table <- knitr::kable(m, format = "html", table.attr = "style='display: inline-block; vertical-align: top;'")
+tags$table(tags$td(table))
 ```
 - This includes the main effects of fertilizer and water as well as their interaction.
 - An interaction means that the effect of one predictor depends on the level of another predictor.
@@ -124,6 +129,17 @@ data <- data.frame(
 )
 f <-formula(yield ~ fertilizer + water + fertilizer : water, data = data)
 show_model(f, data)
+formula <- f
+model <- lm(formula, data = data)
+f <- data.frame(Formula = deparse(formula))
+formula_table <- kable(data.frame(Formula = f), format = "html", table.attr = "style='display: inline-block; vertical-align: top;'")
+html_output <- tags$table(
+  tags$tr(
+    tags$td(formula_table),
+  )
+)
+html_output
+
 ```
 - see in the section before the model is the same it is only another way to express it
 
@@ -152,7 +168,8 @@ m$term <- terms[m$term]
 names(m)[names(m) == "estimate"] <- "ßs"
 names(m)[names(m) == "std.error"] <- "Standard error of ßs"
 names(m)[names(m) == "statistic"] <- "t-statistic = ßs / Standard error of ßs"
-knitr::kable(m)
+table <- knitr::kable(m, format = "html", table.attr = "style='display: inline-block; vertical-align: top;'")
+tags$table(tags$td(table))
 ```
 - school represents the primary grouping factor
 - class is nested within school, modeling different classes within each school
