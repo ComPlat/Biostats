@@ -331,3 +331,11 @@ check_axis_limits <- function(col, min, max) {
     return()
   }
 }
+
+# check that result is only of allowed type
+check_type_res <- function(res) {
+  allowed <- c("numeric", "integer", "logical", "data.frame")
+  if (!(class(res) %in% allowed)) {
+    stop(paste0("Found result with unallowed type: ", class(res)))
+  }
+}

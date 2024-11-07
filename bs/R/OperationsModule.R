@@ -415,12 +415,14 @@ OperationEditorServer <- function(id, data) {
         list2env(r_vals$intermediate_vars, envir = eval_env)
         list2env(r_vals$df, envir = eval_env) # NOTE: this adds each column as own variable
         new <- eval(parse(text = code), envir = eval_env)
+        check_type_res(new)
       })
       if (inherits(e, "try-error")) {
         err <- conditionMessage(attr(e, "condition"))
         showNotification(err, type = "error")
+      } else {
+        r_vals$intermediate_vars[[var_name]] <- new
       }
-      r_vals$intermediate_vars[[var_name]] <- new
     })
 
     # Run operation and append to df
@@ -453,6 +455,7 @@ OperationEditorServer <- function(id, data) {
         list2env(r_vals$intermediate_vars, envir = eval_env)
         list2env(r_vals$df, envir = eval_env)  # NOTE: this adds each column as own variable
         new <- eval(parse(text = code), envir = eval_env)
+        check_type_res(new)
         r_vals$df[, new_col] <- new
       })
       if (inherits(e, "try-error")) {
