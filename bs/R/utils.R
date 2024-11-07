@@ -212,6 +212,34 @@ diagnosticPlot <- function(df, formula) {
   return(f)
 }
 
+get_elem <- function(df, ...) {
+  stopifnot("Expected dataframe or vector" = is.data.frame(df) || is.vector(df))
+  s <- substitute(list(...))
+  args <- as.list(s[-1])
+  l <- length(args)
+  if (l <= 0 || l > 2) {
+    stop("Wrong number of arguments")
+  }
+  if (is.data.frame(df) && l == 1) {
+    stop("To get one element from a dataframe two index arguments are required")
+  }
+  if (is.vector(df) && l != 1) {
+    stop("To get one element from a list one indec argument is required")
+  }
+  if (is.data.frame(df)) {
+    if (!is.numeric(args[[1]]) || !is.numeric(args[[2]])) {
+      stop("The index arguments have to be of type numeric")
+    }
+    return(df[args[[1]], args[[2]]])
+  }
+  if (is.vector(df)) {
+    if (!is.numeric(args[[1]])) {
+      stop("The index arguments have to be of type numeric")
+    }
+    return(df[args[[1]]])
+  }
+}
+
 get_cols <- function(df, ...) {
   stopifnot("Expected dataframe" = is.data.frame(df))
   s <- substitute(list(...))
