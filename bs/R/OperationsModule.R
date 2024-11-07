@@ -350,8 +350,10 @@ OperationEditorServer <- function(id, data) {
           iv_list[[name]]
         })
         observeEvent(input[[paste0("remove_iv_", name)]], {
-          r_vals$intermediate_vars[[name]] <- NULL
-          showNotification(paste("Removed intermediate result:", name), type = "message")
+          if (!is.null(r_vals$intermediate_vars[[name]])) {
+            r_vals$intermediate_vars[[name]] <- NULL
+            showNotification(paste("Removed intermediate result:", name), type = "message")
+          }
         }, ignoreInit = TRUE)
       }
     })
