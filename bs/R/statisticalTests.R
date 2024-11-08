@@ -27,13 +27,6 @@ testsSidebarUI <- function(id) {
         )
       ),
       selectInput(
-        NS(id, "paired"), "Paired or unpaired t-test",
-        c(
-          "Unpaired" = "up",
-          "Paired" = "p"
-        )
-      ),
-      selectInput(
         NS(id, "varEq"), "Are the two variances treated as equal or not?",
         c(
           "Equal" = "eq",
@@ -206,17 +199,13 @@ testsServer <- function(id, data, listResults) {
       err <- NULL
       fit <- NULL
       e <- try({
-        paired <- FALSE
-        if (input$paired == "p") {
-          paired <- TRUE
-        }
         eq <- TRUE
         if (input$varEq == "noeq") {
           eq <- FALSE
         }
         fit <- broom::tidy(t.test(formula,
           data = df, conf.level = input$confLevel,
-          alternative = input$alt, paired = paired, var.equal = eq
+          alternative = input$alt, var.equal = eq
         ))
       })
       if (inherits(e, "try-error")) {
