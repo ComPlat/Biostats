@@ -11,6 +11,7 @@ source("DoseResponse.R")
 source("OperationsModule.R")
 source("FormulaModule.R")
 source("SplitByGroup.R")
+source("DiagnosticPlots.R")
 
 ui <- fluidPage(
   useShinyjs(),

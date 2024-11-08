@@ -17,6 +17,8 @@ library(Matrix)
 library(shinyjs)
 library(equatiomatic)
 library(openxlsx)
+library(car)
+library(cowplot)
 # TODO: add missing libraries to the Dockerfile
 
 library(COMELN)

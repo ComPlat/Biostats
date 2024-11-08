@@ -39,6 +39,7 @@ RUN install2.r --error --skipinstalled \
     jose \
     R6 \
     cowplot \
+    car \
     equatiomatic \
     quarto
 

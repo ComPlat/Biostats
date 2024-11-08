@@ -47,6 +47,7 @@ createExcelFile <- function(l) {
   # save data to excel file
   for (i in seq_along(l)) {
     if (inherits(l[[i]], "plot")) {
+      print("test")
       p <- l[[i]]@p
       width <- l[[i]]@width
       height <- l[[i]]@height
@@ -201,21 +202,6 @@ splitData <- function(df, formula) {
   res <- data.frame(value = df[, 1], interaction = interaction(df[, 2:ncol(df)]))
   names(res) <- c("value", interaction = paste0(names(df)[2:ncol(df)], collapse = "."))
   res
-}
-
-diagnosticPlot <- function(df, formula) {
-  model <- lm(formula, data = df)
-  f <- tempfile(fileext = ".png")
-  png(f)
-  par(mfrow = c(3, 2))
-  plot(model, 1)
-  plot(model, 2)
-  plot(model, 3)
-  plot(model, 4)
-  plot(model, 5)
-  plot(model, 6)
-  dev.off()
-  return(f)
 }
 
 get_elem <- function(df, ...) {

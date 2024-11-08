@@ -63,7 +63,7 @@ assUI <- function(id) {
     actionButton(NS(id, "download_ass"), "Save and exit"),
     checkboxGroupInput(NS(id, "TableSaved"), "Saved results to file", NULL),
     tableOutput(NS(id, "ass_result")),
-    plotOutput(NS(id, "DiagnosticPlotRes"))
+    plotOutput(NS(id, "DiagnosticPlotRes"), width = "100%", height = "1000px")
   )
 }
 
@@ -121,7 +121,7 @@ assServer <- function(id, data, listResults) {
     })
 
 
-    output$open_formula_editor_corr <- renderUI({
+    output$open_formula_editor_corr <- renderUI({ # TODO: change to unique identifier probably via [["open_formula_editor"]]
       actionButton(NS(id, "open_formula_editor"),
         "Open formula editor",
         title = "Open the formula editor to create or modify a formula",
@@ -238,7 +238,7 @@ assServer <- function(id, data, listResults) {
 
     output$ass_result <- renderTable(
       {
-        if (!inherits(listResults$curr_data, "diagnosticPlot")) {
+        if (!inherits(listResults$curr_data, "plot")) {
           return(listResults$curr_data)
         }
         return(NULL)
@@ -253,25 +253,17 @@ assServer <- function(id, data, listResults) {
       req(!is.null(data$formula))
       formula <- data$formula
       err <- NULL
-      f <- NULL
+      p <- NULL
       e <- try({
-        f <- diagnosticPlot(df, formula)
+        p <- diagnosticPlots(df, formula)
       })
       if (inherits(e, "try-error")) {
         err <- conditionMessage(attr(e, "condition"))
         output$ass_error <- renderText(err)
       } else {
-        listResults$curr_data <- new("diagnosticPlot", p = f)
-        listResults$curr_name <- paste("Test Nr", length(listResults$all_names) + 1, "diagnostic plots")
-        output$DiagnosticPlotRes <- renderImage(
-          {
-            list(
-              src = f,
-              contentType = "image/png"
-            )
-          },
-          deleteFile = FALSE
-        )
+        listResults$curr_data <- new("plot", p = p, width = 15, height = 15, resolution = 600)
+        listResults$curr_name <- paste("Plot Nr", length(listResults$all_names) + 1, "diagnostic plots")
+        output$DiagnosticPlotRes <- renderPlot(p)
         output$curr_error <- renderText(err)
       }
     }
