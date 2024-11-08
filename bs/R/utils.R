@@ -56,6 +56,7 @@ createExcelFile <- function(l) {
         plot = p,
         filename = fn, width = width, height = height, dpi = resolution
       )
+      plot_files <- c(plot_files, fn)
       openxlsx::insertImage(wb, "Results", fn, startRow = curr_row)
       curr_row <- curr_row + 20
     } else if (inherits(l[[i]], "diagnosticPlot")) {
@@ -71,13 +72,18 @@ createExcelFile <- function(l) {
       openxlsx::insertImage(wb, "Results", fn, startRow = curr_row)
       curr_row <- curr_row + 20
       plot_files <- c(plot_files, l[[i]]@p)
+      plot_files <- c(plot_files, fn)
     } else if (inherits(l[[i]], "doseResponse")) {
+      openxlsx::writeData(wb, "Results", l[[i]]@df, startRow = curr_row)
+      curr_row <- curr_row + nrow(l[[i]]@df) + 5
       p <- l[[i]]@p
-      fn <- tempfile(fileext = ".png")
-      ggsave(plot = p, filename = fn)
-      jsString <- c(jsString, DF2String(l[[i]]@df))
-      openxlsx::insertImage(wb, "Results", fn, startRow = curr_row)
-      curr_row <- curr_row + 20
+      for (idx in seq_len(length(p))) {
+        fn <- tempfile(fileext = ".png")
+        ggsave(plot = p[[idx]], filename = fn)
+        openxlsx::insertImage(wb, "Results", fn, startRow = curr_row)
+        curr_row <- curr_row + 20
+        plot_files <- c(plot_files, fn)
+      }
     } else if (inherits(l[[i]], "data.frame")) {
       openxlsx::writeData(wb, "Results", l[[i]], startRow = curr_row)
       curr_row <- curr_row + dim(l[[i]])[1] + 5

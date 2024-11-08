@@ -284,9 +284,7 @@ server <- function(input, output, session) {
     }
     df <- NULL
     df <- upload(file)
-    if (is.data.frame(df)) {
-      var$df <- df
-    } else {
+    if (!is.data.frame(df)) {
       showNotification("File can not be used. Upload into R failed!", duration = 0)
     }
     tryCatch(
@@ -306,9 +304,12 @@ server <- function(input, output, session) {
 
   output$df <- renderDT({
     if (Sys.getenv("RUN_MODE") == "SERVER") {
-      isolate({
-        dataSet$df <- download_file()
-      })
+      res <- try({download_file()})
+      if (inherits(res, "try-error")) {
+        stop(attributes(res)$condition)
+      } else {
+        dataSet$df <- res
+      }
       datatable(dataSet$df, options = list(pageLength = 10))
     } else {
       req(input$file)

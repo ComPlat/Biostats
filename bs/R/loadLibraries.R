@@ -16,6 +16,7 @@ library(MASS)
 library(Matrix)
 library(shinyjs)
 library(equatiomatic)
+library(openxlsx)
 # TODO: add missing libraries to the Dockerfile
 
 library(COMELN)

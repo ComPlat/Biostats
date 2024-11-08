@@ -1,14 +1,12 @@
 allowed_fcts <- function() {
   c(
-    "-", "+", "*", "/",
+    "-", "+", "*", "/", "(",
     "log", "log10", "sqrt", "exp", "^",
     "sin", "cos", "tan", "tanh", "sinh", "cosh", "acos", "asin", "atan",
-    "is.numeric", "is.character", "is.logical", "is.factor", "is.integer",
     "as.numeric", "as.character", "as.logical", "as.factor", "as.integer",
     ">", "<", "<=", ">=", "==", "!=",
     "abs", "ceiling", "floor", "trunc", "round",
-    "grep", "substr", "sub", "paste", "paste0",
-    "strsplit", "tolower", "toupper",
+    "paste", "paste0", "tolower", "toupper",
     "dnorm", "pnorm", "qnorm", "rnorm", "dbinom",
     "pbinom", "qbinom", "rbinom", "dpois",
     "ppois", "rpois", "dunif", "punif", "qunif", "runif",

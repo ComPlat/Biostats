@@ -422,6 +422,9 @@ OperationEditorServer <- function(id, data) {
         showNotification(err, type = "error")
       } else {
         r_vals$intermediate_vars[[var_name]] <- new
+        exportTestValues(
+          iv_list = r_vals$intermediate_vars
+        )
       }
     })
 

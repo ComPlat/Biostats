@@ -245,7 +245,7 @@ DoseResponseServer <- function(id, data, listResults) {
         resP <- resP[!is.null(resP)]
         resP <- resP[!sapply(resP, is.null)]
         r_vals$plots <- resP
-        resPlot <- plot_grid(plotlist = resP, ncol = 3)
+        resPlot <- resP
       })
       if (inherits(e, "try-error")) {
         err <- conditionMessage(attr(e, "condition"))
