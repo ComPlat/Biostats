@@ -14,7 +14,7 @@ CooksDistance <- function(df, formula) {
     geom_hline(yintercept = cutoff,
       linetype = "dashed",
       color = "black",
-      size = 0.25
+      linewidth = 0.25
     ) +
     geom_text(data = cd[cd$CooksDistance >= cutoff, ],
       aes(label = Index),
@@ -50,7 +50,7 @@ diagnosticPlots <- function(df, formula) {
     geom_hline(yintercept = 0,
       linetype = "dashed",
       color = "black",
-      size = 0.25
+      linewidth = 0.25
     ) +
     geom_line(
       data = line_data,
@@ -63,8 +63,13 @@ diagnosticPlots <- function(df, formula) {
       size = 3) +
     labs(
       y = "Residuals", x = "Fitted values",
-      title = "Residuals vs Fitted values"
-    )
+      title = "Residuals vs Fitted values",
+      caption = "In this plot, residuals should scatter randomly around zero
+with consistent spread across fitted values for homoscedasticity.
+Patterns like fanning or funneling indicate heteroscedasticity, where residual
+variance changes with fitted values, violating the homoscedasticity assumption."
+    ) +
+    theme(plot.caption = element_text(size = 12, hjust = 0))
 
   # qq norm plot
   standardized_resids <- resids / sd(resids)
@@ -143,7 +148,7 @@ diagnosticPlots <- function(df, formula) {
     geom_hline(yintercept = 0,
       linetype = "dashed",
       color = "black",
-      size = 0.25
+      linewidth = 0.25
     ) +
     geom_text(data = residuals_leverage_df[influential_points, ],
       aes(label = index),

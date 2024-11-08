@@ -21,9 +21,15 @@ assSidebarUI <- function(id) {
         "Test of normal distribution"
       )
     ),
-    actionButton(NS(id, "shapiro"), "Shapiro test for individual groups"),
+    actionButton(NS(id, "shapiro"),
+      "Shapiro test for individual groups",
+      title = 
+      "Use this test if you have a formula like 'response ~ pred1 * pred2' (two-way ANOVA) to check normality of residuals within each group."),
     tags$hr(),
-    actionButton(NS(id, "shapiroResiduals"), "Shapiro test for residuals of linear model"),
+    actionButton(NS(id, "shapiroResiduals"), "Shapiro test for residuals of linear model",
+      title = 
+      "Use this test if you have a formula like 'response ~ predictor1' to check normality of the residuals of the linear model."
+    ),
     tags$hr(),
     tags$div(
       class = "header", checked = NA,
@@ -164,6 +170,7 @@ assServer <- function(id, data, listResults) {
             temp <- broom::tidy(shapiro.test(tempDat[, 1]))
             if (!is.null(temp)) {
               temp$variable <- i
+              temp$`Normal distributed` <- temp$p.value > 0.05
               res[[length(res) + 1]] <- temp
             }
           }
@@ -196,6 +203,7 @@ assServer <- function(id, data, listResults) {
         fit <- lm(formula, data = df)
         r <- resid(fit)
         res <- broom::tidy(shapiro.test(r))
+        res$`Residuals normal distributed` <- res$p.value > 0.05
       })
       if (!inherits(e, "try-error")) {
         listResults$curr_data <- res
@@ -221,6 +229,7 @@ assServer <- function(id, data, listResults) {
       fit <- NULL
       e <- try({
         fit <- broom::tidy(car::leveneTest(formula, data = df, center = input$center))
+        fit$`Variance homogenity` <- fit$p.value > 0.05
       })
       if (inherits(e, "try-error")) {
         err <- conditionMessage(attr(e, "condition"))
