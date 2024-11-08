@@ -37,8 +37,16 @@ testsSidebarUI <- function(id) {
     ),
     conditionalPanel(
       condition = "input.TestsConditionedPanels == 'More than two groups'",
-      actionButton(NS(id, "aovTest"), "anova"),
-      actionButton(NS(id, "kruskalTest"), "kruskal wallis test"),
+      actionButton(NS(id, "aovTest"), "ANOVA", 
+        title = 
+        "Use ANOVA (Analysis of Variance) when comparing the means of more than two groups,
+        assuming the data is normally distributed and variances are equal across groups."
+      ),
+      actionButton(NS(id, "kruskalTest"), "Kruskal-Wallis Test",
+        title =
+        "Use the Kruskal-Wallis test when comparing more than two groups but
+        the assumptions of normality or equal variances are not met. It is a non-parametric test."
+      ),
     ),
     conditionalPanel(
       selectInput(NS(id, "PostHocTests"), "Choose a Post Hoc test",

@@ -20,7 +20,16 @@ CooksDistance <- function(df, formula) {
       aes(label = Index),
       vjust = -1,
       color = "black",
-      size = 3)
+      size = 3) +
+    labs(caption = "Cook's distance is used to detect
+influential data points in a regression model.
+Points with large Cook's distances (above the cutoff line)
+may be having a disproportionate influence on the estimated coefficients.
+The dashed line represents the threshold for identifying influential points.
+Any data points above this line should be considered for further investigation,
+as they could potentially distort the results of the regression analysis.
+Influential points are labelled with the row index in the dataset.") +
+    theme(plot.caption = element_text(size = 12, hjust = 0))
 }
 
 diagnosticPlots <- function(df, formula) {
@@ -100,8 +109,14 @@ variance changes with fitted values, violating the homoscedasticity assumption."
       size = 3) +
     labs(
       y = "Standardized residuals", x = "Theoretical Quantiles",
-      title = "Q-Q Residuals"
-    )
+      title = "Q-Q Residuals",
+      caption = "In this plot, the points should fall along
+the reference line if the residuals are normally distributed.
+Large deviations from the line suggest non-normality.
+The closer the points are to the line,
+the more likely the residuals follow a normal distribution."
+    ) +
+    theme(plot.caption = element_text(size = 12, hjust = 0))
 
   # Manual Scale-Location Plot
   line_data <- lowess(fitted, sqrt_resids) |> as.data.frame()
@@ -127,8 +142,16 @@ variance changes with fitted values, violating the homoscedasticity assumption."
     labs(
       y = expression(sqrt("Standardized residuals")),
       x = "Fitted values",
-      title = "Scale-Location"
-    )
+      title = "Scale-Location",
+      caption = "In this plot, the square root of the
+standardized residuals is plotted against the fitted values.
+For homoscedasticity, the points should show a random scatter
+without a trend, and the spread of residuals should be
+consistent across all levels of fitted values.
+A fan or funnel shape indicates heteroscedasticity,
+meaning the variance of residuals is not constant."
+    ) +
+    theme(plot.caption = element_text(size = 12, hjust = 0))
 
   # Residuals vs Leverage
   line_data <- lowess(leverage, standardized_resids) |> as.data.frame()
@@ -157,8 +180,16 @@ variance changes with fitted values, violating the homoscedasticity assumption."
       size = 3) +
     labs(
       y = "Standardized residuals", x = "Leverage",
-      title = "Residuals vs Leverage"
-    )
+      title = "Residuals vs Leverage",
+      caption = "In this plot, residuals are plotted against leverage
+values to detect influential data points. High leverage points,
+particularly those with large residuals, can disproportionately affect
+the fitted model. The dashed horizontal line represents zero residuals.
+Points that are far from this line (with high residuals) and have high
+leverage may be influential outliers. Influential points are labelled with
+the row index in the dataset."
+    ) +
+    theme(plot.caption = element_text(size = 12, hjust = 0))
 
   plot_grid(
     resids_vs_fitted,

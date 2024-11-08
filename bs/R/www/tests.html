@@ -16,7 +16,6 @@
 <div class="boxed-output">
   <p><strong>Two groups:</strong> 
     <ul>
-    <li><strong>Paired or Unpaired:</strong> Select whether the t-test should be paired or unpaired.</li>
     <li><strong>Variance Equality:</strong> Decide if the variances of the two groups are equal or not.</li>
     </ul>
   </p>
@@ -35,24 +34,24 @@
 <div class="boxed-output">
 <p><strong>Post Hoc Tests:</strong> After conducting ANOVA, users can select and run post hoc tests, including:
   <ul>
-    <li>Tukey HSD</li>
-    <li>Kruskal Wallis post hoc test</li>
-    <li>Least Significant Difference test (LSD)</li>
-    <li>Scheffe post hoc test</li>
-    <li>REGW post hoc test</li>
+    <li><strong>Tukey HSD (Honestly Significant Difference):</strong> A test used to compare all pairs of group means to determine which pairs are significantly different. This test is suitable for balanced designs with equal sample sizes in each group and is often used after ANOVA to perform pairwise comparisons.</li>
+    <li><strong>Kruskal Wallis post hoc test:</strong> A non-parametric method used to compare more than two groups. If the Kruskal-Wallis test finds a significant difference, post hoc pairwise comparisons can be performed using the Dunn test or other similar methods to identify which groups differ.</li>
+    <li><strong>Least Significant Difference (LSD) test:</strong> A post hoc test that compares all pairs of means, but unlike Tukey’s HSD, it does not adjust for multiple comparisons. It is more sensitive but less conservative, which increases the chance of Type I errors (false positives).</li>
+    <li><strong>Scheffe post hoc test:</strong> A very conservative test that can be used to make all pairwise comparisons and contrasts between groups. It is robust to unequal sample sizes and can be used after ANOVA with more than two levels, especially when there are complex contrasts.</li>
+    <li><strong>REGW (Revised Generalized Welch’s) post hoc test:</strong> This is a robust method for comparing group means when the assumption of equal variances is violated (heteroscedasticity). It is designed to work with unequal sample sizes and unequal variances.</li>
   </ul>
   Users can also adjust the p-value threshold and choose between balanced or unbalanced designs.
 </p>
 <p><strong>Adjusted p-Value Method:</strong>
     When applicable, users can select the method for adjusting p-values for multiple comparisons, including:
   <ul>
-    <li>Holm</li>
-    <li>Hommel</li>
-    <li>Hochberg</li>
-    <li>Bonferroni</li>
-    <li>BH (Benjamini-Hochberg)</li>
-    <li>BY (Benjamini-Yekutieli)</li>
-    <li>FDR (False Discovery Rate)</li>
+    <li><strong>Holm:</strong> A step-down method for controlling the family-wise error rate (FWER). It adjusts p-values sequentially from the smallest to the largest.</li>
+    <li><strong>Hommel:</strong> A more powerful adjustment for controlling the FWER, often used when performing multiple comparisons.</li>
+    <li><strong>Hochberg:</strong> A step-up method for controlling the FWER. It is more powerful than Bonferroni but may be less robust under certain conditions.</li>
+    <li><strong>Bonferroni:</strong> A conservative method for controlling the FWER. It divides the significance level (alpha) by the number of tests performed to reduce the likelihood of Type I errors.</li>
+    <li><strong>BH (Benjamini-Hochberg):</strong> A method to control the false discovery rate (FDR). It is less conservative than Bonferroni and is useful when performing a large number of comparisons.</li>
+    <li><strong>BY (Benjamini-Yekutieli):</strong> An extension of the Benjamini-Hochberg method that controls FDR in situations where the tests are dependent.</li>
+    <li><strong>FDR (False Discovery Rate):</strong> An alternative to controlling FWER, this method allows for a specified proportion of false positives among the rejected hypotheses.</li>
   </ul>
 </p>
 </div>
