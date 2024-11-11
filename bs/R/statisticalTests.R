@@ -246,6 +246,7 @@ testsServer <- function(id, data, listResults) {
       })
       if (inherits(e, "try-error")) {
         err <- conditionMessage(attr(e, "condition"))
+        err <- paste0(err, "\n", "Could not use Formula")
         output$test_error <- renderText(err)
       }
       if (is.null(err)) {
@@ -255,9 +256,10 @@ testsServer <- function(id, data, listResults) {
               fit <- broom::tidy(aov(formula, data = df))
             },
             kruskal = {
-              fit <- broom::tidy(kruskal.test(formula, data = df))
+              fit <- broom::tidy(kruskal.test(formula, data = df)) # Keep here the restriction for respone ~ predictor
             },
             HSD = {
+              check_formula(formula)
               aov_res <- aov(formula, data = df)
               bal <- input$design
               req(bal)
@@ -272,11 +274,13 @@ testsServer <- function(id, data, listResults) {
               )$groups
             },
             kruskalTest = {
+              check_formula(formula)
               fit <- with(df, kruskal(df[, dep], df[, indep]),
                 alpha = input$pval, p.adj = input$padj, group = TRUE
               )$groups
             },
             LSD = {
+              check_formula(formula)
               aov_res <- aov(formula, data = df)
               fit <- agricolae::LSD.test(aov_res,
                 trt = indep,
@@ -284,19 +288,23 @@ testsServer <- function(id, data, listResults) {
               )$groups
             },
             scheffe = {
+              check_formula(formula)
               aov_res <- aov(formula, data = df)
               fit <- agricolae::scheffe.test(aov_res, trt = indep, alpha = input$pval, group = TRUE)$groups
             },
             REGW = {
+              check_formula(formula)
               aov_res <- aov(formula, data = df)
               fit <- agricolae::REGW.test(aov_res, trt = indep, alpha = input$pval, group = TRUE)$groups
             }
           )
-        })
+        }, silent = TRUE)
         if (inherits(e, "try-error")) {
           err <- conditionMessage(attr(e, "condition"))
+          err <- paste0(err, "\n", "Test did not run successfully")
           output$test_error <- renderText(err)
         } else if (is.null(fit)) {
+          err <- paste0(err, "\n", "Test did not run successfully")
           output$test_error <- renderText("Result is NULL")
         } else {
           fit <- cbind(fit, row.names(fit))

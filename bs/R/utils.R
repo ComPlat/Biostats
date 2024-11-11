@@ -331,3 +331,15 @@ check_type_res <- function(res) {
     stop(paste0("Found result with unallowed type: ", class(res)))
   }
 }
+
+# Check that formula is of type response ~ predictor
+check_formula <- function(formula) {
+  if (!inherits(formula, "formula")) {
+    stop("Input must be a formula of the type response ~ predictor")
+  }
+  terms <- all.vars(formula)
+  if (length(terms) != 2) {
+    stop("Formula must have exactly two terms: response ~ predictor")
+  }
+  return(TRUE)
+}
