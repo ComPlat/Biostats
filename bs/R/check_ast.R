@@ -10,7 +10,7 @@ allowed_fcts <- function() {
     "dnorm", "pnorm", "qnorm", "rnorm", "dbinom",
     "pbinom", "qbinom", "rbinom", "dpois",
     "ppois", "rpois", "dunif", "punif", "qunif", "runif",
-    "mean", "sd", "median", "quantile", "range",
+    "Mean", "sd", "median", "quantile", "range",
     "sum", "diff", "min", "max", "scale",
     "c", "vector", "length", "matrix", "~",
     "get_rows", "get_cols", "get_elem",

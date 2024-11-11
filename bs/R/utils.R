@@ -263,6 +263,12 @@ create_df_name <- function(current_df_name, column_names) {
   }
 }
 
+create_r_names <- function(df) {
+  names <- sapply(names(df), make.names)
+  names(df) <- names
+  return(df)
+}
+
 as.char <- function(v) {
   return(as.character(v))
 }
@@ -342,4 +348,13 @@ check_formula <- function(formula) {
     stop("Formula must have exactly two terms: response ~ predictor")
   }
   return(TRUE)
+}
+
+
+# Own Mean
+Mean <- function(x) {
+  if (!is.numeric(x)) {
+    x <- as.numeric(x)
+  }
+  mean(x, na.rm = TRUE)
 }

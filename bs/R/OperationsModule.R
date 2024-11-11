@@ -35,6 +35,7 @@ OperatorEditorSidebar <- function(id) {
     ),
 
     div(
+      h3("Variables"),
       uiOutput(NS(id, "colnames_list")),
       class = "boxed-output"
     ),
@@ -52,7 +53,7 @@ OperatorEditorSidebar <- function(id) {
     ),
     div(
       h3("Math Functions"),
-      actionButton(NS(id, "log"), "log", class = "add-button", title = "lagarithm to the base e"),
+      actionButton(NS(id, "log"), "log", class = "add-button", title = "logarithm to the base e"),
       actionButton(NS(id, "log10"), "log10", class = "add-button", title = "logarithm to the base 10"),
       actionButton(NS(id, "sqrt"), "sqrt", class = "add-button", title = "Square root"),
       actionButton(NS(id, "exp"), "exp", class = "add-button", title = "Exponential function (e^x) equate to exp(x)"),
@@ -85,14 +86,14 @@ OperatorEditorSidebar <- function(id) {
     ),
     div(
       h3("Statistical & Utils Functions"),
-      actionButton(NS(id, "mean"), "mean", class = "add-button", title = "Calculate the average of numbers (e.g., mean(ColName))"),
+      actionButton(NS(id, "mean"), "Mean", class = "add-button", title = "Calculate the average of numbers (e.g., Mean(ColName))"),
       actionButton(NS(id, "sd"), "standard deviation", class = "add-button", title = "sd(ColName) gives the standard deviation"),
       actionButton(NS(id, "median"), "median", class = "add-button", title = "median(ColName) calculates the median)"),
       actionButton(NS(id, "sum"), "sum", class = "add-button", title = "Add up all the numbers sum(ColName)"),
       actionButton(NS(id, "min"), "min", class = "add-button", title = "Find the smallest number (e.g., min(c(1, 2, 3)) gives 1)"),
       actionButton(NS(id, "max"), "max", class = "add-button", title = "Find the largest number (e.g., max(c(1, 2, 3)) gives 3)"),
       actionButton(NS(id, "c"), "concatenate", class = "add-button", title = "Combine values into a list (e.g., c(1, 2, 3) gives [1, 2, 3])"),
-      actionButton(NS(id, "get_elem"), "get one element", class = "add-bottom",
+      actionButton(NS(id, "get_elem"), "get one element", class = "add-button",
       title = "Extract one element from a variable. This can either be ColName or a tabular dataset. In case it is a ColName the syntax is get_elem(ColName, idx) where idx is an integer number e.g. 1. In case one specific element of a dataset should be retrieved the syntax is get_elem(df, idx_row, idx_col). Again idx_row and idx_col have to be integers. The first one specifies the row number and the second one the column number."),
       actionButton(NS(id, "get_rows"), "get_rows", class = "add-button",
         title = 'Filter by row. For example get_rows(df, ColName == "Control") or get_rows(df, colName == 10)'),
@@ -271,10 +272,13 @@ OperationEditorServer <- function(id, data) {
         names(col_info) <- names(r_vals$df)
         div(
           class = "var-box-output",
-          h4("df",
+          actionButton(
+            paste0("OP-dataset_", r_vals$df_name, "_", r_vals$counter_id),
+            label = "Dataset",
             title =
             "This is the dataset. Using the text df you can access the entire dataset. If you only want to work with one of the column you can use the respective column title. As a side note only the first 6 rows of the data table are shown.",
-            class = "var-output"),
+            class = "add-button"
+          ),
           div(
             title = "This displays the current types for each column",
             renderTable({
@@ -285,6 +289,17 @@ OperationEditorServer <- function(id, data) {
             head(r_vals$df)
           })
         )
+      })
+    })
+
+    # React to df button
+    observe({
+      req(r_vals$df)
+      var <- r_vals$df_name
+      observeEvent(input[[paste0("dataset_", var, "_", r_vals$counter_id)]], {
+        current_text <- input[["editable_code"]]
+        updated_text <- paste(current_text, var, sep = " ")
+        updateTextAreaInput(session, "editable_code", value = updated_text)
       })
     })
 
@@ -336,8 +351,12 @@ OperationEditorServer <- function(id, data) {
       iv_ui <- lapply(names(iv_list), function(name) {
         div(
           class = "var-box-output",
-          h4(name, title = paste0("This is the variable ", name,
-            ". You can use it by entering: ", name, " within the Operation text field."), class = "var-output"),
+          actionButton(
+            inputId = paste0("OP-intermediate_vars_", name, "_", r_vals$counter_id),
+            label = name,
+            title = paste0("This is the variable ", name,
+            ". You can use it by entering: ", name, " within the Operation text field."),
+            class = "add-button"),
           verbatimTextOutput(NS(id, paste0("iv_", name))),
           actionButton(NS(id, paste0("remove_iv_", name)), "Remove", class = "btn-danger")
         )
@@ -371,6 +390,21 @@ OperationEditorServer <- function(id, data) {
           }
         }, ignoreInit = TRUE)
       }
+    })
+
+    # React to intermediate variables buttons
+    observe({
+      req(r_vals$df)
+      req(length(r_vals$intermediate_vars) >= 1)
+      iv_list <- r_vals$intermediate_vars
+      iv_list <- iv_list[names(iv_list) != r_vals$df_name]
+      lapply(names(iv_list), function(var) {
+        observeEvent(input[[paste0("intermediate_vars_", var, "_", r_vals$counter_id)]], {
+          current_text <- input[["editable_code"]]
+          updated_text <- paste(current_text, var, sep = " ")
+          updateTextAreaInput(session, "editable_code", value = updated_text)
+        })
+      })
     })
 
     # Run operation and store in intermediate result
@@ -672,7 +706,7 @@ OperationEditorServer <- function(id, data) {
     })
     observeEvent(input$mean, {
       current_text <- input$editable_code
-      updated_text <- paste(current_text, "mean(", sep = " ")
+      updated_text <- paste(current_text, "Mean(", sep = " ")
       updateTextAreaInput(session, "editable_code", value = updated_text)
     })
     observeEvent(input$sd, {

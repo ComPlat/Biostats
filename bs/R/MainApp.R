@@ -309,6 +309,7 @@ server <- function(input, output, session) {
       if (inherits(res, "try-error")) {
         stop(attributes(res)$condition)
       } else {
+        res <- create_r_names(res)
         dataSet$df <- res
       }
       datatable(dataSet$df, options = list(pageLength = 10))
@@ -320,6 +321,7 @@ server <- function(input, output, session) {
         showNotification(err)
         return(NULL)
       }
+      df <- create_r_names(df)
       dataSet$df <- df
       req(!is.na(dataSet$df))
       datatable(dataSet$df, options = list(pageLength = 10))

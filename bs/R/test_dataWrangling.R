@@ -92,3 +92,4 @@ expect_equal(content, " get_elem( conc , 1 )")
 iv_list <- app$get_values()$export[["OP-iv_list"]]
 expect_equal(iv_list$GET_ELEM_AND_COMMA, get_elem(CO2$conc, 1))
 
+app$stop()

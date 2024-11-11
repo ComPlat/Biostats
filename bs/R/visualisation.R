@@ -57,10 +57,8 @@ visSidebarUI <- function(id) {
       ),
       textInput(NS(id, "xaxisText"), "X axis label", value = "x label"),
       textInput(NS(id, "yaxisText"), "Y axis label", value = "y label"),
-      uiOutput(NS(id, "MinXAxis")),
-      uiOutput(NS(id, "MaxXAxis")),
-      uiOutput(NS(id, "MinYAxis")),
-      uiOutput(NS(id, "MaxYAxis")),
+      uiOutput(NS(id, "XRange")),
+      uiOutput(NS(id, "YRange")),
       uiOutput(NS(id, "facetBy")),
       uiOutput(NS(id, "facetScales"))
     )
@@ -126,7 +124,7 @@ visServer <- function(id, data, listResults) {
   moduleServer(id, function(input, output, session) {
 
     # Render axis limits
-    output[["MinXAxis"]] <- renderUI({
+    output[["XRange"]] <- renderUI({
       req(!is.null(data$df))
       req(is.data.frame(data$df))
       req(input$xVar)
@@ -135,48 +133,31 @@ visServer <- function(id, data, listResults) {
       if (is.numeric(df[, x])) {
         x_min <- min(df[[x]], na.rm = TRUE)
         padded_min <- x_min * 0.5 # Needed for boxplots
-        return(numericInput(
-          inputId = "VIS-MinXAxis",
-          label = "Min X axis",
-          value = padded_min
-        ))
-      } else {
-        choices <- unique(df[[x]])
-        return(selectInput(
-          inputId = "VIS-MinXAxis",
-          label = "Min X axis",
-          choices = choices,
-          selected = choices[1]
-        ))
-      }
-    })
-
-    output[["MaxXAxis"]] <- renderUI({
-      req(!is.null(data$df))
-      req(is.data.frame(data$df))
-      req(input$xVar)
-      x <- input$xVar
-      df <- data$df
-      if (is.numeric(df[, x])) {
         x_max <- max(df[[x]], na.rm = TRUE)
         padded_max <- x_max * 1.25
-        return(numericInput(
-          inputId = "VIS-MaxXAxis",
-          label = "Max X axis",
-          value = padded_max
-        ))
+        return(
+          sliderInput(
+            "VIS-XRange",
+            "Select range for x axis:",
+            min = padded_min,
+            max = padded_max,
+            value = c(padded_min, padded_max)
+          )
+        )
       } else {
         choices <- unique(df[[x]])
-        return(selectInput(
-          inputId = "VIS-MaxXAxis",
-          label = "Max X axis",
-          choices = choices,
-          selected = choices[length(choices)]
-        ))
+        return(
+          shinyWidgets::sliderTextInput( # TODO: add everywhere shinyWidgets
+            "VIS-XRange",
+            "Select range for x axis:",
+            selected = c(choices[1], choices[length(choices)]),
+            choices = choices
+          )
+        )
       }
     })
 
-    output[["MinYAxis"]] <- renderUI({
+    output[["YRange"]] <- renderUI({
       req(!is.null(data$df))
       req(is.data.frame(data$df))
       req(input$yVar)
@@ -185,44 +166,27 @@ visServer <- function(id, data, listResults) {
       if (is.numeric(df[, y])) {
         y_min <- min(df[[y]], na.rm = TRUE)
         padded_min <- y_min * 0.95
-        return(numericInput(
-          inputId = "VIS-MinYAxis",
-          label = "Min Y axis",
-          value = padded_min
-        ))
-      } else {
-        choices <- unique(df[[y]])
-        return(selectInput(
-          inputId = "VIS-MinYAxis",
-          label = "Min Y axis",
-          choices = choices,
-          selected = choices[1]
-        ))
-      }
-    })
-
-    output[["MaxYAxis"]] <- renderUI({
-      req(!is.null(data$df))
-      req(is.data.frame(data$df))
-      req(input$yVar)
-      y <- input$yVar
-      df <- data$df
-      if (is.numeric(df[, y])) {
         y_max <- max(df[[y]], na.rm = TRUE)
         padded_max <- y_max * 1.05
-        return(numericInput(
-          inputId = "VIS-MaxYAxis",
-          label = "Max Y axis",
-          value = padded_max
-        ))
+        return(
+          sliderInput(
+            "VIS-YRange",
+            "Select range for y axis:",
+            min = padded_min,
+            max = padded_max,
+            value = c(padded_min, padded_max)
+          )
+        )
       } else {
         choices <- unique(df[[y]])
-        return(selectInput(
-          inputId = "VIS-MaxYAxis",
-          label = "Max Y axis",
-          choices = choices,
-          selected = choices[length(choices)]
-        ))
+        return(
+          shinyWidgets::sliderTextInput( # TODO: add everywhere shinyWidgets
+            "VIS-YRange",
+            "Select range for x axis:",
+            selected = c(choices[1], choices[length(choices)]),
+            choices = choices
+          )
+        )
       }
     })
 
@@ -462,8 +426,8 @@ visServer <- function(id, data, listResults) {
         fitMethod <- "none"
       }
       e <- try({
-        check_axis_limits(df[, x], input$MinXAxis, input$MaxXAxis)
-        check_axis_limits(df[, y], input$MinYAxis, input$MaxYAxis)
+        check_axis_limits(df[, x], input$XRange[1], input$XRange[2])
+        check_axis_limits(df[, y], input$YRange[1], input$YRange[2])
       }, silent = TRUE)
       if (inherits(e, "try-error")) {
         showNotification(attr(e, "condition")$message)
@@ -477,7 +441,7 @@ visServer <- function(id, data, listResults) {
               fill, fillTitle, themeFill,
               col, colTitle, theme,
               facetMode, facet, facetScales,
-              input$MinXAxis, input$MaxXAxis, input$MinYAxis, input$MaxYAxis
+              input$XRange[1], input$XRange[2], input$YRange[1], input$YRange[2]
             )
           } else if (method == "dot") {
             k <- NULL
@@ -494,14 +458,14 @@ visServer <- function(id, data, listResults) {
               fitMethod,
               col, colTitle, theme,
               facetMode, facet, facetScales, k,
-              input$MinXAxis, input$MaxXAxis, input$MinYAxis, input$MaxYAxis
+              input$XRange[1], input$XRange[2], input$YRange[1], input$YRange[2]
             )
           } else if (method == "line") {
             p <- LineplotFct(
               df, x, y, xlabel, ylabel,
               col, colTitle, theme,
               facetMode, facet, facetScales,
-              input$MinXAxis, input$MaxXAxis, input$MinYAxis, input$MaxYAxis
+              input$XRange[1], input$XRange[2], input$YRange[1], input$YRange[2]
             )
           }
         },
