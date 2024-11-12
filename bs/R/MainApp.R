@@ -298,6 +298,16 @@ server <- function(input, output, session) {
       size = "l"
     ))
   })
+  # docu split by group
+  observeEvent(input[["SG-split_docu"]], {
+    showModal(modalDialog(
+      title = "Subsetting the dataset",
+      includeHTML("www/SplitData.html"),
+      easyClose = TRUE,
+      footer = NULL,
+      size = "l"
+    ))
+  })
 
   output$conditional_data_ui <- renderUI({
     if (Sys.getenv("RUN_MODE") != "SERVER") {

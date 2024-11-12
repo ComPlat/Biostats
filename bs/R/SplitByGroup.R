@@ -44,6 +44,11 @@ SplitByGroupUI <- function(id) {
     ),
     fluidRow(
       div(
+        actionButton(
+          NS(id, "split_docu"),
+          label = NULL,
+          icon = icon("question-circle")
+        ),
         uiOutput(NS(id, "colnames_dropdown")),
         class = "boxed-output"
       ),
@@ -125,13 +130,16 @@ SplitByGroupServer <- function(id, data) {
       e <- try({
         selected_cols <- input[[paste0("colnames-dropdown_")]]
         selected_groups <- input[[paste0("levels-dropdown_")]]
+        if (length(selected_groups) == 0 || length(selected_cols) == 0) {
+          stop("Invalid subset either no columns or now levels of the columns were selected")
+        }
         data$backup_df <- r_vals$df
         data$df <- split(r_vals$df, selected_cols, selected_groups)
         data$filter_col <- selected_cols
         data$filter_group <- selected_groups
-      })
+      }, silent = TRUE)
       if (inherits(e, "try-error")) {
-        showNotification("Invalid formula", type = "error")
+        showNotification(e, type = "error")
       }
     })
   })

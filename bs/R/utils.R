@@ -297,6 +297,7 @@ split <- function(df, cols, levels) {
     }
     df_res <- rbind(df_res, df[df[, cols[i]] == levels_temp, ])
   }
+  if (nrow(df) == 0) stop("Subset contains 0 rows")
   return(df_res)
 }
 
