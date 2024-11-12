@@ -321,7 +321,7 @@ visServer <- function(id, data, listResults) {
     })
 
     # Render split by group
-    output$open_split_by_group <- renderUI({
+    output[["open_split_by_group"]] <- renderUI({
       actionButton(NS(id, "open_split_by_group"),
         "Open the split by group functionality",
         title = "Open the split by group helper window",
@@ -425,14 +425,6 @@ visServer <- function(id, data, listResults) {
         showNotification("Fit method will be ignored as X variable is not numerical", duration = 0)
         fitMethod <- "none"
       }
-      e <- try({
-        check_axis_limits(df[, x], input$XRange[1], input$XRange[2])
-        check_axis_limits(df[, y], input$YRange[1], input$YRange[2])
-      }, silent = TRUE)
-      if (inherits(e, "try-error")) {
-        showNotification(attr(e, "condition")$message)
-        return()
-      }
       p <- tryCatch(
         {
           if (method == "box") {
@@ -468,9 +460,11 @@ visServer <- function(id, data, listResults) {
               input$XRange[1], input$XRange[2], input$YRange[1], input$YRange[2]
             )
           }
+          ggplot_build(p) # NOTE: invokes errors and warnings by building but not rendering plot
         },
         warning = function(warn) {
-          showNotification(paste("A warning occurred: ", conditionMessage(warn)), duration = 0)
+          showNotification(warn$message)
+          return(p)
         },
         error = function(err) {
           showNotification(paste("An error occurred: ", conditionMessage(err)), duration = 0)

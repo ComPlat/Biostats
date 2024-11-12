@@ -76,7 +76,7 @@ assUI <- function(id) {
 assServer <- function(id, data, listResults) {
   moduleServer(id, function(input, output, session) {
     # Render split by group
-    output$open_split_by_group <- renderUI({
+    output[["open_split_by_group"]] <- renderUI({
       actionButton(NS(id, "open_split_by_group"),
         "Open the split by group functionality",
         title = "Open the split by group helper window",

@@ -161,13 +161,13 @@ DotplotFct <- function(df, x, y, xLabel, yLabel,
       data = df,
       aes(!!!aes)
     ) +
-      geom_point(position = position_dodge(width = 0.5))
+      geom_point()
   } else {
     p <- ggplot(
       data = df,
       aes(!!!aes, !!!aesColour)
     ) +
-      geom_point(position = position_dodge(width = 0.5))
+      geom_point()
   }
 
   p <- p + xlab(xLabel)
@@ -218,7 +218,7 @@ DotplotFct <- function(df, x, y, xLabel, yLabel,
   }
   if (fitMethod == "gam") {
     p <- ggplot(data = df, aes(!!!aes, !!!aesColour)) +
-      geom_point(data = df, aes(shape = annotation), position = position_dodge(width = 0.5)) +
+      geom_point(data = df, aes(shape = annotation)) +
       geom_smooth(
         method = fitMethod,
         formula = y ~ s(x, bs = "cs", k = k)
@@ -226,7 +226,7 @@ DotplotFct <- function(df, x, y, xLabel, yLabel,
       theme(legend.position = "bottom")
   } else {
     p <- ggplot(data = df, aes(!!!aes, !!!aesColour)) +
-      geom_point(data = df, aes(shape = annotation), position = position_dodge(width = 0.5)) +
+      geom_point(data = df, aes(shape = annotation)) +
       geom_smooth(method = fitMethod) +
       theme(legend.position = "bottom")
   }
