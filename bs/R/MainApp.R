@@ -202,9 +202,90 @@ server <- function(input, output, session) {
   observeEvent(input[["visualization_docu"]], {
     showModal(modalDialog(
       title = "Visualization",
-      includeHTML("www/visualization.html"),
+      HTML(
+        '
+        <p>The <strong>Visualisation Tab</strong>
+        in Biostats allows users to explore and visualize data through several plot types,
+        including <em>Boxplots</em>, <em>Scatterplots</em>, and <em>Lineplots</em>.
+        Below is an outline of each feature, including controls and customization options.
+        </p>
+        <div class="boxed-output">
+        <p><strong>Data Grouping and Splitting</strong></p>
+        <p>Use these options to separate data into groups or apply filters dynamically:</p>
+        <ul>
+        <li><strong>Split by Group</strong>: Enables user to subset data using one or more column(s).</li>
+        </ul>
+        </div>
+        '
+      ),
+      br(),
+      renderImage({
+        list(src = "www/DocuPlot.jpg",
+          contentType = 'image/jpg',
+          width = 650,
+          height = 500,
+          alt = "Basic Plot"
+        )
+      }, deleteFile = FALSE),
+      br(),
+      br(),
+      br(),
+      br(),
+      br(),
+      HTML(
+        '
+        <div class="boxed-output">
+        <p><strong>Variable Selection</strong></p>
+        <p>Select variables for both the x-axis and y-axis:</p>
+        <ul>
+        <li><strong>Y Variable</strong>: Set the variable for the y-axis.</li>
+        <li><strong>X Variable</strong>: Set the variable for the x-axis, with options to treat it as a factor or numeric. (see plot a)</li>
+        </ul>
+        </div>
+
+        <div class="boxed-output">
+        <p><strong>Conditional Options</strong></p>
+        <p>Customize your plot with the following settings:</p>
+        <ul>
+        <li>Choose columns of the dataset which are used to further distinguish the data. </li>
+        <li>In case of boxplots groups can be defined for the colour of the box border and the fill of the box (See plot b and c)</li>
+        <li>The other plot types only support the colour attribute (see plot c).</li>
+        <li><strong>Legend Titles</strong>: Set titles for fill and color legends to improve interpretability.</li>
+        </ul>
+        </div>
+
+        <div class="boxed-output">
+        <p><strong>Axis and Facet Controls</strong></p>
+        <p>Adjust axis labels, ranges, and facet options:</p>
+        <ul>
+        <li><strong>Axis Labels</strong>: Set custom labels for x and y axes.</li>
+        <li><strong>Axis Ranges</strong>: Define minimum and maximum values for zooming in on data.</li>
+        <li><strong>Split plot by a column</strong> Specify a variable to create several subplots (see plot d)</li>
+        </ul>
+        </div>
+
+        <div class="boxed-output">
+        <p><strong>Plot Type Selection and Plot Creation</strong><p>
+        <p>Choose between Boxplot, Scatterplot, and Lineplot, and click "Create Plot" to generate:</p>
+        <p>Use the interactive adjustments for dimensions and resolution before saving or exporting plots.</p>
+        </div>
+
+        <div class="boxed-output">
+        <p><strong>Saving and Exporting Options</strong></p>
+        <p>Once satisfied with the plot, use these controls to save and export:</p>
+        <ul>
+        <li><strong>Add to Result File</strong>: Adds the current result to the <em>result file</em>.
+        This is a temporary file holding all results.</li>
+        <li><strong>Final selection</strong>: tick the boxes from the <em>result file</em> to add them to the result file. </li>
+        <li><strong>Download Options</strong>: Export plots with custom width, height, and resolution.</li>
+        <li><strong>Save results</strong>: by clicking this button the file is either sent to your ELN (please refresh the page) or saved locally.</li>
+        </ul>
+        </div>
+        '
+      ),
       easyClose = TRUE,
-      footer = NULL
+      footer = NULL,
+      size = "l"
     ))
   })
   # docu formula editor

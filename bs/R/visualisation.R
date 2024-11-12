@@ -245,7 +245,7 @@ visServer <- function(id, data, listResults) {
       req(!is.null(data$df))
       req(is.data.frame(data$df))
       colnames <- c("", names(data$df))
-      tooltip <- "Select the value of the colour variable"
+      tooltip <- "Select a variable  for the colour variable. By chosing this groups are formed based on the unique entries in this column. Thereby, each entry gets its own colour to distinguish the groups. Dependent on the plot type either the lines, dots or the frame of the boxes are labelled"
       div(
         tags$label(
           "Dependent Variable",
@@ -266,7 +266,7 @@ visServer <- function(id, data, listResults) {
       req(!is.null(data$df))
       req(is.data.frame(data$df))
       colnames <- c("", names(data$df))
-      tooltip <- "Select the value of the fill variable"
+      tooltip <- "Select a variable  for the fill variable. By chosing this groups are formed based on the unique entries in this column. Thereby, each entry gets its own colour to distinguish the groups."
       div(
         tags$label(
           "Dependent Variable",
