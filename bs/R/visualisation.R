@@ -10,7 +10,9 @@ visSidebarUI <- function(id) {
     div(
       class = "boxed-output",
       uiOutput(NS(id, "yVar")),
-      uiOutput(NS(id, "xVar"))
+      uiOutput(NS(id, "xVar")),
+      textInput(NS(id, "xaxisText"), "X axis label", value = "x label"),
+      textInput(NS(id, "yaxisText"), "Y axis label", value = "y label")
     ),
     div(
       class = "boxed-output",
@@ -31,7 +33,10 @@ visSidebarUI <- function(id) {
           ),
           selectize = FALSE
         )
-      ),
+      )
+    ),
+    div(
+      class = "boxed-output",
       uiOutput(NS(id, "col")),
       textInput(NS(id, "legendTitleCol"), "Legend title for colour", value = "Title colour"),
       selectInput(NS(id, "theme"), "Choose a 'colour' theme",
@@ -46,7 +51,14 @@ visSidebarUI <- function(id) {
           "Set3" = "Set3"
         ),
         selectize = FALSE
-      ),
+      )
+    ),
+    div(
+      class = "boxed-output",
+      uiOutput(NS(id, "facetBy")),
+      uiOutput(NS(id, "facetScales"))
+    ),
+    div(
       class = "boxed-output",
       radioButtons(NS(id, "xType"), "Type of x",
         choices = c(
@@ -55,12 +67,8 @@ visSidebarUI <- function(id) {
         ),
         selected = "factor"
       ),
-      textInput(NS(id, "xaxisText"), "X axis label", value = "x label"),
-      textInput(NS(id, "yaxisText"), "Y axis label", value = "y label"),
       uiOutput(NS(id, "XRange")),
-      uiOutput(NS(id, "YRange")),
-      uiOutput(NS(id, "facetBy")),
-      uiOutput(NS(id, "facetScales"))
+      uiOutput(NS(id, "YRange"))
     )
   )
 }

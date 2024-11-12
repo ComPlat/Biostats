@@ -172,7 +172,6 @@ DotplotFct <- function(df, x, y, xLabel, yLabel,
 
   p <- p + xlab(xLabel)
   p <- p + ylab(yLabel)
-  p <- addInterval(p, df, x, y, xMin, xMax, yMin, yMax)
   if (colourVar != "") {
     p <- p + guides(colour = guide_legend(title = legendTitleColour))
     p <- p + scale_color_brewer(palette = colourTheme)
@@ -180,6 +179,8 @@ DotplotFct <- function(df, x, y, xLabel, yLabel,
 
   if (facetMode != "none") {
     p <- addFacet(p, facetVar, facetMode, facetScales)
+  } else {
+    p <- addInterval(p, df, x, y, xMin, xMax, yMin, yMax)
   }
 
   if (fitMethod == "none" || fitMethod == "") {
@@ -241,6 +242,8 @@ DotplotFct <- function(df, x, y, xLabel, yLabel,
   }
   if (facetMode != "none") {
     p <- addFacet(p, "Panel", facetMode, facetScales)
+  } else {
+    p <- addInterval(p, df, x, y, xMin, xMax, yMin, yMax)
   }
 
   return(p)
@@ -289,9 +292,10 @@ BoxplotFct <- function(df, x, y, xLabel, yLabel,
   p <- p + guides(colour = guide_legend(title = legendTitleColour))
   p <- p + scale_fill_brewer(palette = fillTheme)
   p <- p + scale_color_brewer(palette = colourTheme)
-  p <- addInterval(p, df, x, y, xMin, xMax, yMin, yMax)
   if (facetMode != "none") {
     p <- addFacet(p, facetVar, facetMode, facetScales)
+  } else {
+    p <- addInterval(p, df, x, y, xMin, xMax, yMin, yMax)
   }
   return(p)
 }
@@ -326,9 +330,10 @@ LineplotFct <- function(df, x, y, xLabel, yLabel,
   p <- p + ylab(yLabel)
   p <- p + guides(colour = guide_legend(title = legendTitleColour))
   p <- p + scale_color_brewer(palette = colourTheme)
-  p <- addInterval(p, df, x, y, xMin, xMax, yMin, yMax)
   if (facetMode != "none") {
     p <- addFacet(p, facetVar, facetMode, facetScales)
+  } else {
+    p <- addInterval(p, df, x, y, xMin, xMax, yMin, yMax)
   }
   return(p)
 }
