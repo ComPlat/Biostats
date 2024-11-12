@@ -14,9 +14,6 @@ corrSidebarUI <- function(id) {
       verbatimTextOutput(NS(id, "applied_filter"))
     ),
     br(),
-    actionButton(NS(id, "pear"), "Pearson correlation"),
-    actionButton(NS(id, "spear"), "Spearman correlation"),
-    actionButton(NS(id, "kendall"), "Kendall correlation"),
     sliderInput(NS(id, "conflevel"), "Confidence level of the interval",
       min = 0, max = 1, value = 0.95
     ),
@@ -27,7 +24,16 @@ corrSidebarUI <- function(id) {
         "Less" = "less",
         "Greater" = "greater"
       )
-    )
+    ),
+    actionButton(NS(id, "pear"), "Pearson correlation",
+      title =
+      "Measures the linear relationship between two continuous variables. Assumes normal distribution and equal variance."),
+    actionButton(NS(id, "spear"), "Spearman correlation",
+      title =
+      "Measures the monotonic relationship between two variables using ranks. Suitable for ordinal data or non-linear relationships."),
+    actionButton(NS(id, "kendall"), "Kendall correlation",
+      title =
+      "Measures the strength of dependence between two variables based on rank concordance. Works well with small samples or tied ranks.")
   )
 }
 
@@ -135,29 +141,33 @@ corrServer <- function(id, data, listResults) {
       f <- as.character(data$formula)
       dep <- f[2]
       indep <- f[3]
-      df <- data$df
-      d <- df
-      fit <- NULL
-      err <- NULL
-      e <- try({
+      d <- data$df
+      e <- tryCatch({
         check_ast(str2lang(indep), colnames(df)) # NOTE: check_ast throws error
         check_ast(str2lang(dep), colnames(df))
-        fit <- broom::tidy(
-          cor.test(d[, dep], d[, indep],
-            method = method,
-            alternative = input$alt,
-            conf.level = input$conflevel
-          )
+        fit <- withCallingHandlers(
+          expr = broom::tidy(
+            cor.test(d[, dep], d[, indep],
+              method = method,
+              alternative = input$alt,
+              conf.level = input$conflevel
+            )
+          ),
+          warning = function(warn) {
+            showNotification(warn$message, type = "warning")
+            invokeRestart("muffleWarning")
+          }
         )
-      })
-      if (inherits(e, "try-error")) {
-        err <- conditionMessage(attr(e, "condition"))
-        output$corr_error <- renderText(err)
-      } else {
         listResults$curr_data <- fit
         listResults$curr_name <- paste("Test Nr", length(listResults$all_names) + 1, "Conducted test: ", method)
         output$corr_result <- renderTable(fit, digits = 6)
-      }
+      },
+        error = function(err) {
+          err <- err$message
+          showNotification(err)
+          output$corr_error <- renderText(err)
+        }
+      )
     }
 
     observeEvent(input$pear, {
