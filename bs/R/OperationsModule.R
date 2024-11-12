@@ -494,6 +494,16 @@ OperationEditorServer <- function(id, data) {
         new <- eval(parse(text = code), envir = eval_env)
         check_type_res(new)
         r_vals$df[, new_col] <- new
+
+        if (!is.null(data$backup_df)) {
+          eval_env <- new.env()
+          list2env(r_vals$intermediate_vars, envir = eval_env)
+          list2env(data$backup_df, envir = eval_env)  # NOTE: this adds each column as own variable
+          new <- eval(parse(text = code), envir = eval_env)
+          check_type_res(new)
+          data$backup_df[, new_col] <- new
+          showNotification("Conducted operation also for entire dataset and not only the subset")
+        }
       })
       if (inherits(e, "try-error")) {
         err <- conditionMessage(attr(e, "condition"))

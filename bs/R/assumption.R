@@ -126,7 +126,6 @@ assServer <- function(id, data, listResults) {
       data$filter_group <- NULL
     })
 
-
     output$open_formula_editor_corr <- renderUI({ # TODO: change to unique identifier probably via [["open_formula_editor"]]
       actionButton(NS(id, "open_formula_editor"),
         "Open formula editor",
