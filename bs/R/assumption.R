@@ -80,7 +80,7 @@ assServer <- function(id, data, listResults) {
       actionButton(NS(id, "open_split_by_group"),
         "Open the split by group functionality",
         title = "Open the split by group helper window",
-        disabled = is.null(data$df) || !is.data.frame(data$df)
+        disabled = is.null(data$df) || !is.data.frame(data$df) || !is.null(data$backup_df)
       )
     })
 
