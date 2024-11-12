@@ -40,12 +40,12 @@ testsSidebarUI <- function(id) {
       actionButton(NS(id, "aovTest"), "ANOVA", 
         title = 
         "Use ANOVA (Analysis of Variance) when comparing the means of more than two groups,
-        assuming the data is normally distributed and variances are equal across groups."
+        assuming the data is normally distributed and variances are equal across groups. For more information see the Assumption tab"
       ),
       actionButton(NS(id, "kruskalTest"), "Kruskal-Wallis Test",
         title =
         "Use the Kruskal-Wallis test when comparing more than two groups but
-        the assumptions of normality or equal variances are not met. It is a non-parametric test."
+        the assumptions of normality or equal variances are not met. It is a non-parametric test. For more information see the Assumption tab"
       ),
     ),
     conditionalPanel(

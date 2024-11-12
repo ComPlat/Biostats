@@ -40,6 +40,16 @@ FormulaEditorUI <- function(id) {
         margin-bottom: 10px;
         color: #333;
         }
+        .create_button{
+        background-color: #04AA6D; /* Green */
+        border: none;
+        color: black;
+        padding: 15px 32px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 16px;
+        }
         "))
     ),
     fluidRow(
@@ -49,8 +59,14 @@ FormulaEditorUI <- function(id) {
         div(
           class = "model",
           h3(class = "title", "Left Side of Statistical Model"),
-          uiOutput(NS(id, "colnames_dropdown")),
-          actionButton(NS(id, "create_formula"), "Create statistical model")
+          uiOutput(NS(id, "colnames_dropdown"))
+        ),
+        br(),
+        br(),
+        br(),
+        div(
+          class = "model",
+          actionButton(NS(id, "create_formula"), "Create statistical model", class = "create_button")
         )
       ),
       column(
