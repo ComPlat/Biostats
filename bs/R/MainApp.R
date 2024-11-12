@@ -45,18 +45,6 @@ ui <- fluidPage(
           OperatorEditorSidebar("OP")
         ),
         conditionalPanel(
-          condition = "input.conditionedPanels == 'Correlation'",
-          div(
-            style = "position: relative",
-            actionButton(
-              "corr_docu",
-              label = NULL,
-              icon = icon("question-circle")
-            )
-          ),
-          corrSidebarUI("CORR")
-        ),
-        conditionalPanel(
           condition = "input.conditionedPanels == 'Visualisation'",
           div(
             style = "position: relative;",
@@ -79,6 +67,18 @@ ui <- fluidPage(
             )
           ),
           assSidebarUI("ASS")
+        ),
+        conditionalPanel(
+          condition = "input.conditionedPanels == 'Correlation'",
+          div(
+            style = "position: relative",
+            actionButton(
+              "corr_docu",
+              label = NULL,
+              icon = icon("question-circle")
+            )
+          ),
+          corrSidebarUI("CORR")
         ),
         conditionalPanel(
           condition = "input.conditionedPanels == 'Tests'",
@@ -117,16 +117,16 @@ ui <- fluidPage(
           OperatorEditorUI("OP")
         ),
         tabPanel(
-          "Correlation",
-          corrUI("CORR")
-        ),
-        tabPanel(
           "Visualisation",
           visUI("VIS")
         ),
         tabPanel(
           "Assumption",
           assUI("ASS")
+        ),
+        tabPanel(
+          "Correlation",
+          corrUI("CORR")
         ),
         tabPanel(
           "Tests",

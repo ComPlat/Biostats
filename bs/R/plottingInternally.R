@@ -179,7 +179,7 @@ DotplotFct <- function(df, x, y, xLabel, yLabel,
   }
 
   if (facetMode != "none") {
-    p <- addFacet(p, facetVar, facetMode)
+    p <- addFacet(p, facetVar, facetMode, facetScales)
   }
 
   if (fitMethod == "none" || fitMethod == "") {
