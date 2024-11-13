@@ -351,11 +351,45 @@ check_formula <- function(formula) {
   return(TRUE)
 }
 
-
-# Own Mean
+# Own stats functions handling NA
 Mean <- function(x) {
   if (!is.numeric(x)) {
     x <- as.numeric(x)
   }
   mean(x, na.rm = TRUE)
+}
+
+Median <- function(x) {
+  if (!is.numeric(x)) {
+    x <- as.numeric(x)
+  }
+  median(x, na.rm = TRUE)
+}
+
+SD <- function(x) {
+  if (!is.numeric(x)) {
+    x <- as.numeric(x)
+  }
+  sd(x, na.rm = TRUE)
+}
+
+Sum <- function(x) {
+  if (!is.numeric(x)) {
+    x <- as.numeric(x)
+  }
+  sum(x, na.rm = TRUE)
+}
+
+Min <- function(x) {
+  if (!is.numeric(x)) {
+    x <- as.numeric(x)
+  }
+  min(x, na.rm = TRUE)
+}
+
+Max <- function(x) {
+  if (!is.numeric(x)) {
+    x <- as.numeric(x)
+  }
+  max(x, na.rm = TRUE)
 }

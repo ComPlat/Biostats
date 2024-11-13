@@ -87,11 +87,11 @@ OperatorEditorSidebar <- function(id) {
     div(
       h3("Statistical & Utils Functions"),
       actionButton(NS(id, "mean"), "Mean", class = "add-button", title = "Calculate the average of numbers (e.g., Mean(ColName))"),
-      actionButton(NS(id, "sd"), "standard deviation", class = "add-button", title = "sd(ColName) gives the standard deviation"),
-      actionButton(NS(id, "median"), "median", class = "add-button", title = "median(ColName) calculates the median)"),
-      actionButton(NS(id, "sum"), "sum", class = "add-button", title = "Add up all the numbers sum(ColName)"),
-      actionButton(NS(id, "min"), "min", class = "add-button", title = "Find the smallest number (e.g., min(c(1, 2, 3)) gives 1)"),
-      actionButton(NS(id, "max"), "max", class = "add-button", title = "Find the largest number (e.g., max(c(1, 2, 3)) gives 3)"),
+      actionButton(NS(id, "sd"), "standard deviation", class = "add-button", title = "SD(ColName) gives the standard deviation"),
+      actionButton(NS(id, "median"), "Median", class = "add-button", title = "Median(ColName) calculates the median)"),
+      actionButton(NS(id, "sum"), "Sum", class = "add-button", title = "Add up all the numbers Sum(ColName)"),
+      actionButton(NS(id, "min"), "Min", class = "add-button", title = "Find the smallest number (e.g., Min(c(1, 2, 3)) gives 1)"),
+      actionButton(NS(id, "max"), "Max", class = "add-button", title = "Find the largest number (e.g., Max(c(1, 2, 3)) gives 3)"),
       actionButton(NS(id, "c"), "concatenate", class = "add-button", title = "Combine values into a list (e.g., c(1, 2, 3) gives [1, 2, 3])"),
       actionButton(NS(id, "get_elem"), "get one element", class = "add-button",
       title = "Extract one element from a variable. This can either be ColName or a tabular dataset. In case it is a ColName the syntax is get_elem(ColName, idx) where idx is an integer number e.g. 1. In case one specific element of a dataset should be retrieved the syntax is get_elem(df, idx_row, idx_col). Again idx_row and idx_col have to be integers. The first one specifies the row number and the second one the column number."),
@@ -244,11 +244,14 @@ OperatorEditorUI <- function(id) {
       )
     ),
     uiOutput(NS(id, "head")),
+    actionButton(NS(id, "save"), "Add output to result-file"),
+    actionButton(NS(id, "download"), "Save results"),
+    checkboxGroupInput(NS(id, "TableSaved"), "Saved results to file", NULL),
     uiOutput(NS(id, "intermediate_results"))
   )
 }
 
-OperationEditorServer <- function(id, data) {
+OperationEditorServer <- function(id, data, listResults) {
 
   moduleServer(id, function(input, output, session) {
     # Reactive values
@@ -512,6 +515,13 @@ OperationEditorServer <- function(id, data) {
       data$df <- r_vals$df
       output$head <- renderTable(head(r_vals$df, 10))
       r_vals$counter_id <- r_vals$counter_id + 1
+
+      listResults$curr_data <- data$df
+      listResults$curr_name <- paste(
+        "Dataset Changes Nr",
+        length(listResults$all_names) + 1,
+        "Conducted test: ", input$editable_code
+      )
     })
 
     observeEvent(input$add, {
@@ -721,27 +731,27 @@ OperationEditorServer <- function(id, data) {
     })
     observeEvent(input$sd, {
       current_text <- input$editable_code
-      updated_text <- paste(current_text, "sd(", sep = " ")
+      updated_text <- paste(current_text, "SD(", sep = " ")
       updateTextAreaInput(session, "editable_code", value = updated_text)
     })
     observeEvent(input$median, {
       current_text <- input$editable_code
-      updated_text <- paste(current_text, "median(", sep = " ")
+      updated_text <- paste(current_text, "Median(", sep = " ")
       updateTextAreaInput(session, "editable_code", value = updated_text)
     })
     observeEvent(input$sum, {
       current_text <- input$editable_code
-      updated_text <- paste(current_text, "sum(", sep = " ")
+      updated_text <- paste(current_text, "Sum(", sep = " ")
       updateTextAreaInput(session, "editable_code", value = updated_text)
     })
     observeEvent(input$min, {
       current_text <- input$editable_code
-      updated_text <- paste(current_text, "min(", sep = " ")
+      updated_text <- paste(current_text, "Min(", sep = " ")
       updateTextAreaInput(session, "editable_code", value = updated_text)
     })
     observeEvent(input$max, {
       current_text <- input$editable_code
-      updated_text <- paste(current_text, "max(", sep = " ")
+      updated_text <- paste(current_text, "Max(", sep = " ")
       updateTextAreaInput(session, "editable_code", value = updated_text)
     })
     observeEvent(input$c, {
@@ -843,6 +853,41 @@ OperationEditorServer <- function(id, data) {
       current_text <- input$editable_code
       updated_text <- paste(current_text, "runif(", sep = " ")
       updateTextAreaInput(session, "editable_code", value = updated_text)
+    })
+
+    observeEvent(input$save, {
+      if (is.null(listResults$curr_name)) {
+        return(NULL)
+      }
+      if (!(listResults$curr_name %in% unlist(listResults$all_names))) {
+        listResults$all_data[[length(listResults$all_data) + 1]] <- listResults$curr_data
+        listResults$all_names[[length(listResults$all_names) + 1]] <- listResults$curr_name
+      }
+      updateCheckboxGroupInput(session, "TableSaved",
+        choices = listResults$all_names
+      )
+    })
+
+    observeEvent(input$download, {
+      lr <- unlist(listResults$all_names)
+      indices <- sapply(input$TableSaved, function(x) {
+        which(x == lr)
+      })
+      req(length(indices) >= 1)
+      l <- listResults$all_data[indices]
+      if (Sys.getenv("RUN_MODE") == "SERVER") {
+        excelFile <- createExcelFile(l)
+        upload(session, excelFile, new_name = "Results.xlsx") # TODO: add possibility for desired file name
+      } else {
+        jsString <- createJSString(l)
+        session$sendCustomMessage(
+          type = "downloadZip",
+          list(
+            numberOfResults = length(jsString),
+            FileContent = jsString
+          )
+        )
+      }
     })
 
   })

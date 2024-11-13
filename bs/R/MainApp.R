@@ -199,6 +199,7 @@ server <- function(input, output, session) {
     ))
   })
   # docu visualisation
+  # TODO: put html strings in own html files
   observeEvent(input[["visualization_docu"]], {
     showModal(modalDialog(
       title = "Visualization",
@@ -431,7 +432,7 @@ server <- function(input, output, session) {
     curr_data = NULL, curr_name = NULL,
     all_data = list(), all_names = list()
   )
-  OperationEditorServer("OP", dataSet)
+  OperationEditorServer("OP", dataSet, listResults)
   corrServer("CORR", dataSet, listResults)
   visServer("VIS", dataSet, listResults)
   assServer("ASS", dataSet, listResults)
