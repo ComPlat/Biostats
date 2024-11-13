@@ -1,4 +1,3 @@
-# TODO: the names of hte columns the new ones have to be modified by makenames
 
 # TODO: store original dataset. Add option to reset dataset 
 
@@ -112,16 +111,16 @@ OperatorEditorSidebar <- function(id) {
     ),
     div(
       h3("Convert types of columns"),
-      actionButton(NS(id, "as.char"), "convert to character",
+      actionButton(NS(id, "as_char"), "convert to character",
         title = "Convert a column of the dataset or an intermediate variable to character. For example as.char(ColName)",
         class = "add-button"),
-      actionButton(NS(id, "as.int"), "convert to integer",
+      actionButton(NS(id, "as_int"), "convert to integer",
         title = "Convert a column of the dataset or an intermediate variable to integer. For example as.int(ColName)",
         class = "add-button"),
-      actionButton(NS(id, "as.real"), "convert to real number",
+      actionButton(NS(id, "as_real"), "convert to real number",
         title = "Convert a column of the dataset or an intermediate variable to a real number. For example as.real(ColName)",
         class = "add-button"),
-      actionButton(NS(id, "as.fact"), "convert to factors",
+      actionButton(NS(id, "as_fact"), "convert to factors",
         title = "Convert a column of the dataset or an intermediate variable to a factor. For example as.fact(ColName)",
         class = "add-button"),
       class = "boxed-output"
@@ -641,7 +640,7 @@ OperationEditorServer <- function(id, data, listResults) {
     })
     observeEvent(input$ceil, {
       current_text <- input$editable_code
-      updated_text <- paste(current_text, "ceil(", sep = " ")
+      updated_text <- paste(current_text, "ceiling(", sep = " ")
       updateTextAreaInput(session, "editable_code", value = updated_text)
     })
     observeEvent(input$floor, {
@@ -759,22 +758,22 @@ OperationEditorServer <- function(id, data, listResults) {
       updated_text <- paste(current_text, "c(", sep = " ")
       updateTextAreaInput(session, "editable_code", value = updated_text)
     })
-    observeEvent(input$as.char, {
+    observeEvent(input$as_char, {
       current_text <- input$editable_code
       updated_text <- paste(current_text, "as.char(", sep = " ")
       updateTextAreaInput(session, "editable_code", value = updated_text)
     })
-    observeEvent(input$as.int, {
+    observeEvent(input$as_int, {
       current_text <- input$editable_code
       updated_text <- paste(current_text, "as.int(", sep = " ")
       updateTextAreaInput(session, "editable_code", value = updated_text)
     })
-    observeEvent(input$as.real, {
+    observeEvent(input$as_real, {
       current_text <- input$editable_code
       updated_text <- paste(current_text, "as.real(", sep = " ")
       updateTextAreaInput(session, "editable_code", value = updated_text)
     })
-    observeEvent(input$as.fact, {
+    observeEvent(input$as_fact, {
       current_text <- input$editable_code
       updated_text <- paste(current_text, "as.fact(", sep = " ")
       updateTextAreaInput(session, "editable_code", value = updated_text)

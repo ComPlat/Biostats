@@ -1,12 +1,12 @@
 library(tinytest)
 
 mock_ggplot <- ggplot(data = CO2, aes(x = uptake, y = conc)) +
-                  geom_point() +
-                  geom_smooth()
+  geom_point() +
+  geom_smooth()
 test_annotateDF <- function() {
   df <- annotateDF(mock_ggplot, method = "lm")
   expect_equal(nrow(df), 84)
-  expect_equal(ncol(df), 14)  
+  expect_equal(ncol(df), 14)
 }
 test_annotateDF()
 
@@ -20,3 +20,4 @@ test_calcParams <- function() {
 test_calcParams()
 
 test_dir()
+
