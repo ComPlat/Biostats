@@ -468,7 +468,7 @@ is_valid_filename <- function(filename) {
     if (nchar(filename) >= 100) {
       return(FALSE)
     }
-    ex <- extract_extension(filename)
+    ex <- strsplit(basename(filename), split = "\\.")[[1]]
     if (length(ex) == 1) { # no extension found
       return(FALSE)
     }
@@ -477,7 +477,7 @@ is_valid_filename <- function(filename) {
 }
 
 check_filename_for_server <- function(filename) {
-  ex <- extract_extension(filename)
+  ex <- strsplit(basename(filename), split = "\\.")[[1]]
   ex <- ex[[length(ex)]]
   ex == "xlsx"
 }

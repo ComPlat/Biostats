@@ -155,7 +155,6 @@ app <- function() {
     observeEvent(input[["corr_docu"]], {
       showModal(modalDialog(
         title = "Correlation",
-        includeHTML("www/correlation.html"),
         includeHTML(system.file("www/data.html", package = "bs")),
         easyClose = TRUE,
         footer = NULL
@@ -281,7 +280,6 @@ app <- function() {
     observeEvent(input[["FO-formula_docu"]], {
       showModal(modalDialog(
         title = "Defining the formula",
-        includeHTML("www/formula.html"),
         includeHTML(system.file("www/formula.html", package = "bs")),
         easyClose = TRUE,
         footer = NULL,
@@ -292,7 +290,6 @@ app <- function() {
     observeEvent(input[["SG-split_docu"]], {
       showModal(modalDialog(
         title = "Subsetting the dataset",
-        includeHTML("www/SplitData.html"),
         includeHTML(system.file("www/SplitData.html", package = "bs")),
         easyClose = TRUE,
         footer = NULL,
