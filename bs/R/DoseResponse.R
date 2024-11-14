@@ -41,9 +41,18 @@ DoseResponseUI <- function(id) {
     checkboxGroupInput(NS(id, "TableSaved"), "Saved results to file", NULL),
     tabsetPanel(
       id = NS(id, "results_tabs"),
-      tabPanel("Results Table",
-               tableOutput(NS(id, "dr_result"))),
-      tabPanel("Results Plot",
+      tabPanel(
+        "Results Table",
+        tableOutput(NS(id, "dr_result"))
+      ),
+      tabPanel(
+        "Overview Plot",
+        plotOutput(NS(id, "dr_overview_plot"), height = 700),
+        actionButton(NS(id, "previousPageOverview"), "Previous page"),
+        actionButton(NS(id, "nextPageOverview"), "Next page")
+      ),
+      tabPanel(
+        "Results Plot",
         uiOutput(NS(id, "dropdown_plots")),
         plotOutput(NS(id, "dr_result_plot")),
         actionButton(NS(id, "previousPage"), "Previous plot"),
@@ -60,7 +69,9 @@ DoseResponseServer <- function(id, data, listResults) {
     r_vals <- reactiveValues(
       plots = NULL,
       names = NULL, # For dropdown_plots
-      currentPage = 1
+      overview_plots = NULL,
+      currentPage = 1,
+      currentPageOverview = 1
     )
 
     # Render names, conc and abs column
@@ -221,6 +232,8 @@ DoseResponseServer <- function(id, data, listResults) {
       r_vals$plots <- NULL # reset
       r_vals$names <- NULL # reset
       r_vals$currentPage <- 1 # reset
+      r_vals$overview_plots <- NULL # reset
+      r_vals$currentPageOverview <- 1 # reset
       f <- as.character(data$formula)
       dep <- f[2]
       indep <- f[3]
@@ -252,6 +265,8 @@ DoseResponseServer <- function(id, data, listResults) {
         r_vals$plots <- resP
         r_vals$names <- resDF$name
         resPlot <- resP
+        overviewPlots <- create_plot_pages(resPlot)
+        r_vals$overview_plots <- overviewPlots
       })
       if (inherits(e, "try-error")) {
         err <- conditionMessage(attr(e, "condition"))
@@ -315,6 +330,34 @@ DoseResponseServer <- function(id, data, listResults) {
       }
     })
 
+    # Display overview plots
+    observe({
+      req(!is.null(r_vals$overview_plots))
+      req(is.list(r_vals$overview_plots))
+      output$dr_overview_plot <- renderPlot(
+        r_vals$overview_plots[[r_vals$currentPageOverview]]
+      )
+    })
+
+    observeEvent(input$nextPageOverview, {
+      req(!is.null(r_vals$overview_plots))
+      req(is.list(r_vals$overview_plots))
+      req(length(r_vals$overview_plots) > 1)
+      if (r_vals$currentPageOverview < length(r_vals$overview_plots)) {
+        r_vals$currentPageOverview <- r_vals$currentPageOverview + 1
+      }
+    })
+
+    observeEvent(input$previousPageOverview, {
+      req(!is.null(r_vals$overview_plots))
+      req(is.list(r_vals$overview_plots))
+      req(length(r_vals$overview_plots) > 1)
+      if (r_vals$currentPageOverview > 1) {
+        r_vals$currentPageOverview <- r_vals$currentPageOverview - 1
+      }
+    })
+
+    # Download results
     observeEvent(input$dr_save, {
       if (is.null(listResults$curr_name)) {
         return(NULL)
