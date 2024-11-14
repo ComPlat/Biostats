@@ -1,0 +1,26 @@
+---
+output: html_document
+---
+
+## Overview
+
+- 1. Describe DOE in Excel
+  * Number of parameters
+  * Boundaries of parameters
+- 2. Rscript
+  * generates DOE matrix
+- 3. TPA sends DOE matrix back to ELN 
+- 4. User collects DOE matrix via chemotion python API using the Device computer
+- 5. Device measures samples and sends results back to ELN via Inbox (via Shuttle)
+
+## Alternative
+
+- 1. Describe DOE in Excel
+  * Number of parameters
+  * Boundaries of parameters
+- 2. Rscript
+  * generates DOE matrix
+  * uses python API to generate one reaction variation per row in the DOE matrix
+- 3. User collects Reaction variation via python API
+- 4. Device measures samples and sends results back to ELN via Inbox (via Shuttle)
+- 5. Maybe, python API can link the results with the respective Reaction variation

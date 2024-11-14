@@ -44,6 +44,7 @@ DoseResponseUI <- function(id) {
       tabPanel("Results Table",
                tableOutput(NS(id, "dr_result"))),
       tabPanel("Results Plot",
+        uiOutput(NS(id, "dropdown_plots")),
         plotOutput(NS(id, "dr_result_plot")),
         actionButton(NS(id, "previousPage"), "Previous plot"),
         actionButton(NS(id, "nextPage"), "Next plot")
@@ -58,6 +59,7 @@ DoseResponseServer <- function(id, data, listResults) {
 
     r_vals <- reactiveValues(
       plots = NULL,
+      names = NULL, # For dropdown_plots
       currentPage = 1
     )
 
@@ -217,6 +219,8 @@ DoseResponseServer <- function(id, data, listResults) {
       print_noti(!is.null(data$formula), "You have to set a formula")
       req(!is.null(data$formula))
       r_vals$plots <- NULL # reset
+      r_vals$names <- NULL # reset
+      r_vals$currentPage <- 1 # reset
       f <- as.character(data$formula)
       dep <- f[2]
       indep <- f[3]
@@ -246,6 +250,7 @@ DoseResponseServer <- function(id, data, listResults) {
         resP <- resP[!is.null(resP)]
         resP <- resP[!sapply(resP, is.null)]
         r_vals$plots <- resP
+        r_vals$names <- resDF$name
         resPlot <- resP
       })
       if (inherits(e, "try-error")) {
@@ -267,6 +272,29 @@ DoseResponseServer <- function(id, data, listResults) {
       req(!is.null(r_vals$plots))
       req(is.list(r_vals$plots))
       output$dr_result_plot <- renderPlot(r_vals$plots[[r_vals$currentPage]])
+    })
+
+    output[["dropdown_plots"]] <- renderUI({
+      req(!is.null(r_vals$plots))
+      req(is.list(r_vals$plots))
+      req(length(r_vals$plots) > 1)
+      req(!is.null(r_vals$names))
+      req(length(r_vals$names) > 1)
+      selectInput(
+        inputId = "DOSERESPONSE-dropdown_plots",
+        label = "Select plot",
+        choices = r_vals$names,
+        selected = r_vals$names[1]
+      )
+    })
+
+    observeEvent(input$dropdown_plots, {
+      req(!is.null(r_vals$plots))
+      req(is.list(r_vals$plots))
+      req(length(r_vals$plots) > 1)
+      req(!is.null(r_vals$names))
+      req(length(r_vals$names) > 1)
+      r_vals$currentPage <- which(input$dropdown_plots == r_vals$names)
     })
 
     observeEvent(input$nextPage, {
