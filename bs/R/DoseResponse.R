@@ -37,6 +37,7 @@ DoseResponseUI <- function(id) {
     h4(strong("Results of test:")),
     actionButton(NS(id, "dr_save"), "Add output to result-file"),
     actionButton(NS(id, "download_dr"), "Save results"),
+    textInput(NS(id, "user_filename"), "Set filename", value = ""),
     checkboxGroupInput(NS(id, "TableSaved"), "Saved results to file", NULL),
     tabsetPanel(
       id = NS(id, "results_tabs"),
@@ -300,6 +301,7 @@ DoseResponseServer <- function(id, data, listResults) {
     })
 
     observeEvent(input$download_dr, {
+      print_noti(is_valid_filename(input$user_filename), "Defined filename is not valid")
       lr <- unlist(listResults$all_names)
       indices <- sapply(input$TableSaved, function(x) {
         which(x == lr)
@@ -307,15 +309,18 @@ DoseResponseServer <- function(id, data, listResults) {
       req(length(indices) >= 1)
       l <- listResults$all_data[indices]
       if (Sys.getenv("RUN_MODE") == "SERVER") {
+        print_noti(check_filename_for_server(input$user_filename), "Defined filename does not have xlsx as extension")
         excelFile <- createExcelFile(l)
-        upload(session, excelFile, new_name = "Results.xlsx") # TODO: add possibility for desired file name
+        upload(session, excelFile, new_name = input$user_filename)
       } else {
+        print_noti(check_filename_for_serverless(input$user_filename), "Defined filename does not have zip as extension")
         jsString <- createJSString(l)
         session$sendCustomMessage(
           type = "downloadZip",
           list(
             numberOfResults = length(jsString),
-            FileContent = jsString
+            FileContent = jsString,
+            Filename = input$user_filename
           )
         )
       }

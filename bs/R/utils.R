@@ -393,3 +393,43 @@ Max <- function(x) {
   }
   max(x, na.rm = TRUE)
 }
+
+# Check filename
+is_valid_filename <- function(filename) {
+  try({
+    if (!is.character(filename)) {
+      return(FALSE)
+    }
+    if (grepl(" ", filename)) {
+      return(FALSE)
+    }
+    invalid_chars <- "[<>:\"/\\|?*]"
+    if (grepl(invalid_chars, filename)) {
+      return(FALSE)
+    }
+    if (nchar(filename) == 0) {
+      return(FALSE)
+    }
+    if (nchar(filename) >= 100) {
+      return(FALSE)
+    }
+    ex <- strsplit(basename(filename), split = "\\.")[[1]]
+    if (length(ex) == 1) { # no extension found
+      return(FALSE)
+    }
+    return(TRUE)
+  })
+}
+
+check_filename_for_server <- function(filename) {
+  ex <- strsplit(basename(filename), split = "\\.")[[1]]
+  ex <- ex[[length(ex)]]
+  ex == "xlsx"
+}
+
+check_filename_for_serverless <- function(filename) {
+  ex <- strsplit(basename(filename), split = "\\.")[[1]]
+  ex <- ex[[length(ex)]]
+  ex == "zip"
+}
+

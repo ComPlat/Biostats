@@ -1,5 +1,6 @@
 Shiny.addCustomMessageHandler('downloadZip', function(message) {
   var FileContent = message.FileContent;
+  var FileName = message.Filename;
   if( (typeof FileContent) == "string") {
     if (FileContent.startsWith("data:image")) {
       var fileName = 'file' + (i + 1) + '.png'; 
@@ -11,14 +12,14 @@ Shiny.addCustomMessageHandler('downloadZip', function(message) {
       }
       zip.file(fileName, byteArray, {binary: true});
       zip.generateAsync({type: 'blob'}).then(function(content) {
-        saveAs(content, 'download.zip');
+        saveAs(content, FileName);
       });
     } else {
       var zipText = new JSZip();
       var fileNameText = 'file' + 1 + '.txt'; 
       zipText.file(fileNameText, FileContent);
       zipText.generateAsync({type: 'blob'}).then(function(content) {
-        saveAs(content, 'download.zip');
+        saveAs(content, FileName);
       });
     }
   } else {
@@ -38,7 +39,7 @@ Shiny.addCustomMessageHandler('downloadZip', function(message) {
       }
     }
     zip.generateAsync({type: 'blob'}).then(function(content) {
-      saveAs(content, 'download.zip');
+      saveAs(content, FileName);
     });
   }
 });

@@ -18,6 +18,7 @@ ENV SHINY_LOG_STDERR=1
 RUN install2.r --error --skipinstalled \
     shiny \
     shinyjs \
+    shinyWidgets \
     jsonlite \
     ggplot2 \
     htmltools \
@@ -49,12 +50,14 @@ RUN mkdir /home/shiny/results
 
 COPY ./MTT/ /home/MTT
 COPY ./comeln/ /home/comeln
+COPY ./bs/ /home/bs
 USER root
 RUN bash -c "cd /home/MTT; R CMD INSTALL ."
 RUN bash -c "cd /home/comeln; R CMD INSTALL ."
+RUN bash -c "cd /home/bs; R CMD INSTALL ."
 
 EXPOSE 4001
-COPY ./bs/R /srv/shiny-server/
+COPY ./Start_Server_App.R /srv/shiny-server/app.R
 COPY ./run.sh .
 
 ENV SHINY_LOG_STDERR=1

@@ -119,7 +119,8 @@ visUI <- function(id) {
     fluidRow(
       column(
         12,
-        actionButton(NS(id, "downloadViss"), "Save results")
+        actionButton(NS(id, "downloadViss"), "Save results"),
+        textInput(NS(id, "user_filename"), "Set filename", value = "")
       )
     ),
     plotOutput(
@@ -469,6 +470,7 @@ visServer <- function(id, data, listResults) {
             )
           }
           ggplot_build(p) # NOTE: invokes errors and warnings by building but not rendering plot
+          p
         },
         warning = function(warn) {
           showNotification(warn$message)
@@ -524,6 +526,7 @@ visServer <- function(id, data, listResults) {
     })
 
     observeEvent(input$downloadViss, {
+      print_noti(is_valid_filename(input$user_filename), "Defined filename is not valid")
       lr <- unlist(listResults$all_names)
       indices <- sapply(input$TableSaved, function(x) {
         which(x == lr)
@@ -531,15 +534,18 @@ visServer <- function(id, data, listResults) {
       req(length(indices) >= 1)
       l <- listResults$all_data[indices]
       if (Sys.getenv("RUN_MODE") == "SERVER") {
+        print_noti(check_filename_for_server(input$user_filename), "Defined filename does not have xlsx as extension")
         excelFile <- createExcelFile(l)
-        upload(session, excelFile, new_name = "Results.xlsx") # TODO: add possibility for desired file name
+        upload(session, excelFile, new_name = input$user_filename)
       } else {
+        print_noti(check_filename_for_serverless(input$user_filename), "Defined filename does not have zip as extension")
         jsString <- createJSString(l)
         session$sendCustomMessage(
           type = "downloadZip",
           list(
             numberOfResults = length(jsString),
-            FileContent = jsString
+            FileContent = jsString,
+            Filename = input$user_filename
           )
         )
       }

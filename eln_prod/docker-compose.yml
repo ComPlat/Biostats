@@ -1,0 +1,57 @@
+services:
+  db:
+    image: postgres:13
+    restart: unless-stopped
+    hostname: db
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - chemotion_db:/var/lib/postgresql/data/
+    networks:
+      - chemotion
+
+  worker:
+    image: ptrxyz/internal:eln-1.10.3
+    restart: unless-stopped
+    environment:
+      - CONFIG_ROLE=worker
+      - SECRET_KEY_BASE=pleasechangeme
+    depends_on:
+      - db
+      - eln
+    volumes:
+      - chemotion_data:/chemotion/data/
+      - chemotion:/chemotion/app
+    networks:
+      - chemotion
+
+  eln:
+    image: ptrxyz/internal:eln-1.10.3
+    restart: unless-stopped
+    environment:
+      - CONFIG_ROLE=eln
+      - SECRET_KEY_BASE=pleasechangeme
+      - PUBLIC_URL=http://0.0.0.0:4000
+    depends_on:
+      - db
+    volumes:
+      - ./shared/pullin:/shared
+      - ./shared/backup:/backup
+      - chemotion_data:/chemotion/data/
+      - chemotion:/chemotion/app
+    ports:
+      - 4000:4000
+    networks:
+      - chemotion
+
+volumes:
+  chemotion:
+    name: chemotion_app
+  chemotion_data:
+    name: chemotion_data
+  chemotion_db:
+    name: chemotion_db
+
+networks:
+  chemotion:
