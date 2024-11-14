@@ -1,3 +1,52 @@
+# Upload data into R
+readData <- function(path) {
+  stopifnot(is.character(path))
+  df <- NULL
+  df <- try(as.data.frame(readxl::read_excel(
+    path,
+    col_names = TRUE
+  )), silent = TRUE)
+  if (class(df) == "try-error") {
+    # identify seperator
+    line <- readLines(path, n = 1)
+    semicolon <- grepl(";", line)
+    comma <- grepl(",", line)
+    tab <- grepl("\t", line)
+    seperator <- NULL
+    if (semicolon == TRUE) {
+      seperator <- ";"
+    } else if (comma == TRUE) {
+      seperator <- ","
+    } else if (tab == TRUE) {
+      seperator <- "\t"
+    } else {
+      return("error")
+    }
+    df <- try(read.csv(path, header = TRUE, sep = seperator))
+    if (class(df) == "try-error") {
+      return("error")
+    }
+  } else {
+    f <- function(x) {
+      options(warn = -1)
+      x <- as.numeric(x)
+      options(warn = 0)
+      x <- x[!is.na(x)]
+      length(x) > 0
+    }
+    check <- apply(df, 2, f)
+    conv <- function(a, b) {
+      if (a == TRUE) {
+        return(as.numeric(b))
+      }
+      return(b)
+    }
+    df <- Map(conv, check, df)
+    df <- data.frame(df)
+  }
+  return(df)
+}
+
 DF2String <- function(df) {
   resNames <- names(df)
   resNames <- paste(resNames, collapse = "\t")
@@ -395,6 +444,12 @@ Max <- function(x) {
 }
 
 # Check filename
+extract_extension <- function(filename) {
+  ex <- strsplit(basename(filename), split = "\\.")[[1]]
+  ex <- ex[[length(ex)]]
+  return(ex)
+}
+
 is_valid_filename <- function(filename) {
   try({
     if (!is.character(filename)) {
@@ -413,7 +468,7 @@ is_valid_filename <- function(filename) {
     if (nchar(filename) >= 100) {
       return(FALSE)
     }
-    ex <- strsplit(basename(filename), split = "\\.")[[1]]
+    ex <- extract_extension(filename)
     if (length(ex) == 1) { # no extension found
       return(FALSE)
     }
@@ -422,14 +477,33 @@ is_valid_filename <- function(filename) {
 }
 
 check_filename_for_server <- function(filename) {
-  ex <- strsplit(basename(filename), split = "\\.")[[1]]
+  ex <- extract_extension(filename)
   ex <- ex[[length(ex)]]
   ex == "xlsx"
 }
 
 check_filename_for_serverless <- function(filename) {
-  ex <- strsplit(basename(filename), split = "\\.")[[1]]
+  ex <- extract_extension(filename)
   ex <- ex[[length(ex)]]
   ex == "zip"
 }
 
+# Split list of plots into panels of 9 plots
+create_plot_pages <- function(plotList) {
+  n_full_pages <- floor(length(plotList) / 9)
+  n_plots_last_page <- length(plotList) %% 9
+  res <- list()
+  i <- 1
+  for (i in seq_len(n_full_pages)) {
+    if (i == 1) {
+      res[[i]] <- plotList[1:(i * 9)]
+    } else {
+      res[[i]] <- plotList[((i - 1) * 9 + 1):(i * 9)]
+    }
+  }
+  res[[i + 1]] <- plotList[(n_full_pages * 9 + 1):
+    (n_full_pages * 9 + n_plots_last_page)]
+  lapply(res, function(x) {
+    cowplot::plot_grid(plotlist = x)
+  })
+}
