@@ -335,6 +335,7 @@ as.fact <- function(v) {
 }
 
 # Split groups
+# FIX: this works only for one column
 split <- function(df, cols, levels) {
   df_res <- NULL
   levels_temp <- NULL

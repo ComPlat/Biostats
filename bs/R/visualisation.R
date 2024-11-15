@@ -9,8 +9,8 @@ visSidebarUI <- function(id) {
     ),
     div(
       class = "boxed-output",
-      uiOutput(NS(id, "yVar")),
-      uiOutput(NS(id, "xVar")),
+      uiOutput(NS(id, "yVarUI")),
+      uiOutput(NS(id, "xVarUI")),
       textInput(NS(id, "xaxisText"), "X axis label", value = "x label"),
       textInput(NS(id, "yaxisText"), "Y axis label", value = "y label")
     ),
@@ -18,7 +18,7 @@ visSidebarUI <- function(id) {
       class = "boxed-output",
       conditionalPanel(
         condition = "input.VisConditionedPanels == 'Boxplot'",
-        uiOutput(NS(id, "fill")),
+        uiOutput(NS(id, "fillUI")),
         textInput(NS(id, "legendTitleFill"), "Legend title for fill", value = "Title fill"),
         selectInput(NS(id, "themeFill"), "Choose a 'fill' theme",
           c(
@@ -37,7 +37,7 @@ visSidebarUI <- function(id) {
     ),
     div(
       class = "boxed-output",
-      uiOutput(NS(id, "col")),
+      uiOutput(NS(id, "colUI")),
       textInput(NS(id, "legendTitleCol"), "Legend title for colour", value = "Title colour"),
       selectInput(NS(id, "theme"), "Choose a 'colour' theme",
         c(
@@ -55,8 +55,8 @@ visSidebarUI <- function(id) {
     ),
     div(
       class = "boxed-output",
-      uiOutput(NS(id, "facetBy")),
-      uiOutput(NS(id, "facetScales"))
+      uiOutput(NS(id, "facetByUI")),
+      uiOutput(NS(id, "facetScalesUI"))
     ),
     div(
       class = "boxed-output",
@@ -67,8 +67,8 @@ visSidebarUI <- function(id) {
         ),
         selected = "factor"
       ),
-      uiOutput(NS(id, "XRange")),
-      uiOutput(NS(id, "YRange"))
+      uiOutput(NS(id, "XRangeUI")),
+      uiOutput(NS(id, "YRangeUI"))
     )
   )
 }
@@ -133,7 +133,7 @@ visServer <- function(id, data, listResults) {
   moduleServer(id, function(input, output, session) {
 
     # Render axis limits
-    output[["XRange"]] <- renderUI({
+    output[["XRangeUI"]] <- renderUI({
       req(!is.null(data$df))
       req(is.data.frame(data$df))
       req(input$xVar)
@@ -166,7 +166,7 @@ visServer <- function(id, data, listResults) {
       }
     })
 
-    output[["YRange"]] <- renderUI({
+    output[["YRangeUI"]] <- renderUI({
       req(!is.null(data$df))
       req(is.data.frame(data$df))
       req(input$yVar)
@@ -200,7 +200,7 @@ visServer <- function(id, data, listResults) {
     })
 
     # Render x and y selectInput
-    output[["yVar"]] <- renderUI({
+    output[["yVarUI"]] <- renderUI({
       req(!is.null(data$df))
       req(is.data.frame(data$df))
       colnames <- names(data$df)
@@ -221,7 +221,7 @@ visServer <- function(id, data, listResults) {
       )
     })
 
-    output[["xVar"]] <- renderUI({
+    output[["xVarUI"]] <- renderUI({
       req(!is.null(data$df))
       req(is.data.frame(data$df))
       colnames <- names(data$df)
@@ -242,7 +242,7 @@ visServer <- function(id, data, listResults) {
       )
     })
 
-    output[["col"]] <- renderUI({
+    output[["colUI"]] <- renderUI({
       req(!is.null(data$df))
       req(is.data.frame(data$df))
       colnames <- c("", names(data$df))
@@ -263,7 +263,7 @@ visServer <- function(id, data, listResults) {
       )
     })
 
-    output[["fill"]] <- renderUI({
+    output[["fillUI"]] <- renderUI({
       req(!is.null(data$df))
       req(is.data.frame(data$df))
       colnames <- c("", names(data$df))
@@ -284,7 +284,7 @@ visServer <- function(id, data, listResults) {
       )
     })
 
-    output[["facetBy"]] <- renderUI({
+    output[["facetByUI"]] <- renderUI({
       req(!is.null(data$df))
       req(is.data.frame(data$df))
       colnames <- c("", names(data$df))
@@ -305,7 +305,8 @@ visServer <- function(id, data, listResults) {
       )
     })
 
-    output[["facetScales"]] <- renderUI({
+    # TODO: Why is this defined as renderUI?
+    output[["facetScalesUI"]] <- renderUI({
       req(!is.null(data$df))
       req(is.data.frame(data$df))
       colnames <- c("", names(data$df))
@@ -479,6 +480,9 @@ visServer <- function(id, data, listResults) {
         error = function(err) {
           showNotification(paste("An error occurred: ", conditionMessage(err)), duration = 0)
         }
+      )
+      exportTestValues(
+        plot = p
       )
       output$plotResult <- renderPlot(p)
       listResults$curr_data <- new("plot", p = p, width = width, height = height, resolution = resolution)
