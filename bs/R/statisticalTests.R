@@ -68,21 +68,7 @@ testsSidebarUI <- function(id) {
           "Unbalanced" = "ub"
         )
       ),
-      conditionalPanel(
-        condition = "input.PostHocTests == 'kruskalPHTest' || input.PostHocTests == 'lsdTest'",
-        selectInput(NS(id, "padj"), "Adjusted p method",
-          c(
-            "Holm" = "holm",
-            "Hommel" = "hommel",
-            "Hochberg" = "hochberg",
-            "Bonferroni" = "bonferroni",
-            "BH" = "BH",
-            "BY" = "BY",
-            "fdr" = "fdr"
-          ),
-          selectize = FALSE
-        )
-      )
+      uiOutput(NS(id, "padj"))
     )
   )
 }
@@ -122,6 +108,28 @@ testsUI <- function(id) {
 
 testsServer <- function(id, data, listResults) {
   moduleServer(id, function(input, output, session) {
+    # Render p adjustment methods
+    output[["padj"]] <- renderUI({
+      if (input$PostHocTests == "kruskalTest" || input$PostHocTests == "LSD") {
+        return(
+          selectInput(NS(id, "padj"), "Adjusted p method",
+            c(
+              "Holm" = "holm",
+              "Hommel" = "hommel",
+              "Hochberg" = "hochberg",
+              "Bonferroni" = "bonferroni",
+              "BH" = "BH",
+              "BY" = "BY",
+              "fdr" = "fdr"
+            ),
+            selectize = FALSE
+          )
+        )
+      }
+      # condition = "input.PostHocTests == 'kruskalTest' || input.PostHocTests == 'Least significant difference test'",
+
+    })
+
     # Render split by group
     output[["open_split_by_group"]] <- renderUI({
       actionButton(NS(id, "open_split_by_group"),
@@ -187,7 +195,9 @@ testsServer <- function(id, data, listResults) {
         FormulaEditorUI("FO"),
         easyClose = TRUE,
         size = "l",
-        footer = NULL
+        footer = tagList(
+          modalButton("Close")
+        )
       ))
     })
 
@@ -214,7 +224,7 @@ testsServer <- function(id, data, listResults) {
         }
         fit <- broom::tidy(t.test(formula,
           data = df, conf.level = input$confLevel,
-          alternative = input$alt, var.equal = eq
+          alternative = input$altHyp, var.equal = eq
         ))
       })
       if (inherits(e, "try-error")) {
@@ -222,6 +232,9 @@ testsServer <- function(id, data, listResults) {
         output$test_error <- renderText(err)
       } else {
         listResults$curr_data <- fit
+        exportTestValues(
+          tests_res = fit
+        )
         listResults$curr_name <- paste("Test Nr", length(listResults$all_names) + 1, "Conducted t-test")
         output$test_result <- renderTable(fit, digits = 6)
       }
@@ -310,6 +323,9 @@ testsServer <- function(id, data, listResults) {
         } else {
           fit <- cbind(fit, row.names(fit))
           names(fit)[ncol(fit)] <- paste0(indep, collapse = ".")
+          exportTestValues(
+            tests_res = fit
+          )
           listResults$curr_data <- fit
           listResults$curr_name <- paste("Test Nr", length(listResults$all_names) + 1, "Conducted: ", method)
           output$test_result <- renderTable(fit, digits = 6)
