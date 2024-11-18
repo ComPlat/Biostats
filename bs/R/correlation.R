@@ -123,7 +123,9 @@ corrServer <- function(id, data, listResults) {
         FormulaEditorUI("FO"),
         easyClose = TRUE,
         size = "l",
-        footer = NULL
+        footer = tagList(
+          modalButton("Close")
+        )
       ))
     })
 
@@ -158,6 +160,9 @@ corrServer <- function(id, data, listResults) {
             showNotification(warn$message, type = "warning")
             invokeRestart("muffleWarning")
           }
+        )
+        exportTestValues(
+          correlation_res = fit
         )
         listResults$curr_data <- fit
         listResults$curr_name <- paste("Test Nr", length(listResults$all_names) + 1, "Conducted test: ", method)

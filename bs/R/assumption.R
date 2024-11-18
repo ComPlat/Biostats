@@ -141,7 +141,9 @@ assServer <- function(id, data, listResults) {
         FormulaEditorUI("FO"),
         easyClose = TRUE,
         size = "l",
-        footer = NULL
+        footer = tagList(
+          modalButton("Close")
+        )
       ))
     })
 
@@ -177,6 +179,9 @@ assServer <- function(id, data, listResults) {
           res <- do.call(rbind, res)
         })
         if (!inherits(e, "try-error")) {
+          exportTestValues(
+            assumption_res  = res
+          )
           listResults$curr_data <- res
           listResults$curr_name <- paste("Test Nr", length(listResults$all_names) + 1, "Conducted shapiro test")
           output$curr_result <- renderTable(res, digits = 6)
@@ -206,6 +211,9 @@ assServer <- function(id, data, listResults) {
         res$`Residuals normal distributed` <- res$p.value > 0.05
       })
       if (!inherits(e, "try-error")) {
+        exportTestValues(
+          assumption_res  = res
+        )
         listResults$curr_data <- res
         listResults$curr_name <- paste("Test Nr", length(listResults$all_names) + 1, "Conducted shapiro test")
         output$curr_result <- renderTable(res, digits = 6)
@@ -235,6 +243,9 @@ assServer <- function(id, data, listResults) {
         err <- conditionMessage(attr(e, "condition"))
         output$ass_error <- renderText(err)
       } else {
+        exportTestValues(
+          assumption_res  = fit
+        )
         listResults$curr_data <- fit
         listResults$curr_name <- paste("Test Nr", length(listResults$all_names) + 1, "variance homogenity (levene)")
         output$curr_result <- renderTable(fit, digits = 6)
@@ -270,6 +281,9 @@ assServer <- function(id, data, listResults) {
         err <- conditionMessage(attr(e, "condition"))
         output$ass_error <- renderText(err)
       } else {
+        exportTestValues(
+          assumption_res  = p
+        )
         listResults$curr_data <- new("plot", p = p, width = 15, height = 15, resolution = 600)
         listResults$curr_name <- paste("Plot Nr", length(listResults$all_names) + 1, "diagnostic plots")
         output$DiagnosticPlotRes <- renderPlot(p)
