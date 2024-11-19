@@ -37,15 +37,11 @@ testsSidebarUI <- function(id) {
     ),
     conditionalPanel(
       condition = "input.TestsConditionedPanels == 'More than two groups'",
-      actionButton(NS(id, "aovTest"), "ANOVA", 
-        title = 
-        "Use ANOVA (Analysis of Variance) when comparing the means of more than two groups,
-        assuming the data is normally distributed and variances are equal across groups. For more information see the Assumption tab"
+      actionButton(NS(id, "aovTest"), "ANOVA",
+        title = "Use ANOVA (Analysis of Variance) when comparing the means of more than two groups, assuming the data is normally distributed and variances are equal across groups. For more information see the Assumption tab"
       ),
       actionButton(NS(id, "kruskalTest"), "Kruskal-Wallis Test",
-        title =
-        "Use the Kruskal-Wallis test when comparing more than two groups but
-        the assumptions of normality or equal variances are not met. It is a non-parametric test. For more information see the Assumption tab"
+        title = "Use the Kruskal-Wallis test when comparing more than two groups but the assumptions of normality or equal variances are not met. It is a non-parametric test. For more information see the Assumption tab"
       ),
     ),
     conditionalPanel(
@@ -108,6 +104,7 @@ testsUI <- function(id) {
 
 testsServer <- function(id, data, listResults) {
   moduleServer(id, function(input, output, session) {
+
     # Render p adjustment methods
     output[["padj"]] <- renderUI({
       if (input$PostHocTests == "kruskalTest" || input$PostHocTests == "LSD") {
@@ -126,8 +123,6 @@ testsServer <- function(id, data, listResults) {
           )
         )
       }
-      # condition = "input.PostHocTests == 'kruskalTest' || input.PostHocTests == 'Least significant difference test'",
-
     })
 
     # Render split by group

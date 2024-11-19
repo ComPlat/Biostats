@@ -77,7 +77,7 @@ app$click("TESTS-PostHocTest")
 res <- app$get_values()$export
 df <- CO2
 dep <- "uptake"
-fit <- with(df, agricolae::kruskal(df[, dep],df[, "conc"]),
+fit <- with(df, agricolae::kruskal(df[, dep], df[, "conc"]),
   alpha = 0.05, p.adj = 0.05, group = TRUE
 )$groups
 expected <- cbind(fit, row.names(fit))
