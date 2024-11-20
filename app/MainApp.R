@@ -332,12 +332,7 @@ app <- function() {
     # Render results list
     output$Results <- renderUI({
       if (input$conditionedPanels == "DataWrangling" || input$conditionedPanels == "Dose Response analysis") {
-        return(
-          div(
-            class = "var-box-output",
-            h3(strong("The results are displayed in the other tabs"))
-          )
-        )
+        return()
       }
       res <- listResults$all_data |> rev()
       if (length(res) == 0) {
@@ -388,12 +383,12 @@ app <- function() {
         }
       })
       download_stuff <- div(
-        class = "var-box-output",
-        h3(strong("Results")),
-        p("The following list contains the results"),
+        br(),
+        h4("Results"),
         actionButton("download", "Save and exit"),
         textInput("user_filename", "Set filename", value = "")
       )
+
       do.call(tagList, list(download_stuff, res_ui_list))
     })
 
