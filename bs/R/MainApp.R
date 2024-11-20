@@ -197,7 +197,6 @@ app <- function() {
       ))
     })
     # docu visualisation
-    # TODO: put html strings in own html files
     observeEvent(input[["visualization_docu"]], {
       showModal(modalDialog(
         title = "Visualization",
@@ -399,6 +398,9 @@ app <- function() {
 
     # Show results
     observe({
+      if (length(listResults$all_data) == 0) {
+        return()
+      }
       res <- listResults$all_data
       res_ui_list <- lapply(names(res), function(name) {
         observeEvent(res[[name]], {
@@ -422,6 +424,9 @@ app <- function() {
 
     # Observe remove buttons
     observe({
+      if (length(listResults$all_data) == 0) {
+        return()
+      }
       current_list <- listResults$all_data
       lapply(names(current_list), function(name) {
         observeEvent(input[[paste0("remove_res_", name)]],

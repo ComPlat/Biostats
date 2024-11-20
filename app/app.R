@@ -1,4 +1,5 @@
     library(shiny)
+    library(shinyWidgets)
     library(DT)
     library(bslib)
     library(broom)

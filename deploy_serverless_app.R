@@ -1,9 +1,11 @@
-files <- list.files("/home/konrad/Documents/Biostats/bs/R/", pattern = ".R", full.names = TRUE)
-file.copy(files, "/home/konrad/Documents/Biostats/app/", overwrite = TRUE)
+# files <- list.files("/home/konrad/Documents/Biostats/bs/R/", pattern = ".R", full.names = TRUE)
+# file.copy(files, "/home/konrad/Documents/Biostats/app/", overwrite = TRUE)
+
 file.create("/home/konrad/Documents/Biostats/app/app.R", overwrite = TRUE)
 con <- file("/home/konrad/Documents/Biostats/app/app.R")
 code <- function() {
   library(shiny)
+  library(shinyWidgets)
   library(DT)
   library(bslib)
   library(broom)
@@ -33,6 +35,6 @@ writeLines(code, con)
 close(con)
 
 setwd("/home/konrad/Documents/Biostats")
-shinylive::export("./app/", "docs")
+shinylive::export(appdir = "./app/", destdir = "docs", quiet = FALSE)
 setwd("/home/konrad/Documents/Biostats/docs")
 httpuv::runStaticServer(".")
