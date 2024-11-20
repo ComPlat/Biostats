@@ -71,12 +71,6 @@ testsSidebarUI <- function(id) {
 
 testsUI <- function(id) {
   fluidRow(
-    tags$head(
-      tags$script(src = "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"),
-      tags$script(src = "https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"),
-      tags$script(src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/0.4.1/html2canvas.min.js"),
-      tags$script(src = "download.js")
-    ),
     tabsetPanel(
       tabPanel(
         "Two groups",
@@ -91,14 +85,7 @@ testsUI <- function(id) {
         br(),
       ),
       id = "TestsConditionedPanels"
-    ),
-    h4(strong("Results of test:")),
-    tableOutput(NS(id, "test_result")),
-    verbatimTextOutput(NS(id, "test_error")),
-    actionButton(NS(id, "test_save"), "Add output to result-file"),
-    actionButton(NS(id, "download_test"), "Save results"),
-    textInput(NS(id, "user_filename"), "Set filename", value = ""),
-    checkboxGroupInput(NS(id, "TableSaved"), "Saved results to file", NULL)
+    )
   )
 }
 
@@ -205,7 +192,6 @@ testsServer <- function(id, data, listResults) {
     })
 
     tTest <- function() {
-      output$test_error <- renderText(NULL)
       req(is.data.frame(data$df))
       df <- data$df
       req(!is.null(data$formula))
@@ -224,14 +210,16 @@ testsServer <- function(id, data, listResults) {
       })
       if (inherits(e, "try-error")) {
         err <- conditionMessage(attr(e, "condition"))
-        output$test_error <- renderText(err)
+        print_noti(FALSE, err)
       } else {
-        listResults$curr_data <- fit
+        listResults$counter <- listResults$counter + 1
+        new_name <- paste0(
+          "TTestNr", listResults$counter
+        )
+        listResults$all_data[[new_name]] <- fit
         exportTestValues(
           tests_res = fit
         )
-        listResults$curr_name <- paste("Test Nr", length(listResults$all_names) + 1, "Conducted t-test")
-        output$test_result <- renderTable(fit, digits = 6)
       }
     }
 
@@ -240,7 +228,6 @@ testsServer <- function(id, data, listResults) {
     })
 
     conductTests <- function(method) {
-      output$test_error <- renderText(NULL)
       req(is.data.frame(data$df))
       df <- data$df
       req(!is.null(data$formula))
@@ -311,19 +298,21 @@ testsServer <- function(id, data, listResults) {
         if (inherits(e, "try-error")) {
           err <- conditionMessage(attr(e, "condition"))
           err <- paste0(err, "\n", "Test did not run successfully")
-          output$test_error <- renderText(err)
+          print_noti(FALSE, err)
         } else if (is.null(fit)) {
           err <- paste0(err, "\n", "Test did not run successfully")
-          output$test_error <- renderText("Result is NULL")
+          print_noti(FALSE, err)
         } else {
           fit <- cbind(fit, row.names(fit))
           names(fit)[ncol(fit)] <- paste0(indep, collapse = ".")
           exportTestValues(
             tests_res = fit
           )
-          listResults$curr_data <- fit
-          listResults$curr_name <- paste("Test Nr", length(listResults$all_names) + 1, "Conducted: ", method)
-          output$test_result <- renderTable(fit, digits = 6)
+          listResults$counter <- listResults$counter + 1
+          new_name <- paste0(
+            "Test_", method, "Nr", listResults$counter
+          )
+          listResults$all_data[[new_name]] <- fit
         }
       }
     }
@@ -336,52 +325,10 @@ testsServer <- function(id, data, listResults) {
       conductTests("kruskal")
     })
 
-    observeEvent(input$kruskalTest, {
-      conductTests("kruskal")
-    })
-
     observeEvent(input$PostHocTest, {
       conductTests(input$PostHocTests)
     })
 
-    observeEvent(input$test_save, {
-      if (is.null(listResults$curr_name)) {
-        return(NULL)
-      }
-      if (!(listResults$curr_name %in% unlist(listResults$all_names))) {
-        listResults$all_data[[length(listResults$all_data) + 1]] <- listResults$curr_data
-        listResults$all_names[[length(listResults$all_names) + 1]] <- listResults$curr_name
-      }
-      updateCheckboxGroupInput(session, "TableSaved",
-        choices = listResults$all_names
-      )
-    })
-
-    observeEvent(input$download_test, {
-      print_noti(is_valid_filename(input$user_filename), "Defined filename is not valid")
-      lr <- unlist(listResults$all_names)
-      indices <- sapply(input$TableSaved, function(x) {
-        which(x == lr)
-      })
-      req(length(indices) >= 1)
-      l <- listResults$all_data[indices]
-      if (Sys.getenv("RUN_MODE") == "SERVER") {
-        print_noti(check_filename_for_server(input$user_filename), "Defined filename does not have xlsx as extension")
-        excelFile <- createExcelFile(l)
-        upload(session, excelFile, new_name = input$user_filename)
-      } else {
-        print_noti(check_filename_for_serverless(input$user_filename), "Defined filename does not have zip as extension")
-        jsString <- createJSString(l)
-        session$sendCustomMessage(
-          type = "downloadZip",
-          list(
-            numberOfResults = length(jsString),
-            FileContent = jsString,
-            Filename = input$user_filename
-          )
-        )
-      }
-    })
   })
 
   return(listResults)

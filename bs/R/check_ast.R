@@ -12,7 +12,7 @@ allowed_fcts <- function() {
     "ppois", "rpois", "dunif", "punif", "qunif", "runif",
     "Mean", "SD", "Median", "quantile", "range",
     "Sum", "diff", "Min", "Max", "scale",
-    "c", "vector", "length", "matrix", "~",
+    "c", "seq", "DataFrame", "vector", "length", "matrix", "~",
     "get_rows", "get_cols", "get_elem",
     "as.char", "as.int", "as.real", "as.fact"
   )

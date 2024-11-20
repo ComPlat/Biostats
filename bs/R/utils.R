@@ -190,8 +190,12 @@ createJSString <- function(l) {
     } else if (inherits(l[[i]], "doseResponse")) {
       p <- l[[i]]@p
       fn <- tempfile(fileext = ".png")
-      ggsave(plot = p, filename = fn)
-      jsString <- c(jsString, paste0("data:image/png;base64,", base64enc::base64encode(fn)))
+      for (idx in seq_len(length(p))) {
+        fn <- tempfile(fileext = ".png")
+        ggsave(plot = p[[idx]], filename = fn)
+        jsString <- c(jsString, paste0("data:image/png;base64,", base64enc::base64encode(fn)))
+        unlink(fn)
+      }
       unlink(fn)
       jsString <- c(jsString, DF2String(l[[i]]@df))
     } else if (inherits(l[[i]], "data.frame")) {
@@ -507,4 +511,36 @@ create_plot_pages <- function(plotList) {
   lapply(res, function(x) {
     cowplot::plot_grid(plotlist = x)
   })
+}
+
+# internal dataframe function
+elongate_col <- function(col, l) {
+  times <- l / length(col)
+  if (floor(times) == times) {
+    return(rep(col, times))
+  } else {
+    res <- rep(col, floor(times))
+    remaining_elems <- l %% length(col)
+    res <- c(res, col[1:remaining_elems])
+    return(res)
+  }
+}
+
+DataFrame <- function(...) {
+  columns <- list(...)
+  s <- substitute(list(...))
+  args <- as.list(s[-1])
+  args <- lapply(args, function(x) {
+    make.names(deparse(x))
+  })
+  sapply(columns, function(x) {
+    if (length(x) == 0) stop("Found empty column")
+  })
+  rows <- max(sapply(columns, length))
+  columns <- lapply(columns, function(col) {
+    elongate_col(col, rows)
+  })
+  df <- do.call(cbind, columns) |> as.data.frame()
+  names(df) <- args
+  return(df)
 }

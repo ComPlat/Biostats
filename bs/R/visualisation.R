@@ -75,12 +75,6 @@ visSidebarUI <- function(id) {
 
 visUI <- function(id) {
   fluidRow(
-    tags$head(
-      tags$script(src = "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"),
-      tags$script(src = "https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"),
-      tags$script(src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/0.4.1/html2canvas.min.js"),
-      tags$script(src = "download.js"),
-    ),
     br(),
     tabsetPanel(
       tabPanel(
@@ -100,8 +94,6 @@ visUI <- function(id) {
       ),
       id = "VisConditionedPanels"
     ),
-    actionButton(NS(id, "plotSave"), "Add output to result-file"),
-    checkboxGroupInput(NS(id, "TableSaved"), "Saved results to file", NULL),
     fluidRow(
       column(
         4,
@@ -115,16 +107,6 @@ visUI <- function(id) {
         4,
         numericInput(NS(id, "resPlot"), "Resolution of plot", value = 300)
       ),
-    ),
-    fluidRow(
-      column(
-        12,
-        actionButton(NS(id, "downloadViss"), "Save results"),
-        textInput(NS(id, "user_filename"), "Set filename", value = "")
-      )
-    ),
-    plotOutput(
-      NS(id, "plotResult")
     )
   )
 }
@@ -484,75 +466,25 @@ visServer <- function(id, data, listResults) {
       exportTestValues(
         plot = p
       )
-      output$plotResult <- renderPlot(p)
-      listResults$curr_data <- new("plot", p = p, width = width, height = height, resolution = resolution)
-      listResults$curr_name <- paste(
-        "Plot Nr",
-        length(listResults$all_names) + 1, paste("Type: ", method)
-      )
+      listResults$counter <- listResults$counter + 1
+      new_result_name <- paste0("PlotNr", listResults$counter)
+      listResults$all_data[[new_result_name]] <- new("plot", p = p, width = width, height = height, resolution = resolution)
     }
 
     observeEvent(input$CreatePlotBox, {
       req(is.data.frame(data$df))
       plotFct("box")
     })
-    output$plotResult <- renderPlot({
-      renderPlot(listResults$curr_data)
-    })
 
     observeEvent(input$CreatePlotScatter, {
       req(is.data.frame(data$df))
       plotFct("dot")
-    })
-    output$plotResult <- renderPlot({
-      renderPlot(listResults$curr_data)
     })
 
     observeEvent(input$CreatePlotLine, {
       req(is.data.frame(data$df))
       plotFct("line")
     })
-    output$plotResult <- renderPlot({
-      renderPlot(listResults$curr_data)
-    })
 
-    observeEvent(input$plotSave, {
-      if (is.null(listResults$curr_name)) {
-        return(NULL)
-      }
-      if (!(listResults$curr_name %in% unlist(listResults$all_names))) {
-        listResults$all_data[[length(listResults$all_data) + 1]] <- listResults$curr_data
-        listResults$all_names[[length(listResults$all_names) + 1]] <- listResults$curr_name
-      }
-      updateCheckboxGroupInput(session, "TableSaved",
-        choices = listResults$all_names
-      )
-    })
-
-    observeEvent(input$downloadViss, {
-      print_noti(is_valid_filename(input$user_filename), "Defined filename is not valid")
-      lr <- unlist(listResults$all_names)
-      indices <- sapply(input$TableSaved, function(x) {
-        which(x == lr)
-      })
-      req(length(indices) >= 1)
-      l <- listResults$all_data[indices]
-      if (Sys.getenv("RUN_MODE") == "SERVER") {
-        print_noti(check_filename_for_server(input$user_filename), "Defined filename does not have xlsx as extension")
-        excelFile <- createExcelFile(l)
-        upload(session, excelFile, new_name = input$user_filename)
-      } else {
-        print_noti(check_filename_for_serverless(input$user_filename), "Defined filename does not have zip as extension")
-        jsString <- createJSString(l)
-        session$sendCustomMessage(
-          type = "downloadZip",
-          list(
-            numberOfResults = length(jsString),
-            FileContent = jsString,
-            Filename = input$user_filename
-          )
-        )
-      }
-    })
   })
 }

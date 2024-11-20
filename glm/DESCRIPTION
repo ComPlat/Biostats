@@ -1,0 +1,14 @@
+Package: glm
+Type: Package
+Title: biostats
+Version: 1.0
+Date: 2022-03-24
+Author: Konrad Krämer
+Maintainer: <konrad_kraemer@kit.edu>
+Description: Offers the backend for generalized linear models used in Biostats shiny app.
+License: GPL-3
+Imports:
+  broom,
+  ggplot2
+Encoding: UTF-8
+

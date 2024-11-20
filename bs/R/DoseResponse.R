@@ -28,17 +28,6 @@ DoseResponseSidebarUI <- function(id) {
 
 DoseResponseUI <- function(id) {
   fluidRow(
-    tags$head(
-      tags$script(src = "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"),
-      tags$script(src = "https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"),
-      tags$script(src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/0.4.1/html2canvas.min.js"),
-      tags$script(src = "download.js")
-    ),
-    h4(strong("Results of test:")),
-    actionButton(NS(id, "dr_save"), "Add output to result-file"),
-    actionButton(NS(id, "download_dr"), "Save results"),
-    textInput(NS(id, "user_filename"), "Set filename", value = ""),
-    checkboxGroupInput(NS(id, "TableSaved"), "Saved results to file", NULL),
     tabsetPanel(
       id = NS(id, "results_tabs"),
       tabPanel(
@@ -58,8 +47,7 @@ DoseResponseUI <- function(id) {
         actionButton(NS(id, "previousPage"), "Previous plot"),
         actionButton(NS(id, "nextPage"), "Next plot")
       )
-    ),
-    verbatimTextOutput(NS(id, "dr_error"))
+    )
   )
 }
 
@@ -218,7 +206,6 @@ DoseResponseServer <- function(id, data, listResults) {
     })
 
     drFct <- function() {
-      output$dr_error <- renderText(NULL)
       req(is.data.frame(data$df))
       df <- data$df
       req(input$substanceNames)
@@ -270,11 +257,15 @@ DoseResponseServer <- function(id, data, listResults) {
       })
       if (inherits(e, "try-error")) {
         err <- conditionMessage(attr(e, "condition"))
-        output$dr_error <- renderText(err)
+        print_noti(FALSE, err)
       } else {
         listResults$curr_data <- new("doseResponse", df = resDF, p = resPlot)
         listResults$curr_name <- paste("Test Nr", length(listResults$all_names) + 1, "Conducted dose response analysis")
         output$dr_result <- renderTable(resDF, digits = 6)
+
+        listResults$counter <- listResults$counter + 1
+        new_result_name <- paste0("DoseResponseNr", listResults$counter)
+        listResults$all_data[[new_result_name]] <- new("doseResponse", df = resDF, p = resPlot)
       }
     }
 
@@ -357,45 +348,6 @@ DoseResponseServer <- function(id, data, listResults) {
       }
     })
 
-    # Download results
-    observeEvent(input$dr_save, {
-      if (is.null(listResults$curr_name)) {
-        return(NULL)
-      }
-      if (!(listResults$curr_name %in% unlist(listResults$all_names))) {
-        listResults$all_data[[length(listResults$all_data) + 1]] <- listResults$curr_data
-        listResults$all_names[[length(listResults$all_names) + 1]] <- listResults$curr_name
-      }
-      updateCheckboxGroupInput(session, "TableSaved",
-        choices = listResults$all_names
-      )
-    })
-
-    observeEvent(input$download_dr, {
-      print_noti(is_valid_filename(input$user_filename), "Defined filename is not valid")
-      lr <- unlist(listResults$all_names)
-      indices <- sapply(input$TableSaved, function(x) {
-        which(x == lr)
-      })
-      req(length(indices) >= 1)
-      l <- listResults$all_data[indices]
-      if (Sys.getenv("RUN_MODE") == "SERVER") {
-        print_noti(check_filename_for_server(input$user_filename), "Defined filename does not have xlsx as extension")
-        excelFile <- createExcelFile(l)
-        upload(session, excelFile, new_name = input$user_filename)
-      } else {
-        print_noti(check_filename_for_serverless(input$user_filename), "Defined filename does not have zip as extension")
-        jsString <- createJSString(l)
-        session$sendCustomMessage(
-          type = "downloadZip",
-          list(
-            numberOfResults = length(jsString),
-            FileContent = jsString,
-            Filename = input$user_filename
-          )
-        )
-      }
-    })
   })
 
   return(listResults)

@@ -56,22 +56,7 @@ assSidebarUI <- function(id) {
 }
 
 assUI <- function(id) {
-  fluidRow(
-    tags$head(
-      tags$script(src = "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"),
-      tags$script(src = "https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"),
-      tags$script(src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/0.4.1/html2canvas.min.js"),
-      tags$script(src = "download.js")
-    ),
-    h4(strong("Results of test:")),
-    verbatimTextOutput(NS(id, "ass_error")),
-    actionButton(NS(id, "ass_save"), "Add output to result-file"),
-    actionButton(NS(id, "download_ass"), "Save and exit"),
-    textInput(NS(id, "user_filename"), "Set filename", value = ""),
-    checkboxGroupInput(NS(id, "TableSaved"), "Saved results to file", NULL),
-    tableOutput(NS(id, "ass_result")),
-    plotOutput(NS(id, "DiagnosticPlotRes"), width = "100%", height = "1000px")
-  )
+  fluidRow()
 }
 
 assServer <- function(id, data, listResults) {
@@ -127,7 +112,7 @@ assServer <- function(id, data, listResults) {
       data$filter_group <- NULL
     })
 
-    output$open_formula_editor_corr <- renderUI({ # TODO: change to unique identifier probably via [["open_formula_editor"]]
+    output$open_formula_editor_corr <- renderUI({
       actionButton(NS(id, "open_formula_editor"),
         "Open formula editor",
         title = "Open the formula editor to create or modify a formula",
@@ -154,7 +139,6 @@ assServer <- function(id, data, listResults) {
     })
 
     runShapiro <- function() {
-      output$ass_error <- renderText(NULL)
       df <- data$df
       req(is.data.frame(df))
       req(!is.null(data$formula))
@@ -177,18 +161,20 @@ assServer <- function(id, data, listResults) {
             }
           }
           res <- do.call(rbind, res)
-        })
+        }, silent = TRUE)
         if (!inherits(e, "try-error")) {
           exportTestValues(
             assumption_res  = res
           )
-          listResults$curr_data <- res
-          listResults$curr_name <- paste("Test Nr", length(listResults$all_names) + 1, "Conducted shapiro test")
-          output$curr_result <- renderTable(res, digits = 6)
+          listResults$counter <- listResults$counter + 1
+          new_name <- paste0(
+            "ShapiroDataNr", listResults$counter
+          )
+          listResults$all_data[[new_name]] <- res
           output$curr_error <- renderText(err)
         } else {
           err <- conditionMessage(attr(e, "condition"))
-          output$ass_error <- renderText(err)
+          print_noti(FALSE, err)
         }
       }
     }
@@ -197,7 +183,6 @@ assServer <- function(id, data, listResults) {
     })
 
     runShapiroResiduals <- function() {
-      output$ass_error <- renderText(NULL)
       df <- data$df
       req(is.data.frame(df))
       req(!is.null(data$formula))
@@ -209,18 +194,20 @@ assServer <- function(id, data, listResults) {
         r <- resid(fit)
         res <- broom::tidy(shapiro.test(r))
         res$`Residuals normal distributed` <- res$p.value > 0.05
-      })
+      }, silent = TRUE)
       if (!inherits(e, "try-error")) {
         exportTestValues(
           assumption_res  = res
         )
-        listResults$curr_data <- res
-        listResults$curr_name <- paste("Test Nr", length(listResults$all_names) + 1, "Conducted shapiro test")
-        output$curr_result <- renderTable(res, digits = 6)
+        listResults$counter <- listResults$counter + 1
+        new_name <- paste0(
+          "ShaprioResidualsNr", listResults$counter
+        )
+        listResults$all_data[[new_name]] <- res
         output$curr_error <- renderText(err)
       } else {
         err <- conditionMessage(attr(e, "condition"))
-        output$ass_error <- renderText(err)
+        print_noti(FALSE, err)
       }
     }
     observeEvent(input$shapiroResiduals, {
@@ -228,7 +215,6 @@ assServer <- function(id, data, listResults) {
     })
 
     runLevene <- function() {
-      output$ass_error <- renderText(NULL)
       df <- data$df
       req(is.data.frame(df))
       req(!is.null(data$formula))
@@ -238,17 +224,19 @@ assServer <- function(id, data, listResults) {
       e <- try({
         fit <- broom::tidy(car::leveneTest(formula, data = df, center = input$center))
         fit$`Variance homogenity` <- fit$p.value > 0.05
-      })
+      }, silent = TRUE)
       if (inherits(e, "try-error")) {
         err <- conditionMessage(attr(e, "condition"))
-        output$ass_error <- renderText(err)
+        print_noti(FALSE, err)
       } else {
         exportTestValues(
           assumption_res  = fit
         )
-        listResults$curr_data <- fit
-        listResults$curr_name <- paste("Test Nr", length(listResults$all_names) + 1, "variance homogenity (levene)")
-        output$curr_result <- renderTable(fit, digits = 6)
+        listResults$counter <- listResults$counter + 1
+        new_name <- paste0(
+          "LeveneTestNr", listResults$counter
+        )
+        listResults$all_data[[new_name]] <- fit
         output$curr_error <- renderText(err)
       }
     }
@@ -256,18 +244,7 @@ assServer <- function(id, data, listResults) {
       runLevene()
     })
 
-    output$ass_result <- renderTable(
-      {
-        if (!inherits(listResults$curr_data, "plot")) {
-          return(listResults$curr_data)
-        }
-        return(NULL)
-      },
-      digits = 6
-    )
-
     runDiagnosticPlot <- function() {
-      output$ass_error <- renderText(NULL)
       df <- data$df
       req(is.data.frame(df))
       req(!is.null(data$formula))
@@ -276,16 +253,18 @@ assServer <- function(id, data, listResults) {
       p <- NULL
       e <- try({
         p <- diagnosticPlots(df, formula)
-      })
+      }, silent = TRUE)
       if (inherits(e, "try-error")) {
         err <- conditionMessage(attr(e, "condition"))
-        output$ass_error <- renderText(err)
+        print_noti(FALSE, err)
       } else {
         exportTestValues(
           assumption_res  = p
         )
-        listResults$curr_data <- new("plot", p = p, width = 15, height = 15, resolution = 600)
-        listResults$curr_name <- paste("Plot Nr", length(listResults$all_names) + 1, "diagnostic plots")
+        listResults$counter <- listResults$counter + 1
+        new_result_name <- paste0("DiagnosticPlotNr", listResults$counter)
+        listResults$all_data[[new_result_name]] <-
+          new("plot", p = p, width = 15, height = 15, resolution = 600)
         output$DiagnosticPlotRes <- renderPlot(p)
         output$curr_error <- renderText(err)
       }
@@ -294,44 +273,6 @@ assServer <- function(id, data, listResults) {
       runDiagnosticPlot()
     })
 
-    observeEvent(input$ass_save, {
-      if (is.null(listResults$curr_name)) {
-        return(NULL)
-      }
-      if (!(listResults$curr_name %in% unlist(listResults$all_names))) {
-        listResults$all_data[[length(listResults$all_data) + 1]] <- listResults$curr_data
-        listResults$all_names[[length(listResults$all_names) + 1]] <- listResults$curr_name
-      }
-      updateCheckboxGroupInput(session, "TableSaved",
-        choices = listResults$all_names
-      )
-    })
-
-    observeEvent(input$download_ass, {
-      print_noti(is_valid_filename(input$user_filename), "Defined filename is not valid")
-      lr <- unlist(listResults$all_names)
-      indices <- sapply(input$TableSaved, function(x) {
-        which(x == lr)
-      })
-      req(length(indices) >= 1)
-      l <- listResults$all_data[indices]
-      if (Sys.getenv("RUN_MODE") == "SERVER") {
-        print_noti(check_filename_for_server(input$user_filename), "Defined filename does not have xlsx as extension")
-        excelFile <- createExcelFile(l)
-        upload(session, excelFile, new_name = input$user_filename)
-      } else {
-        print_noti(check_filename_for_serverless(input$user_filename), "Defined filename does not have zip as extension")
-        jsString <- createJSString(l)
-        session$sendCustomMessage(
-          type = "downloadZip",
-          list(
-            numberOfResults = length(jsString),
-            FileContent = jsString,
-            Filename = input$user_filename
-          )
-        )
-      }
-    })
   })
 
   return(listResults)

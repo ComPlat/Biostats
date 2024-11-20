@@ -1,6 +1,3 @@
-
-# TODO: store original dataset. Add option to reset dataset 
-
 OperatorEditorSidebar <- function(id) {
   ui <- fluidPage(
     tags$head(
@@ -92,6 +89,8 @@ OperatorEditorSidebar <- function(id) {
       actionButton(NS(id, "min"), "Min", class = "add-button", title = "Find the smallest number (e.g., Min(c(1, 2, 3)) gives 1)"),
       actionButton(NS(id, "max"), "Max", class = "add-button", title = "Find the largest number (e.g., Max(c(1, 2, 3)) gives 3)"),
       actionButton(NS(id, "c"), "concatenate", class = "add-button", title = "Combine values into a list (e.g., c(1, 2, 3) gives [1, 2, 3])"),
+      actionButton(NS(id, "seq"), "sequence", class = "add-button", title = "Create a sequence of elements (e.g. seq(1, 10, 0.1) which creates a sequence starting from 1 to 10 in steps of 0.1)."),
+      actionButton(NS(id, "df"), "DataFrame", class = "add-button", title = "Create a table (e.g. DataFrame(Variable1, Variable2))"),
       actionButton(NS(id, "get_elem"), "get one element", class = "add-button",
       title = "Extract one element from a variable. This can either be ColName or a tabular dataset. In case it is a ColName the syntax is get_elem(ColName, idx) where idx is an integer number e.g. 1. In case one specific element of a dataset should be retrieved the syntax is get_elem(df, idx_row, idx_col). Again idx_row and idx_col have to be integers. The first one specifies the row number and the second one the column number."),
       actionButton(NS(id, "get_rows"), "get_rows", class = "add-button",
@@ -103,8 +102,8 @@ OperatorEditorSidebar <- function(id) {
     ),
     div(
       h3("String Functions"),
-      actionButton(NS(id, "paste"), "paste", class = "add-button", title = "Join pieces of text (e.g., paste('Hello', 'World') gives 'Hello World')"),
-      actionButton(NS(id, "paste0"), "paste0", class = "add-button", title = "Join pieces of text without spaces (e.g., paste0('Hello', 'World') gives 'HelloWorld')"),
+      actionButton(NS(id, "paste"), "paste", class = "add-button", title = "Join pieces of text (e.g., paste('Hello', 'World') gives 'Hello World')."),
+      actionButton(NS(id, "paste0"), "paste0", class = "add-button", title = "Join pieces of text without spaces (e.g., paste0('Hello', 'World') gives 'HelloWorld'). This is very practical if you want to join two columns e.g. paste0(ColName1, ColName2)"),
       actionButton(NS(id, "tolower"), "tolower", class = "add-button", title = "Convert text to lowercase (e.g., tolower('Hello') gives 'hello')"),
       actionButton(NS(id, "toupper"), "toupper", class = "add-button", title = "Convert text to uppercase (e.g., toupper('hello') gives 'HELLO')"),
       class = "boxed-output"
@@ -243,10 +242,6 @@ OperatorEditorUI <- function(id) {
       )
     ),
     uiOutput(NS(id, "head")),
-    actionButton(NS(id, "save"), "Add output to result-file"),
-    actionButton(NS(id, "download"), "Save results"),
-    textInput(NS(id, "user_filename"), "Set filename", value = ""),
-    checkboxGroupInput(NS(id, "TableSaved"), "Saved results to file", NULL),
     uiOutput(NS(id, "intermediate_results"))
   )
 }
@@ -462,6 +457,9 @@ OperationEditorServer <- function(id, data, listResults) {
         exportTestValues(
           iv_list = r_vals$intermediate_vars
         )
+        listResults$counter <- listResults$counter + 1
+        new_name <- paste0(var_name, listResults$counter)
+        listResults$all_data[[new_name]] <- new
       }
     })
 
@@ -516,12 +514,9 @@ OperationEditorServer <- function(id, data, listResults) {
       output$head <- renderTable(head(r_vals$df, 10))
       r_vals$counter_id <- r_vals$counter_id + 1
 
-      listResults$curr_data <- data$df
-      listResults$curr_name <- paste(
-        "Dataset Changes Nr",
-        length(listResults$all_names) + 1,
-        "Conducted test: ", input$editable_code
-      )
+      listResults$counter <- listResults$counter + 1
+      new_name <- paste0("Dataset", listResults$counter)
+      listResults$all_data[[new_name]] <- data$df
     })
 
     observeEvent(input$add, {
@@ -759,6 +754,16 @@ OperationEditorServer <- function(id, data, listResults) {
       updated_text <- paste(current_text, "c(", sep = " ")
       updateTextAreaInput(session, "editable_code", value = updated_text)
     })
+    observeEvent(input$seq, {
+      current_text <- input$editable_code
+      updated_text <- paste(current_text, "seq(", sep = " ")
+      updateTextAreaInput(session, "editable_code", value = updated_text)
+    })
+    observeEvent(input$df, {
+      current_text <- input$editable_code
+      updated_text <- paste(current_text, "DataFrame(", sep = " ")
+      updateTextAreaInput(session, "editable_code", value = updated_text)
+    })
     observeEvent(input$as_char, {
       current_text <- input$editable_code
       updated_text <- paste(current_text, "as.char(", sep = " ")
@@ -853,45 +858,6 @@ OperationEditorServer <- function(id, data, listResults) {
       current_text <- input$editable_code
       updated_text <- paste(current_text, "runif(", sep = " ")
       updateTextAreaInput(session, "editable_code", value = updated_text)
-    })
-
-    observeEvent(input$save, {
-      if (is.null(listResults$curr_name)) {
-        return(NULL)
-      }
-      if (!(listResults$curr_name %in% unlist(listResults$all_names))) {
-        listResults$all_data[[length(listResults$all_data) + 1]] <- listResults$curr_data
-        listResults$all_names[[length(listResults$all_names) + 1]] <- listResults$curr_name
-      }
-      updateCheckboxGroupInput(session, "TableSaved",
-        choices = listResults$all_names
-      )
-    })
-
-    observeEvent(input$download, {
-      print_noti(is_valid_filename(input$user_filename), "Defined filename is not valid")
-      lr <- unlist(listResults$all_names)
-      indices <- sapply(input$TableSaved, function(x) {
-        which(x == lr)
-      })
-      req(length(indices) >= 1)
-      l <- listResults$all_data[indices]
-      if (Sys.getenv("RUN_MODE") == "SERVER") {
-        print_noti(check_filename_for_server(input$user_filename), "Defined filename does not have xlsx as extension")
-        excelFile <- createExcelFile(l)
-        upload(session, excelFile, new_name = input$user_filename)
-      } else {
-        print_noti(check_filename_for_serverless(input$user_filename), "Defined filename does not have zip as extension")
-        jsString <- createJSString(l)
-        session$sendCustomMessage(
-          type = "downloadZip",
-          list(
-            numberOfResults = length(jsString),
-            FileContent = jsString,
-            Filename = input$user_filename
-          )
-        )
-      }
     })
 
   })
