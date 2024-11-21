@@ -496,6 +496,9 @@ check_filename_for_serverless <- function(filename) {
 # Split list of plots into panels of 9 plots
 create_plot_pages <- function(plotList) {
   n_full_pages <- floor(length(plotList) / 9)
+  if (n_full_pages == 0) {
+    return(list(cowplot::plot_grid(plotlist = plotList)))
+  }
   n_plots_last_page <- length(plotList) %% 9
   res <- list()
   i <- 1
@@ -507,7 +510,7 @@ create_plot_pages <- function(plotList) {
     }
   }
   res[[i + 1]] <- plotList[(n_full_pages * 9 + 1):
-    (n_full_pages * 9 + n_plots_last_page)]
+  (n_full_pages * 9 + n_plots_last_page)]
   lapply(res, function(x) {
     cowplot::plot_grid(plotlist = x)
   })
