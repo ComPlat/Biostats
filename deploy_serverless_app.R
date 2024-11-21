@@ -1,5 +1,8 @@
-# files <- list.files("/home/konrad/Documents/Biostats/bs/R/", pattern = ".R", full.names = TRUE)
-# file.copy(files, "/home/konrad/Documents/Biostats/app/", overwrite = TRUE)
+files <- list.files("/home/konrad/Documents/Biostats/bs/R/", pattern = ".R", full.names = TRUE)
+file.copy(files, "/home/konrad/Documents/Biostats/app/", overwrite = TRUE)
+# Replace the upload field
+# Copy folder www
+# replace system.files with www folder paths
 
 file.create("/home/konrad/Documents/Biostats/app/app.R", overwrite = TRUE)
 con <- file("/home/konrad/Documents/Biostats/app/app.R")
@@ -23,11 +26,12 @@ code <- function() {
   library(shinyjs)
   library(equatiomatic)
   library(car)
-  files <- list.files(".")
+  files <- list.files(".", full.names = TRUE)
+  files <- files[!(basename(files) %in% c("app.R", "www"))]
   lapply(files, source)
   Sys.setenv(RUN_MODE = "BROWSER")
   app <- app()
-  shiny::runApp(app$ui, app$server)
+  shiny::shinyApp(app$ui, app$server)
 }
 code <- body(code) |> deparse()
 code <- code[2:(length(code) - 1)]

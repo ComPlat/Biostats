@@ -1,5 +1,3 @@
-# TODO: add everywhere the ? documentation.
-# In an analogous way to the DoseResponse tab
 DoseResponseSidebarUI <- function(id) {
   tabPanel(
     "Dose Response analysis",
@@ -18,9 +16,9 @@ DoseResponseSidebarUI <- function(id) {
         verbatimTextOutput(NS(id, "applied_filter"))
       ),
       br(),
-      uiOutput(NS(id, "substanceNames")),
-      uiOutput(NS(id, "negIdentifier")),
-      uiOutput(NS(id, "posIdentifier")),
+      uiOutput(NS(id, "substanceNamesUI")),
+      uiOutput(NS(id, "negIdentifierUI")),
+      uiOutput(NS(id, "posIdentifierUI")),
       actionButton(NS(id, "ic50"), "Conduct analysis")
     )
   )
@@ -53,7 +51,6 @@ DoseResponseUI <- function(id) {
 
 DoseResponseServer <- function(id, data, listResults) {
   moduleServer(id, function(input, output, session) {
-
     r_vals <- reactiveValues(
       plots = NULL,
       names = NULL, # For dropdown_plots
@@ -63,7 +60,7 @@ DoseResponseServer <- function(id, data, listResults) {
     )
 
     # Render names, conc and abs column
-    output[["substanceNames"]] <- renderUI({
+    output[["substanceNamesUI"]] <- renderUI({
       req(!is.null(data$df))
       req(is.data.frame(data$df))
       colnames <- names(data$df)
@@ -84,7 +81,7 @@ DoseResponseServer <- function(id, data, listResults) {
       )
     })
 
-    output[["negIdentifier"]] <- renderUI({
+    output[["negIdentifierUI"]] <- renderUI({
       req(!is.null(data$df))
       req(is.data.frame(data$df))
       req(input$`substanceNames`)
@@ -101,13 +98,13 @@ DoseResponseServer <- function(id, data, listResults) {
         selectInput(
           inputId = paste0("DOSERESPONSE-negIdentifier"),
           label = "Name of the negative control",
-          choices = choices[1:length( choices)],
+          choices = choices[1:length(choices)],
           selected = NULL
         )
       )
     })
 
-    output[["posIdentifier"]] <- renderUI({
+    output[["posIdentifierUI"]] <- renderUI({
       req(!is.null(data$df))
       req(is.data.frame(data$df))
       req(input$`substanceNames`)
@@ -124,7 +121,7 @@ DoseResponseServer <- function(id, data, listResults) {
         selectInput(
           inputId = paste0("DOSERESPONSE-posIdentifier"),
           label = "Name of the positive control",
-          choices = choices[1:length( choices)],
+          choices = choices[1:length(choices)],
           selected = NULL
         )
       )
@@ -195,14 +192,18 @@ DoseResponseServer <- function(id, data, listResults) {
         FormulaEditorUI("FO"),
         easyClose = TRUE,
         size = "l",
-        footer = NULL
+        footer = tagList(
+          modalButton("Close")
+        )
       ))
     })
 
     # display current formula
     observe({
       req(!is.null(data$formula))
-      output$formula <- renderText({deparse(data$formula)})
+      output$formula <- renderText({
+        deparse(data$formula)
+      })
     })
 
     drFct <- function() {
@@ -266,6 +267,10 @@ DoseResponseServer <- function(id, data, listResults) {
         listResults$counter <- listResults$counter + 1
         new_result_name <- paste0("DoseResponseNr", listResults$counter)
         listResults$all_data[[new_result_name]] <- new("doseResponse", df = resDF, p = resPlot)
+
+        exportTestValues(
+          doseresponse_res = listResults$curr_data
+        )
       }
     }
 
@@ -347,7 +352,6 @@ DoseResponseServer <- function(id, data, listResults) {
         r_vals$currentPageOverview <- r_vals$currentPageOverview - 1
       }
     })
-
   })
 
   return(listResults)

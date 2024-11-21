@@ -17,8 +17,10 @@
     library(shinyjs)
     library(equatiomatic)
     library(car)
-    files <- list.files(".")
+    files <- list.files(".", full.names = TRUE)
+    files <- files[!(basename(files) %in% c("app.R", "www"))]
     lapply(files, source)
     Sys.setenv(RUN_MODE = "BROWSER")
     app <- app()
-    shiny::runApp(app$ui, app$server)
+    shiny::shinyApp(app$ui, app$server)
+
