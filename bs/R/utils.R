@@ -529,6 +529,12 @@ elongate_col <- function(col, l) {
   }
 }
 
+# TODO: for dataframe
+# Check that enough memory is available
+# Add own function for seq which also checks the size and memory usage
+# Set a limit for the size of the imported data
+# Set a limit for the number of results in the results list. 
+# Set a memory limit for the results list
 DataFrame <- function(...) {
   columns <- list(...)
   s <- substitute(list(...))

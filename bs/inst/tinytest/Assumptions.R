@@ -1,3 +1,9 @@
+# TODO: Tests
+# Add github actions for the test
+# Add test for diagnostic plot
+# add tests for utils functions
+# add tests for plotting internally
+# add tests for lc50 internally 
 library(shinytest2)
 library(tinytest)
 app <- bs::app()
