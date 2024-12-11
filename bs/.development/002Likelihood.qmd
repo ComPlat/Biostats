@@ -1,0 +1,60 @@
+---
+title: "Exploring Likelihood in R"
+output: html_document  # Use `output: quarto::html` for Quarto
+---
+
+## Likelihood of a Dataset
+Likelihood refers to how probable a specific set of data is under a given model.
+It quantifies the models ability to explain the observed data.
+Maximizing the likelihood helps estimate the parameters that make the observed data
+most probable (used in maximum likelihood estimation).
+
+### fitdistr and AIC
+- fitdistr (in MASS package): Fits a distribution to data by estimating
+  its parameters using maximum likelihood estimation.
+  It's useful for modeling and checking which distribution best matches your data.
+- AIC (Akaike Information Criterion): Measures the relative quality
+  of statistical models, balancing model fit and complexity. A lower AIC
+  indicates a model that better explains the data with fewer parameters.
+
+```{r Likelihood}
+library(FAwR)
+library(ggplot2)
+library(MASS)
+data(gutten)
+hist(gutten$dbh.cm)
+fit_norm <- fitdistr(gutten$dbh.cm, "normal")
+fit_norm
+likelihood <- prod(
+  dnorm(gutten$dbh.cm,
+  mean = fit_norm$estimate[1],
+  sd = fit_norm$estimate[2])
+) # Cannot be calculated like this by a computer --> is 0
+likelihood <- sum(
+  log(
+    dnorm(gutten$dbh.cm,
+      mean = fit_norm$estimate[1],
+      sd = fit_norm$estimate[2])
+  )
+)
+likelihood
+logLik(fit_norm)
+AIC(fit_norm)
+BIC(fit_norm)
+
+# log normal
+fit_lognorm <- fitdistr(gutten$dbh.cm, "lognormal")
+fit_lognorm
+likelihood <- sum(
+  log(
+    dnorm(gutten$dbh.cm,
+      mean = fit_lognorm$estimate[1],
+      sd = fit_lognorm$estimate[2])
+  )
+)
+likelihood
+logLik(fit_lognorm)
+AIC(fit_lognorm)
+BIC(fit_lognorm)
+```
+

@@ -17,8 +17,16 @@ DoseResponseSidebarUI <- function(id) {
       ),
       br(),
       uiOutput(NS(id, "substanceNamesUI")),
-      uiOutput(NS(id, "negIdentifierUI")),
-      uiOutput(NS(id, "posIdentifierUI")),
+      checkboxInput(
+        NS(id, "xTransform"),
+        label = "Log transform x-axis",
+        value = FALSE
+      ),
+      checkboxInput(
+        NS(id, "yTransform"),
+        label = "Log transform y-axis",
+        value = FALSE
+      ),
       actionButton(NS(id, "ic50"), "Conduct analysis")
     )
   )
@@ -41,9 +49,13 @@ DoseResponseUI <- function(id) {
       tabPanel(
         "Results Plot",
         uiOutput(NS(id, "dropdown_plots")),
-        plotOutput(NS(id, "dr_result_plot")),
+        plotOutput(
+          NS(id, "dr_result_plot"),
+          click = NS(id, "plot_click")
+        ),
         actionButton(NS(id, "previousPage"), "Previous plot"),
-        actionButton(NS(id, "nextPage"), "Next plot")
+        actionButton(NS(id, "nextPage"), "Next plot"),
+        p("Click on the plot to mark outliers")
       )
     )
   )
@@ -56,10 +68,11 @@ DoseResponseServer <- function(id, data, listResults) {
       names = NULL, # For dropdown_plots
       overview_plots = NULL,
       currentPage = 1,
-      currentPageOverview = 1
+      currentPageOverview = 1,
+      outliers = NULL
     )
 
-    # Render names, conc and abs column
+    # Render names of substances
     output[["substanceNamesUI"]] <- renderUI({
       req(!is.null(data$df))
       req(is.data.frame(data$df))
@@ -76,52 +89,6 @@ DoseResponseServer <- function(id, data, listResults) {
           inputId = paste0("DOSERESPONSE-substanceNames"),
           label = "Column containing the names",
           choices = colnames[1:length(colnames)],
-          selected = NULL
-        )
-      )
-    })
-
-    output[["negIdentifierUI"]] <- renderUI({
-      req(!is.null(data$df))
-      req(is.data.frame(data$df))
-      req(input$`substanceNames`)
-      choices <- unique(data$df[[input$substanceNames]])
-      req(length(choices) >= 1)
-      tooltip <- "Select the name used for the negative control"
-      div(
-        tags$label(
-          "Dependent Variable",
-          class = "tooltip",
-          title = tooltip,
-          `data-toggle` = "tooltip"
-        ),
-        selectInput(
-          inputId = paste0("DOSERESPONSE-negIdentifier"),
-          label = "Name of the negative control",
-          choices = choices[1:length(choices)],
-          selected = NULL
-        )
-      )
-    })
-
-    output[["posIdentifierUI"]] <- renderUI({
-      req(!is.null(data$df))
-      req(is.data.frame(data$df))
-      req(input$`substanceNames`)
-      choices <- unique(data$df[[input$substanceNames]])
-      req(length(choices) >= 1)
-      tooltip <- "Select the name used for the positive control"
-      div(
-        tags$label(
-          "Dependent Variable",
-          class = "tooltip",
-          title = tooltip,
-          `data-toggle` = "tooltip"
-        ),
-        selectInput(
-          inputId = paste0("DOSERESPONSE-posIdentifier"),
-          label = "Name of the positive control",
-          choices = choices[1:length(choices)],
           selected = NULL
         )
       )
@@ -206,15 +173,11 @@ DoseResponseServer <- function(id, data, listResults) {
       })
     })
 
-    drFct <- function() {
+    drFct <- function(reset_outliers = TRUE) {
       req(is.data.frame(data$df))
       df <- data$df
       req(input$substanceNames)
       names <- input$substanceNames
-      req(input$negIdentifier)
-      neg <- input$negIdentifier
-      req(input$posIdentifier)
-      pos <- input$posIdentifier
       print_noti(!is.null(data$formula), "You have to set a formula")
       req(!is.null(data$formula))
       r_vals$plots <- NULL # reset
@@ -222,51 +185,73 @@ DoseResponseServer <- function(id, data, listResults) {
       r_vals$currentPage <- 1 # reset
       r_vals$overview_plots <- NULL # reset
       r_vals$currentPageOverview <- 1 # reset
+      if (reset_outliers) {
+        r_vals$outliers <- NULL
+      }
+      is_xlog <- input$xTransform
+      is_ylog <- input$yTransform
       f <- as.character(data$formula)
+      formula <- data$formula
       dep <- f[2]
       indep <- f[3]
       err <- NULL
       resDF <- NULL
       resPlot <- NULL
-      e <- try({
-        check_ast(str2lang(indep), colnames(df))
-        check_ast(str2lang(dep), colnames(df))
-        res <- ic50(df, dep, indep, names, neg, pos)
-        stopifnot(!inherits(res, "errorClass"))
-        resDF <- lapply(res, function(x) {
-          if (inherits(x, "errorClass")) {
-            return(NULL)
+      e <- try(
+        {
+          check_formula(formula)
+          check_ast(str2lang(indep), colnames(df))
+          check_ast(str2lang(dep), colnames(df))
+          res <- ic50(
+            df, dep,
+            indep, names, r_vals$outliers,
+            is_xlog, is_ylog
+          )
+          if (inherits(res, "errorClass")) {
+            stop(res$error_message)
           }
-          return(x[[1]])
-        })
-        resDF <- resDF[!is.null(resDF)]
-        resDF <- resDF[!sapply(resDF, is.null)]
-        resDF <- Reduce(rbind, resDF)
-        resP <- lapply(res, function(x) {
-          if (inherits(x, "errorClass")) {
-            return(NULL)
-          }
-          return(x[[2]])
-        })
-        resP <- resP[!is.null(resP)]
-        resP <- resP[!sapply(resP, is.null)]
-        r_vals$plots <- resP
-        r_vals$names <- resDF$name
-        resPlot <- resP
-        overviewPlots <- create_plot_pages(resPlot)
-        r_vals$overview_plots <- overviewPlots
-      })
+          resDF <- lapply(res, function(x) {
+            if (inherits(x, "errorClass")) {
+              return(NULL)
+            }
+            return(x[[1]])
+          })
+          resDF <- resDF[!is.null(resDF)]
+          resDF <- resDF[!sapply(resDF, is.null)]
+          resDF <- Reduce(rbind, resDF)
+          resP <- lapply(res, function(x) {
+            if (inherits(x, "errorClass")) {
+              return(NULL)
+            }
+            return(x[[2]])
+          })
+          resP <- resP[!is.null(resP)]
+          resP <- resP[!sapply(resP, is.null)]
+          r_vals$plots <- resP
+          r_vals$names <- resDF$name
+          resPlot <- resP
+          overviewPlots <- create_plot_pages(resPlot)
+          r_vals$overview_plots <- overviewPlots
+        },
+        silent = TRUE
+      )
       if (inherits(e, "try-error")) {
         err <- conditionMessage(attr(e, "condition"))
         print_noti(FALSE, err)
       } else {
         listResults$curr_data <- new("doseResponse", df = resDF, p = resPlot)
-        listResults$curr_name <- paste("Test Nr", length(listResults$all_names) + 1, "Conducted dose response analysis")
+        listResults$curr_name <- paste(
+          "Test Nr", length(listResults$all_names) + 1,
+          "Conducted dose response analysis"
+        )
         output$dr_result <- renderTable(resDF, digits = 6)
 
         listResults$counter <- listResults$counter + 1
         new_result_name <- paste0("DoseResponseNr", listResults$counter)
-        listResults$all_data[[new_result_name]] <- new("doseResponse", df = resDF, p = resPlot)
+        listResults$all_data[[new_result_name]] <- new(
+          "doseResponse",
+          df = resDF, p = resPlot
+        )
 
         exportTestValues(
           doseresponse_res = listResults$curr_data
@@ -324,6 +309,47 @@ DoseResponseServer <- function(id, data, listResults) {
       if (r_vals$currentPage > 1) {
         r_vals$currentPage <- r_vals$currentPage - 1
       }
+    })
+
+    observeEvent(input$plot_click, {
+      req(!is.null(input$plot_click))
+      req(is.data.frame(data$df))
+      print_noti(!is.null(data$formula), "You have to set a formula")
+      try({
+        click <- input$plot_click
+        df <- data$df
+        indices <- which(df$names == r_vals$names[r_vals$currentPage])
+        indices <- data.frame(
+          original_indices = indices,
+          new_indices = seq_along(indices)
+        )
+        sub_df <- df[df$names == r_vals$names[r_vals$currentPage], ]
+        f <- as.character(data$formula)
+        formula <- data$formula
+        check_formula(formula)
+        dep <- f[2]
+        indep <- f[3]
+        x <- as.numeric(sub_df[, indep])
+        y <- as.numeric(sub_df[, dep])
+        x <- x[!is.na(x)]
+        y <- y[!is.na(y)]
+        distances <- sqrt((x - click$x)^2 + (y - click$y)^2)
+        nearest <- which.min(distances)
+        if (distances[nearest] < 0.1) {
+          nearest <- indices[indices$new_indices == nearest, "original_indices"]
+          if (nearest %in% r_vals$outliers) {
+            r_vals$outliers <- r_vals$outliers[r_vals$outliers != nearest]
+          } else {
+            r_vals$outliers <- c(
+              r_vals$outliers,
+              nearest
+            )
+          }
+          old_current_page <- r_vals$currentPage
+          drFct(FALSE)
+          r_vals$currentPage <- old_current_page
+        }
+      })
     })
 
     # Display overview plots

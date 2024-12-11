@@ -1,0 +1,189 @@
+---
+title: "generalized linear model in R"
+output: html_document  # Use `output: quarto::html` for Quarto
+---
+
+## Regression i.e. generalized linear models
+
+A regression describes the quantitative relationship between
+one or more predictor variables and a response variable.
+Here a distribution is again fitted to the measured data.
+However, a predictor effects certain parameters of the distribution.
+For example, we have three factors in our dataset: genotype, time and treatment.
+Moreover, we want to predict the CO2 uptake rate (our response variable).
+Furthermore, we assume normally distributed values.
+CO2uptake ~ N(µ = a + b*genotype + c*time + d*treatment, ρ)
+
+### The link function/scala
+Often distributions have only a certain interval in which they
+are defined. However, if a predictor takes values which are outside
+of the interval,. we need to transform the predictor to a new scale.
+This is the task of the link function. 
+
+
+
+```{r LinkFunctions}
+#| echo = FALSE
+df <- data.frame(distributions = c("Normal", "Poisson", "Binomial", "Gamma", "Negative Binomial"),
+                link_functions = c("Identity", "Log", "Logit (ln(y / (1 - y))", "Inverse", "Log"))
+knitr::kable(df)
+```
+
+
+```{r Regressions}
+library(ggplot2)
+library(MASS)
+df <- data.frame(sizes = c(rnorm(10000, mean = 170, sd = 5), rnorm(10000, mean = 182, sd = 5)),
+                 sex = rep(c("F", "M"), each = 10000))
+p1 <- ggplot(df, aes(x = sizes, colour = sex)) +
+  geom_histogram()
+p2 <- ggplot(df, aes(y = sizes, x = sex)) +
+  geom_boxplot()
+library(patchwork)
+p1 + p2
+m <- glm(sizes ~ 1, data = df, family = "gaussian")
+cat(
+  "Base model: Fit the distribution to the data\n",
+  "y = N(Âµ, Ï�)\n"
+)
+summary(m)
+cat(
+  "Model: which considers the sex\n",
+  "y = N(µ = a*F + b*M, ρ)\n"
+)
+m <- glm(sizes ~ sex, data = df, family = "gaussian")
+summary(m)
+
+# By hand
+# Fit a normal distribution to the data without considering the sex
+fit_base <- fitdistr(df$sizes, "normal")
+mean_base <- fit_base$estimate[1]
+sd_base <- fit_base$estimate[2]
+
+# Calculate log-likelihood for the base model
+log_likelihood_base <- sum(log(dnorm(df$sizes, mean = mean_base, sd = sd_base)))
+log_likelihood_base
+
+# Fit separate distributions for each group
+fit_female <- fitdistr(df$sizes[df$sex == "F"], "normal")
+mean_female <- fit_female$estimate[1]
+sd_female <- fit_female$estimate[2]
+
+fit_male <- fitdistr(df$sizes[df$sex == "M"], "normal")
+mean_male <- fit_male$estimate[1]
+sd_male <- fit_male$estimate[2]
+
+# Calculate log-likelihood for the model considering sex
+log_likelihood_female <- sum(log(dnorm(df$sizes[df$sex == "F"], mean = mean_female, sd = sd_female)))
+log_likelihood_male <- sum(log(dnorm(df$sizes[df$sex == "M"], mean = mean_male, sd = sd_male)))
+
+log_likelihood_total <- log_likelihood_female + log_likelihood_male
+log_likelihood_total
+
+cat("Log-likelihood of the base model:", log_likelihood_base, "\n")
+cat("Log-likelihood of the model considering sex:", log_likelihood_total, "\n")
+
+```
+
+
+## Constructing a Regression Model by Hand
+
+### 1. Formulate the Regression Equation
+
+Suppose you're constructing a simple linear regression model for a response variable $Y$ with a single predictor $X$. The model would be:
+$$
+Y_i = \beta_0 + \beta_1 X_i + \epsilon_i
+$$
+where:
+- $\beta_0$ is the intercept,
+- $\beta_1$ is the slope coefficient,
+- $\epsilon_i$ is the error term assumed to be normally distributed with mean 0 and variance $\sigma^2$.
+
+### 2. Set Up the Design Matrix
+
+For a model with $n$ observations:
+- Create a matrix $X$ for the predictors, which includes a column of 1s for the intercept:
+$$
+X = \begin{bmatrix}
+1 & X_1 \\
+1 & X_2 \\
+\vdots & \vdots \\
+1 & X_n \\
+\end{bmatrix}
+$$
+
+### 3. Estimate the Coefficients
+
+The least squares estimates $\hat{\beta}$ can be found using:
+$$
+\hat{\beta} = (X^T X)^{-1} X^T Y
+$$
+
+#### By Hand Example
+
+- **Calculate $X^T X$**:
+$$
+X^T X = \begin{bmatrix}
+n & \sum X_i \\
+\sum X_i & \sum X_i^2 \\
+\end{bmatrix}
+$$
+
+- **Calculate $X^T Y$**:
+$$
+X^T Y = \begin{bmatrix}
+\sum Y_i \\
+\sum X_i Y_i \\
+\end{bmatrix}
+$$
+
+- **Find $(X^T X)^{-1}$**:
+$$
+(X^T X)^{-1} = \frac{1}{n \sum X_i^2 - (\sum X_i)^2} \begin{bmatrix}
+\sum X_i^2 & -\sum X_i \\
+-\sum X_i & n \\
+\end{bmatrix}
+$$
+
+- **Compute $\hat{\beta}$**:
+$$
+\hat{\beta} = (X^T X)^{-1} X^T Y
+$$
+
+### 4. Compute Residuals
+
+Calculate residuals $\hat{\epsilon}_i = Y_i - \hat{Y}_i$, where $\hat{Y}_i$ is obtained using the fitted model:
+$$
+\hat{Y}_i = \hat{\beta}_0 + \hat{\beta}_1 X_i
+$$
+
+### 5. Estimate Variance $\sigma^2$
+
+The estimate of the variance $\sigma^2$ is:
+$$
+\hat{\sigma}^2 = \frac{\sum \hat{\epsilon}_i^2}{n - p}
+$$
+where $p$ is the number of estimated parameters (e.g., $p = 2$ for intercept and slope).
+
+```{r Regressions Continued}
+design_matrix <- model.matrix(sizes ~ sex, data = df)
+head(design_matrix)
+tail(design_matrix)
+beta_hat <- solve(t(design_matrix) %*% design_matrix) %*% t(design_matrix) %*% df$sizes
+beta_hat
+cat(
+  "Model: which considers the sex\n",
+  "y = N(µ = a*F + b*M, ρ)\n"
+)
+m <- glm(sizes ~ sex, data = df, family = "gaussian")
+summary(m)
+sum(residuals(m)^2) / (nrow(df) - 2)
+
+# Calc residuals
+# NOTE: Is beta_hat[1] + beta_hat[2] * df$sizes but in addition sex is considered
+y_hat <- design_matrix %*% beta_hat 
+residuals <- df$sizes - y_hat
+variance <- sum(residuals^2) / (nrow(df) - 2)
+variance
+```
+
