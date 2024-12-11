@@ -179,7 +179,7 @@ addOutlierLayer <- function(df_outlier, abs_col, conc_col, p) {
 
 drawplot <- function(df, abs_col, conc_col, model, valid_points, title,
                      IC50_relative, IC50_relative_lower, IC50_relative_higher,
-                     df_outlier) {
+                     df_outlier, islog_x, islog_y) {
   min_conc <- min(df[, conc_col])
   max_conc <- max(df[, conc_col])
   grid <- seq(min_conc, max_conc, 0.1)
@@ -209,7 +209,7 @@ drawplot <- function(df, abs_col, conc_col, model, valid_points, title,
           xmin = xmin,
           xmax = xmax, y = ymedian
         ),
-        colour = "darkred", end = "butt", height = butt_height
+        colour = "darkred", height = butt_height
       )
     } else {
       p <- p + labs(caption = "Confidence intervall not in conc. range") +
@@ -225,11 +225,17 @@ drawplot <- function(df, abs_col, conc_col, model, valid_points, title,
           element_text(color = "darkred", face = "italic", size = 8)
       )
   }
-
+  if (islog_x) {
+    p <- p + scale_x_log10()
+  }
+  if (islog_y) {
+    p <- p + scale_y_log10()
+  }
   return(p)
 }
 
-ic50_internal <- function(df, abs, conc, title, df_outlier) {
+ic50_internal <- function(df, abs, conc,
+                          title, df_outlier, islog_x, islog_y) {
   model <- drm(abs ~ conc,
     data = df, fct = LL.4(),
     robust = "median"
@@ -247,7 +253,8 @@ ic50_internal <- function(df, abs, conc, title, df_outlier) {
   )
   p <- drawplot(
     df, abs, conc, model, valid_points, title, res$IC50_relative,
-    res$IC50_relative_lower, res$IC50_relative_higher, df_outlier
+    res$IC50_relative_lower, res$IC50_relative_higher, df_outlier,
+    islog_x, islog_y
   )
   return(list(res, p))
 }
@@ -281,16 +288,6 @@ transform_conc_dr <- function(conc_col) {
   return(temp_conc)
 }
 
-log_dr <- function(df, islog_x, islog_y) {
-  if (islog_x) {
-    df$conc <- log(df$conc)
-  }
-  if (islog_y) {
-    df$abs <- log(df$abs)
-  }
-  return(df)
-}
-
 #' @examples
 #' path <- system.file("data", package = "MTT")
 #' df <- read.csv(paste0(path, "/ExampleData.txt"))
@@ -315,23 +312,25 @@ ic50 <- function(df, abs_col, conc_col,
     conc = df[, conc_col],
     names = df[, substance_name_col]
   )
-  df <- log_dr(df, islog_x, islog_y)
-  df_outlier <- data.frame()
-  if (length(outliers) >= 1) {
-    df_outlier <- df[outliers, ]
-    df <- df[-outliers, ]
-  }
-  df <- df[!sapply(df$conc, is.na), ]
   res <- list()
   for (i in seq_along(substances)) {
     df_temp <- df[df$names == substances[i], ]
-    df_temp_outlier <- df_outlier[df_outlier$names == substances[i], ]
+    df_outlier <- data.frame()
+    outliers_temp <- outliers[[substances[i]]]
+    if (!is.null(outliers_temp)) {
+      df_outlier <- df_temp[outliers_temp, ]
+      df_temp <- df_temp[-outliers_temp, ]
+    }
+    df_temp <- df_temp[!sapply(df_temp$conc, is.na), ]
+    df_outlier <- df_outlier[!sapply(df_outlier$conc, is.na), ]
+
     m <- tryCatch(
       {
         m <- ic50_internal(
           df_temp,
           "abs", "conc",
-          substances[i], df_temp_outlier
+          substances[i], df_outlier,
+          islog_x, islog_y
         )
       },
       error = function(err) {
@@ -349,30 +348,10 @@ ic50 <- function(df, abs_col, conc_col,
   return(res)
 }
 
-df <- read.csv("/home/konrad/Documents/Biostats/test_data/Biostats_2.csv")
-library(ggplot2)
-library(drc)
-
-l <- ic50(
-  df,
-  "Activity_SpotTotalIntensity",
-  "concentration", "ColumnValues",
-  NULL, FALSE, TRUE
-)
-pf <- function(l, idx) {
-  p <- l[[idx]]
-  if (inherits(p, "errorClass")) {
-    print(p$error_message)
-    return(p$object)
-  }
-  p[[2]] + scale_x_log10()
-}
-pl <- lapply(1:20, function(i) pf(l, i))
-cowplot::plot_grid(plotlist = pl)
-pl <- lapply(21:40, function(i) pf(l, i))
-cowplot::plot_grid(plotlist = pl)
-pl <- lapply(41:60, function(i) pf(l, i))
-cowplot::plot_grid(plotlist = pl)
-
-rm(list = ls())
-head(df)
+# library(ggplot2)
+# library(drc)
+# path <- system.file("data", package = "MTT")
+# df <- read.csv(paste0(path, "/ExampleData.txt"))
+# l1 <- ic50(df, "abs", "conc", "names", NULL, FALSE, FALSE)
+# l2 <- ic50(df, "abs", "conc", "names", list(X19611 = c(1, 2, 3, 4)), FALSE, FALSE)
+# cowplot::plot_grid(l1[[1]][[2]], l2[[1]][[2]])
