@@ -27,10 +27,6 @@ app$wait_for_idle()
 
 app$set_inputs(`DOSERESPONSE-substanceNames` = "names")
 app$wait_for_idle()
-app$set_inputs(`DOSERESPONSE-negIdentifier` = "neg")
-app$wait_for_idle()
-app$set_inputs(`DOSERESPONSE-posIdentifier` = "pos")
-app$wait_for_idle()
 app$click("DOSERESPONSE-ic50")
 app$wait_for_idle()
 
@@ -38,7 +34,11 @@ res <- app$get_values()$export
 res_df <- res[[1]]@df
 
 data <- read.csv(system.file("/test_data/DoseResponse.csv", package = "bs"))
-expected <- MTT::ic50(data, "abs", "conc", "names", "neg", "pos")
+expected <- bs:::ic50(
+  data, "abs", "conc",
+  "names", NULL,
+  FALSE, FALSE
+)
 dfs <- lapply(expected, function(x) {
   if (is.list(x)) {
     return(x[[1]])
