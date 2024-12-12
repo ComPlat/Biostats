@@ -10,94 +10,48 @@ app <- function() {
     sidebarLayout(
       sidebarPanel(
         div(
-          class = "boxed-output",
-          uiOutput("open_formula_editor_corr"),
-          verbatimTextOutput("formula")
+          style = "position: relative",
+          actionButton(
+            "docu",
+            label = NULL,
+            icon = icon("question-circle")
+          )
         ),
+        uiOutput("open_formula_editor_main"),
+        verbatimTextOutput("formula"),
+        br(),
+        uiOutput("open_split_by_group"),
+        uiOutput("data_splitted"),
+        verbatimTextOutput("applied_filter"),
+        br(),
         div(
           conditionalPanel(
             condition = "input.conditionedPanels == 'Data'",
-            div(
-              style = "position: relative",
-              actionButton(
-                "data_docu",
-                label = NULL,
-                icon = icon("question-circle")
-              )
-            ),
             uiOutput("conditional_data_ui"),
             tags$hr()
           ),
           conditionalPanel(
             condition = "input.conditionedPanels == 'DataWrangling'",
-            div(
-              style = "position: relative",
-              actionButton(
-                "datawrangling_docu",
-                label = NULL,
-                icon = icon("question-circle")
-              )
-            ),
             OperatorEditorSidebar("OP")
           ),
           conditionalPanel(
             condition = "input.conditionedPanels == 'Visualisation'",
-            div(
-              style = "position: relative;",
-              actionButton(
-                "visualization_docu",
-                label = NULL,
-                icon = icon("question-circle")
-              )
-            ),
             visSidebarUI("VIS")
           ),
           conditionalPanel(
             condition = "input.conditionedPanels == 'Assumption'",
-            div(
-              style = "position: relative",
-              actionButton(
-                "ass_docu",
-                label = NULL,
-                icon = icon("question-circle")
-              )
-            ),
             assSidebarUI("ASS")
           ),
           conditionalPanel(
             condition = "input.conditionedPanels == 'Correlation'",
-            div(
-              style = "position: relative",
-              actionButton(
-                "corr_docu",
-                label = NULL,
-                icon = icon("question-circle")
-              )
-            ),
             corrSidebarUI("CORR")
           ),
           conditionalPanel(
             condition = "input.conditionedPanels == 'Tests'",
-            div(
-              style = "position: relative",
-              actionButton(
-                "test_docu",
-                label = NULL,
-                icon = icon("question-circle")
-              )
-            ),
             testsSidebarUI("TESTS")
           ),
           conditionalPanel(
             condition = "input.conditionedPanels == 'Dose Response analysis'",
-            div(
-              style = "position: relative;",
-              actionButton(
-                "doseresponse_docu",
-                label = NULL,
-                icon = icon("question-circle")
-              )
-            ),
             DoseResponseSidebarUI("DOSERESPONSE")
           )
         )
@@ -151,84 +105,80 @@ app <- function() {
       counter = 0
     )
 
-    # docu data
-    observeEvent(input[["data_docu"]], {
-      showModal(modalDialog(
-        title = "Example Dataframe",
-        includeHTML(system.file("www/data.html", package = "bs")),
-        easyClose = TRUE,
-        footer = NULL
-      ))
-    })
-    observeEvent(input[["datawrangling_docu"]], {
-      showModal(modalDialog(
-        title = "Data wrangling",
-        includeHTML(system.file("www/operations.html", package = "bs")),
-        easyClose = TRUE,
-        footer = NULL
-      ))
-    })
-    observeEvent(input[["corr_docu"]], {
-      showModal(modalDialog(
-        title = "Correlation",
-        includeHTML(system.file("www/data.html", package = "bs")),
-        easyClose = TRUE,
-        footer = NULL
-      ))
-    })
-    observeEvent(input[["ass_docu"]], {
-      showModal(modalDialog(
-        title = "Testing assumptions",
-        includeHTML(system.file("www/assumptions.html", package = "bs")),
-        easyClose = TRUE,
-        footer = NULL
-      ))
-    })
-    observeEvent(input[["test_docu"]], {
-      showModal(modalDialog(
-        title = "Statistical tests",
-        includeHTML(system.file("www/tests.html", package = "bs")),
-        easyClose = TRUE,
-        footer = NULL
-      ))
-    })
-    # docu dose response
-    observeEvent(input[["doseresponse_docu"]], {
-      showModal(modalDialog(
-        title = "Doseresponse analysis",
-        includeHTML(system.file("www/doseresponse.html", package = "bs")),
-        easyClose = TRUE,
-        footer = NULL
-      ))
-    })
-    # docu visualisation
-    observeEvent(input[["visualization_docu"]], {
-      showModal(modalDialog(
-        title = "Visualization",
-        includeHTML(system.file("www/visualization1.html", package = "bs")),
-        br(),
-        renderImage(
-          {
-            list(
-              src = system.file("www/DocuPlot.jpg", package = "bs"),
-              contentType = "image/jpg",
-              width = 650,
-              height = 500,
-              alt = "Basic Plot"
-            )
-          },
-          deleteFile = FALSE
-        ),
-        br(),
-        br(),
-        br(),
-        br(),
-        br(),
-        includeHTML(system.file("www/visualization2.html", package = "bs")),
-        easyClose = TRUE,
-        footer = NULL,
-        size = "l"
-      ))
+    # docu
+    observeEvent(input[["docu"]], {
+      if (input$conditionedPanels == "Data") {
+        showModal(modalDialog(
+          title = "Example Dataframe",
+          includeHTML(system.file("www/data.html", package = "bs")),
+          easyClose = TRUE,
+          footer = NULL
+        ))
+      } else if (input$conditionedPanels == "DataWrangling") {
+        showModal(modalDialog(
+          title = "Data wrangling",
+          includeHTML(system.file("www/operations.html", package = "bs")),
+          easyClose = TRUE,
+          footer = NULL
+        ))
+      }else if (input$conditionedPanels == "Visualisation") {
+        showModal(modalDialog(
+          title = "Visualization",
+          includeHTML(system.file("www/visualization1.html", package = "bs")),
+          br(),
+          renderImage(
+            {
+              list(
+                src = system.file("www/DocuPlot.jpg", package = "bs"),
+                contentType = "image/jpg",
+                width = 650,
+                height = 500,
+                alt = "Basic Plot"
+              )
+            },
+            deleteFile = FALSE
+          ),
+          br(),
+          br(),
+          br(),
+          br(),
+          br(),
+          includeHTML(system.file("www/visualization2.html", package = "bs")),
+          easyClose = TRUE,
+          footer = NULL,
+          size = "l"
+        ))
+
+      }else if (input$conditionedPanels == "Assumption") {
+        showModal(modalDialog(
+          title = "Testing assumptions",
+          includeHTML(system.file("www/assumptions.html", package = "bs")),
+          easyClose = TRUE,
+          footer = NULL
+        ))
+      }else if (input$conditionedPanels == "Correlation") {
+        showModal(modalDialog(
+          title = "Correlation",
+          includeHTML(system.file("www/data.html", package = "bs")),
+          easyClose = TRUE,
+          footer = NULL
+        ))
+      }else if (input$conditionedPanels == "Tests") {
+        showModal(modalDialog(
+          title = "Statistical tests",
+          includeHTML(system.file("www/tests.html", package = "bs")),
+          easyClose = TRUE,
+          footer = NULL
+        ))
+      }else if (input$conditionedPanels == "Dose Response analysis") {
+
+        showModal(modalDialog(
+          title = "Doseresponse analysis",
+          includeHTML(system.file("www/doseresponse.html", package = "bs")),
+          easyClose = TRUE,
+          footer = NULL
+        ))
+      }
     })
     # docu formula editor
     observeEvent(input[["FO-formula_docu"]], {
@@ -441,6 +391,89 @@ app <- function() {
           ignoreInit = TRUE
         )
       })
+    })
+
+    # Observe open formula editor
+    output$open_formula_editor_main <- renderUI({
+      if (input$conditionedPanels == "DataWrangling" ||
+          input$conditionedPanels == "Visualisation") {
+        return()
+      }
+      div(
+        class = "boxed-output",
+        actionButton("open_formula_editor",
+          "Open formula editor",
+          title = "Open the formula editor to create or modify a formula",
+          disabled = is.null(dataSet$df) || !is.data.frame(dataSet$df)
+        ))
+    })
+    observeEvent(input[["open_formula_editor"]], {
+      showModal(modalDialog(
+        title = "FormulaEditor",
+        FormulaEditorUI("FO"),
+        easyClose = TRUE,
+        size = "l",
+        footer = tagList(
+          modalButton("Close")
+        )
+      ))
+    })
+    # display current formula
+    observe({
+      req(!is.null(dataSet$formula))
+      output$formula <- renderText({
+        deparse(dataSet$formula)
+      })
+    })
+
+    # Render split by group
+    output[["open_split_by_group"]] <- renderUI({
+      if (input$conditionedPanels == "DataWrangling") return()
+      div(
+        class = "boxed-output",
+        actionButton("open_split_by_group",
+          "Open the split by group functionality",
+          title = "Open the split by group helper window",
+          disabled = is.null(dataSet$df) ||
+            !is.data.frame(dataSet$df) ||
+            !is.null(dataSet$backup_df)
+        ),
+        actionButton("remove_filter",
+          "Remove the filter from the dataset",
+          title = "remove the filter of the dataset",
+          disabled = is.null(dataSet$backup_df) || !is.data.frame(dataSet$backup_df)
+        )
+      )
+    })
+    observeEvent(input[["open_split_by_group"]], {
+      showModal(modalDialog(
+        title = "SplitByGroup",
+        SplitByGroupUI("SG"),
+        easyClose = TRUE,
+        size = "l",
+        footer = NULL
+      ))
+    })
+    observe({
+      output$applied_filter <- renderText(NULL)
+      req(!is.null(dataSet$filter_col))
+      req(!is.null(dataSet$filter_group))
+      output$applied_filter <- renderText({
+        paste(
+          "The dataset is splitted by the variable(s): [",
+          paste(dataSet$filter_col, collapse = ", "),
+          "] group(s) are set to: [",
+          paste(dataSet$filter_group, collapse = ", "),
+          "]"
+        )
+      })
+    })
+    # Remove filter
+    observeEvent(input[["remove_filter"]], {
+      dataSet$df <-dataSet$backup_df
+      dataSet$backup_df <- NULL
+      dataSet$filter_col <- NULL
+      dataSet$filter_group <- NULL
     })
 
     observeEvent(input$download, {

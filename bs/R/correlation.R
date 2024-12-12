@@ -1,18 +1,6 @@
 corrSidebarUI <- function(id) {
   tabPanel(
     "Correlation",
-    div(
-      class = "boxed-output",
-      uiOutput(NS(id, "open_formula_editor_corr")),
-      verbatimTextOutput(NS(id, "formula"))
-    ),
-    br(),
-    div(
-      class = "boxed-output",
-      uiOutput(NS(id, "open_split_by_group")),
-      uiOutput(NS(id, "data_splitted")),
-      verbatimTextOutput(NS(id, "applied_filter"))
-    ),
     br(),
     sliderInput(NS(id, "conflevel"), "Confidence level of the interval",
       min = 0, max = 1, value = 0.95
@@ -46,85 +34,6 @@ corrUI <- function(id) {
 
 corrServer <- function(id, data, listResults) {
   moduleServer(id, function(input, output, session) {
-    # Render split by group
-    output[["open_split_by_group"]] <- renderUI({
-      actionButton(NS(id, "open_split_by_group"),
-        "Open the split by group functionality",
-        title = "Open the split by group helper window",
-        disabled = is.null(data$df) || !is.data.frame(data$df) || !is.null(data$backup_df)
-      )
-    })
-
-    observeEvent(input[["open_split_by_group"]], {
-      showModal(modalDialog(
-        title = "SplitByGroup",
-        SplitByGroupUI("SG"),
-        easyClose = TRUE,
-        size = "l",
-        footer = NULL
-      ))
-    })
-
-    # check if data is splitted
-    output$data_splitted <- renderUI({
-      actionButton(NS(id, "remove_filter"),
-        "Remove the filter from the dataset",
-        title = "remove the filter of the dataset",
-        disabled = is.null(data$backup_df) || !is.data.frame(data$backup_df)
-      )
-    })
-
-    observe({
-      output$applied_filter <- renderText(NULL)
-      req(!is.null(data$filter_col))
-      req(!is.null(data$filter_group))
-      output$applied_filter <- renderText({
-        paste(
-          "The dataset is splitted by the variable(s): [",
-          paste(data$filter_col, collapse = ", "),
-          "] group(s) are set to: [",
-          paste(data$filter_group, collapse = ", "),
-          "]"
-        )
-      })
-    })
-
-    # Remove filter
-    observeEvent(input[["remove_filter"]], {
-      data$df <- data$backup_df
-      data$backup_df <- NULL
-      data$filter_col <- NULL
-      data$filter_group <- NULL
-    })
-
-    # render formula button
-    output$open_formula_editor_corr <- renderUI({
-      actionButton(NS(id, "open_formula_editor"),
-        "Open formula editor",
-        title = "Open the formula editor to create or modify a formula",
-        disabled = is.null(data$df) || !is.data.frame(data$df)
-      )
-    })
-
-    observeEvent(input[["open_formula_editor"]], {
-      showModal(modalDialog(
-        title = "FormulaEditor",
-        FormulaEditorUI("FO"),
-        easyClose = TRUE,
-        size = "l",
-        footer = tagList(
-          modalButton("Close")
-        )
-      ))
-    })
-
-    # display current formula
-    observe({
-      req(!is.null(data$formula))
-      output$formula <- renderText({
-        deparse(data$formula)
-      })
-    })
 
     corr_fct <- function(method) {
       print_req(is.data.frame(data$df), "The dataset is missing")
