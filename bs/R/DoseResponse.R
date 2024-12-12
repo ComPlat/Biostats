@@ -151,7 +151,7 @@ DoseResponseServer <- function(id, data, listResults) {
       df <- data$df
       reset_dr()
       resDF <- NULL
-      resPlot <- NULL
+      resP <- NULL
       e <- try(
         {
           res <- run_dr(df, NULL)
@@ -176,7 +176,7 @@ DoseResponseServer <- function(id, data, listResults) {
         print_err(err)
       } else {
         output$dr_result <- renderTable(resDF, digits = 6)
-        listResults$curr_data <- new("doseResponse", df = resDF, p = resPlot)
+        listResults$curr_data <- new("doseResponse", df = resDF, p = resP)
         listResults$curr_name <- paste(
           "Test Nr", length(listResults$all_names) + 1,
           "Conducted dose response analysis"
@@ -185,7 +185,7 @@ DoseResponseServer <- function(id, data, listResults) {
         new_result_name <- paste0("DoseResponseNr", listResults$counter)
         listResults$all_data[[new_result_name]] <- new(
           "doseResponse",
-          df = resDF, p = resPlot
+          df = resDF, p = resP
         )
         exportTestValues(
           doseresponse_res = listResults$curr_data
@@ -248,7 +248,7 @@ DoseResponseServer <- function(id, data, listResults) {
     dr_partial <- function(df, name) {
       check_dr()
       resDF <- NULL
-      resPlot <- NULL
+      resP <- NULL
       e <- try(
         {
           outliers <- list(r_vals$outliers[[name]])
@@ -285,7 +285,7 @@ DoseResponseServer <- function(id, data, listResults) {
         print_err(err)
       } else {
         output$dr_result <- renderTable(resDF, digits = 6)
-        listResults$curr_data <- new("doseResponse", df = resDF, p = resPlot)
+        listResults$curr_data <- new("doseResponse", df = resDF, p = resP)
         listResults$curr_name <- paste(
           "Test Nr", length(listResults$all_names) + 1,
           "Conducted dose response analysis"
@@ -294,7 +294,7 @@ DoseResponseServer <- function(id, data, listResults) {
         new_result_name <- paste0("DoseResponseNr", listResults$counter)
         listResults$all_data[[new_result_name]] <- new(
           "doseResponse",
-          df = resDF, p = resPlot
+          df = resDF, p = resP
         )
         exportTestValues(
           doseresponse_res = listResults$curr_data
