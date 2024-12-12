@@ -5,7 +5,70 @@ app <- function() {
     tags$head(
       tags$script(src = "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"),
       tags$script(src = "https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"),
-      tags$script(src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/0.4.1/html2canvas.min.js")
+      tags$script(src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/0.4.1/html2canvas.min.js"),
+      tags$style(HTML("
+        .boxed-output {
+        border: 2px solid #900C3F;
+        padding: 10px;
+        border-radius: 5px;
+        margin-top: 10px;
+        }
+        .add-button {
+        position: relative;
+        padding-right: 20px;
+        }
+        .add-button::after {
+        content: '\\2295';
+        position: absolute;
+        top: 1.1px;
+        right: 5px;
+        font-size: 16px;
+        font-weight: bold;
+        color: #900C3F;
+        width: 15px;
+        height: 15px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        }
+        .model {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border: 2px solid #c8c8c8;
+        border-radius: 5px;
+        margin-top: 10px;
+        }
+        .title {
+        font-size: 14px;
+        font-weight: bold;
+        margin-bottom: 10px;
+        color: #333;
+        }
+        .create_button{
+        background-color: #04AA6D; /* Green */
+        border: none;
+        color: black;
+        padding: 15px 32px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 16px;
+        }
+        .var-output {
+        border: 2px solid #900C3F;
+        padding: 10px;
+        border-radius: 5px;
+        margin-top: 10px;
+        display: inline-block;
+        width: auto;
+        }
+        .var-box-output {
+        border: 2px solid #900C3F;
+        padding: 10px;
+        border-radius: 5px;
+        margin-top: 10px;
+        }
+        "))
     ),
     sidebarLayout(
       sidebarPanel(
@@ -227,10 +290,10 @@ app <- function() {
           unlink(file)
         },
         warning = function(warn) {
-          showNotification(paste("A warning occurred: ", conditionMessage(warn)), duration = 0)
+          print_warn(paste("A warning occurred: ", conditionMessage(warn)))
         },
         error = function(err) {
-          showNotification(paste("An error occurred: ", conditionMessage(err)), duration = 0)
+          print_err(paste("An error occurred: ", conditionMessage(err)))
         }
       )
       req(is.data.frame(df))

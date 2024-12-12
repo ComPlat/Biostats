@@ -1,35 +1,5 @@
 OperatorEditorSidebar <- function(id) {
   ui <- fluidPage(
-    tags$head(
-      tags$style(HTML("
-        .boxed-output {
-        border: 2px solid #900C3F;
-        padding: 10px;
-        border-radius: 5px;
-        margin-top: 10px;
-        }
-        .add-button {
-        position: relative;
-        padding-right: 20px;
-        }
-        .add-button::after {
-        content: '\\2295';
-        position: absolute;
-        top: 1.1px;
-        right: 5px;
-        font-size: 16px;
-        font-weight: bold;
-        color: #900C3F;
-        background-color: white;
-        width: 15px;
-        height: 15px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        }
-        "))
-    ),
-
     div(
       h3("Variables"),
       uiOutput(NS(id, "colnames_list")),
@@ -164,49 +134,6 @@ OperatorEditorSidebar <- function(id) {
 
 OperatorEditorUI <- function(id) {
   ui <- fluidPage(
-    tags$head(
-      tags$style(HTML("
-        .boxed-output {
-        border: 2px solid #900C3F;
-        padding: 10px;
-        border-radius: 5px;
-        margin-top: 10px;
-        }
-        .var-output {
-        border: 2px solid #900C3F;
-        padding: 10px;
-        border-radius: 5px;
-        margin-top: 10px;
-        display: inline-block;
-        width: auto;
-        }
-        .var-box-output {
-        border: 2px solid #900C3F;
-        padding: 10px;
-        border-radius: 5px;
-        margin-top: 10px;
-        }
-        .add-button {
-        position: relative;
-        padding-right: 20px;
-        }
-        .add-button::after {
-        content: '\\2295';
-        position: absolute;
-        top: 1.1px;
-        right: 5px;
-        font-size: 16px;
-        font-weight: bold;
-        color: #900C3F;
-        background-color: white;
-        width: 15px;
-        height: 15px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        }
-        "))
-    ),
     div(
       textAreaInput(NS(id, "editable_code"), "Operation:", value = "", rows = 12),
       class = "boxed-output"

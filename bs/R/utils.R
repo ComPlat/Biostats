@@ -84,7 +84,7 @@ setClass("doseResponse",
 
 createExcelFile <- function(l) {
   if (length(l) == 0) {
-    showNotification("Nothing to upload")
+    print_warn("Nothing to upload")
     return(NULL)
   }
 
@@ -156,7 +156,7 @@ createExcelFile <- function(l) {
       openxlsx::saveWorkbook(wb, fn)
     },
     error = function(e) {
-      showNotification("Error saving file")
+      print_err("Error saving file")
     }
   )
 
