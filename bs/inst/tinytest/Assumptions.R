@@ -3,7 +3,7 @@
 # Add test for diagnostic plot
 # add tests for utils functions
 # add tests for plotting internally
-# add tests for lc50 internally 
+# add tests for lc50 internally
 library(shinytest2)
 library(tinytest)
 app <- bs::app()
@@ -38,7 +38,6 @@ expected <- rbind(
 )
 expected$variable <- c("nonchilled", "chilled")
 expected$`Normal distributed` <- expected$p.value > 0.05
-expected
 tinytest::expect_equal(res[[1]], expected)
 
 # Update output value

@@ -209,7 +209,7 @@ testsServer <- function(id, data, listResults) {
       })
       if (inherits(e, "try-error")) {
         err <- conditionMessage(attr(e, "condition"))
-        print_noti(FALSE, err)
+        print_req(FALSE, err)
       } else {
         listResults$counter <- listResults$counter + 1
         new_name <- paste0(
@@ -300,10 +300,10 @@ testsServer <- function(id, data, listResults) {
         if (inherits(e, "try-error")) {
           err <- conditionMessage(attr(e, "condition"))
           err <- paste0(err, "\n", "Test did not run successfully")
-          print_noti(FALSE, err)
+          print_req(FALSE, err)
         } else if (is.null(fit)) {
           err <- paste0(err, "\n", "Test did not run successfully")
-          print_noti(FALSE, err)
+          print_req(FALSE, err)
         } else {
           fit <- cbind(fit, row.names(fit))
           names(fit)[ncol(fit)] <- paste0(indep, collapse = ".")

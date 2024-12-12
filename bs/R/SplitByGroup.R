@@ -125,8 +125,7 @@ SplitByGroupServer <- function(id, data) {
 
     # React to split data
     observeEvent(input$split_data, {
-      req(!is.null(r_vals$df))
-      req(is.data.frame(r_vals$df))
+      print_req(is.data.frame(r_vals$df), "The dataset is missing")
       e <- try({
         selected_cols <- input[[paste0("colnames-dropdown_")]]
         selected_groups <- input[[paste0("levels-dropdown_")]]
@@ -139,7 +138,7 @@ SplitByGroupServer <- function(id, data) {
         data$filter_group <- selected_groups
       }, silent = TRUE)
       if (inherits(e, "try-error")) {
-        showNotification(e, type = "error")
+        print_err(e)
       }
     })
   })

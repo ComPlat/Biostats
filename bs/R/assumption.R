@@ -140,8 +140,8 @@ assServer <- function(id, data, listResults) {
 
     runShapiro <- function() {
       df <- data$df
-      req(is.data.frame(df))
-      req(!is.null(data$formula))
+      print_req(is.data.frame(df), "The dataset is missing")
+      print_form(data$formula)
       formula <- data$formula
       check <- TRUE
       res <- NULL
@@ -150,17 +150,24 @@ assServer <- function(id, data, listResults) {
       if (isTRUE(check)) {
         res <- list()
         e <- try({
-          dat <- splitData(df, formula)
-          for (i in unique(dat[, 2])) {
-            tempDat <- dat[dat[, 2] == i, ]
-            temp <- broom::tidy(shapiro.test(tempDat[, 1]))
-            if (!is.null(temp)) {
-              temp$variable <- i
-              temp$`Normal distributed` <- temp$p.value > 0.05
-              res[[length(res) + 1]] <- temp
+          res <- withCallingHandlers({
+            dat <- splitData(df, formula)
+            for (i in unique(dat[, 2])) {
+              tempDat <- dat[dat[, 2] == i, ]
+              temp <- broom::tidy(shapiro.test(tempDat[, 1]))
+              if (!is.null(temp)) {
+                temp$variable <- i
+                temp$`Normal distributed` <- temp$p.value > 0.05
+                res[[length(res) + 1]] <- temp
+              }
             }
-          }
-          res <- do.call(rbind, res)
+            res <- do.call(rbind, res)
+          },
+            warning = function(warn) {
+              print_warn(warn$message)
+              invokeRestart("muffleWarning")
+            }
+          )
         }, silent = TRUE)
         if (!inherits(e, "try-error")) {
           exportTestValues(
@@ -171,10 +178,9 @@ assServer <- function(id, data, listResults) {
             "ShapiroDataNr", listResults$counter
           )
           listResults$all_data[[new_name]] <- res
-          output$curr_error <- renderText(err)
         } else {
           err <- conditionMessage(attr(e, "condition"))
-          print_noti(FALSE, err)
+          print_req(FALSE, err)
         }
       }
     }
@@ -184,16 +190,22 @@ assServer <- function(id, data, listResults) {
 
     runShapiroResiduals <- function() {
       df <- data$df
-      req(is.data.frame(df))
-      req(!is.null(data$formula))
+      print_req(is.data.frame(df), "The dataset is missing")
+      print_form(data$formula)
       formula <- data$formula
-      err <- NULL
       res <- NULL
       e <- try({
-        fit <- lm(formula, data = df)
-        r <- resid(fit)
-        res <- broom::tidy(shapiro.test(r))
-        res$`Residuals normal distributed` <- res$p.value > 0.05
+        withCallingHandlers({
+          fit <- lm(formula, data = df)
+          r <- resid(fit)
+          res <- broom::tidy(shapiro.test(r))
+          res$`Residuals normal distributed` <- res$p.value > 0.05
+        },
+          warning = function(warn) {
+            print_warn(warn$message)
+            invokeRestart("muffleWarning")
+          }
+        )
       }, silent = TRUE)
       if (!inherits(e, "try-error")) {
         exportTestValues(
@@ -204,10 +216,9 @@ assServer <- function(id, data, listResults) {
           "ShaprioResidualsNr", listResults$counter
         )
         listResults$all_data[[new_name]] <- res
-        output$curr_error <- renderText(err)
       } else {
         err <- conditionMessage(attr(e, "condition"))
-        print_noti(FALSE, err)
+        print_err(err)
       }
     }
     observeEvent(input$shapiroResiduals, {
@@ -216,18 +227,24 @@ assServer <- function(id, data, listResults) {
 
     runLevene <- function() {
       df <- data$df
-      req(is.data.frame(df))
-      req(!is.null(data$formula))
+      print_req(is.data.frame(df), "The dataset is missing")
+      print_form(data$formula)
       formula <- data$formula
-      err <- NULL
       fit <- NULL
       e <- try({
-        fit <- broom::tidy(car::leveneTest(formula, data = df, center = input$center))
-        fit$`Variance homogenity` <- fit$p.value > 0.05
+        withCallingHandlers({
+          fit <- broom::tidy(car::leveneTest(formula, data = df, center = input$center))
+          fit$`Variance homogenity` <- fit$p.value > 0.05
+        },
+          warning = function(warn) {
+            print_warn(warn$message)
+            invokeRestart("muffleWarning")
+          }
+        )
       }, silent = TRUE)
       if (inherits(e, "try-error")) {
         err <- conditionMessage(attr(e, "condition"))
-        print_noti(FALSE, err)
+        print_err(err)
       } else {
         exportTestValues(
           assumption_res  = fit
@@ -237,7 +254,6 @@ assServer <- function(id, data, listResults) {
           "LeveneTestNr", listResults$counter
         )
         listResults$all_data[[new_name]] <- fit
-        output$curr_error <- renderText(err)
       }
     }
     observeEvent(input$levene, {
@@ -246,17 +262,23 @@ assServer <- function(id, data, listResults) {
 
     runDiagnosticPlot <- function() {
       df <- data$df
-      req(is.data.frame(df))
-      req(!is.null(data$formula))
+      print_req(is.data.frame(df), "The dataset is missing")
+      print_form(data$formula)
       formula <- data$formula
-      err <- NULL
       p <- NULL
       e <- try({
-        p <- diagnosticPlots(df, formula)
+        withCallingHandlers({
+          p <- diagnosticPlots(df, formula)
+        },
+          warning = function(warn) {
+            print_warn(warn$message)
+            invokeRestart("muffleWarning")
+          }
+        )
       }, silent = TRUE)
       if (inherits(e, "try-error")) {
         err <- conditionMessage(attr(e, "condition"))
-        print_noti(FALSE, err)
+        print_err(err)
       } else {
         exportTestValues(
           assumption_res  = p
@@ -266,7 +288,6 @@ assServer <- function(id, data, listResults) {
         listResults$all_data[[new_result_name]] <-
           new("plot", p = p, width = 15, height = 15, resolution = 600)
         output$DiagnosticPlotRes <- renderPlot(p)
-        output$curr_error <- renderText(err)
       }
     }
     observeEvent(input$DiagnosticPlot, {

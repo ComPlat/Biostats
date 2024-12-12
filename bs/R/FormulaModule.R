@@ -251,31 +251,33 @@ FormulaEditorServer <- function(id, data) {
 
     # React to create formula
     observeEvent(input$create_formula, {
-      req(!is.null(r_vals$df))
-      req(is.data.frame(r_vals$df))
-      e <- try({
-        selected_col <- input[[paste0("colnames-dropdown_", r_vals$counter_id)]]
-        current_text <- input[["editable_code"]]
-        formula <- paste(selected_col, " ~ ", current_text)
-        formula <- as.formula(formula)
-        # check formula
-        e <- try({
-          check_ast(formula, colnames(r_vals$df))
-        })
-        if (inherits(e, "try-error")) {
-          showNotification(e, type = "error")
-          return()
+      print_req(is.data.frame(r_vals$df), "The dataset is missing")
+      tryCatch({
+        withCallingHandlers(
+          expr = {
+            selected_col <- input[[paste0("colnames-dropdown_", r_vals$counter_id)]]
+            current_text <- input[["editable_code"]]
+            formula <- paste(selected_col, " ~ ", current_text)
+            formula <- as.formula(formula)
+            check_ast(formula, colnames(r_vals$df))
+            data$formula <- formula
+            model <- lm(formula, data = r_vals$df)
+            model_latex <- extract_eq(model, wrap = TRUE)
+            output$model <- renderUI({
+              withMathJax(HTML(paste0("$$", model_latex, "$$")))
+            })
+          },
+          warning = function(warn) {
+            print_warn(warn$message)
+            invokeRestart("muffleWarning")
+          }
+        )},
+        error = function(err){
+          print_err("Invalid formula")
+          print_err(err$message)
         }
-        data$formula <- formula
-        model <- lm(formula, data = r_vals$df)
-        model_latex <- extract_eq(model, wrap = TRUE)
-        output$model <- renderUI({
-          withMathJax(HTML(paste0("$$", model_latex, "$$")))
-        })
-      })
-      if (inherits(e, "try-error")) {
-        showNotification("Invalid formula", type = "error")
-      }
+      )
     })
+
   })
 }

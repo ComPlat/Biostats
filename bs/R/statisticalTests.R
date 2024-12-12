@@ -191,25 +191,31 @@ testsServer <- function(id, data, listResults) {
     })
 
     tTest <- function() {
-      req(is.data.frame(data$df))
+      print_req(is.data.frame(data$df), "The dataset is missing")
+      print_form(data$formula)
       df <- data$df
-      req(!is.null(data$formula))
       formula <- data$formula
-      err <- NULL
       fit <- NULL
       e <- try({
-        eq <- TRUE
-        if (input$varEq == "noeq") {
-          eq <- FALSE
-        }
-        fit <- broom::tidy(t.test(formula,
-          data = df, conf.level = input$confLevel,
-          alternative = input$altHyp, var.equal = eq
-        ))
+        withCallingHandlers({
+          eq <- TRUE
+          if (input$varEq == "noeq") {
+            eq <- FALSE
+          }
+          fit <- broom::tidy(t.test(formula,
+            data = df, conf.level = input$confLevel,
+            alternative = input$altHyp, var.equal = eq
+          ))
+        },
+          warning = function(warn) {
+            print_warn(warn$message)
+            invokeRestart("muffleWarning")
+          }
+        )
       })
       if (inherits(e, "try-error")) {
         err <- conditionMessage(attr(e, "condition"))
-        print_noti(FALSE, err)
+        print_err(err)
       } else {
         listResults$counter <- listResults$counter + 1
         new_name <- paste0(
@@ -221,15 +227,14 @@ testsServer <- function(id, data, listResults) {
         )
       }
     }
-
     observeEvent(input$tTest, {
       tTest()
     })
 
     conductTests <- function(method) {
-      req(is.data.frame(data$df))
+      print_req(is.data.frame(data$df), "The dataset is missing")
+      print_form(data$formula)
       df <- data$df
-      req(!is.null(data$formula))
       formula <- data$formula
       err <- NULL
       fit <- NULL
@@ -242,56 +247,71 @@ testsServer <- function(id, data, listResults) {
       if (inherits(e, "try-error")) {
         err <- conditionMessage(attr(e, "condition"))
         err <- paste0(err, "\n", "Could not use Formula")
-        output$test_error <- renderText(err)
+        print_err(err)
       }
       if (is.null(err)) {
         e <- try(
           {
-            switch(method,
-              aov = {
-                fit <- broom::tidy(aov(formula, data = df))
-              },
-              kruskal = {
-                fit <- broom::tidy(kruskal.test(formula, data = df)) # Keep here the restriction for respone ~ predictor
-              },
-              HSD = {
-                check_formula(formula)
-                aov_res <- aov(formula, data = df)
-                bal <- input$design
-                req(bal)
-                if (bal == "Balanced") {
-                  bal <- TRUE
-                } else {
-                  bal <- FALSE
+            withCallingHandlers({
+              switch(method,
+                aov = {
+                  fit <- broom::tidy(aov(
+                    formula, data = df)
+                  )
+                },
+                kruskal = {
+                  fit <- broom::tidy(
+                    kruskal.test(formula, data = df)
+                  ) # Keep here the restriction for respone ~ predictor
+                },
+                HSD = {
+                  check_formula(formula)
+                  aov_res <- aov(formula, data = df)
+                  bal <- input$design
+                  req(bal)
+                  if (bal == "Balanced") {
+                    bal <- TRUE
+                  } else {
+                    bal <- FALSE
+                  }
+                  fit <- agricolae::HSD.test(aov_res,
+                    trt = indep,
+                    alpha = input$pval, group = TRUE, unbalanced = bal
+                  )$groups
+                },
+                kruskalTest = {
+                  check_formula(formula)
+                  fit <- with(df, kruskal(df[, dep], df[, indep]),
+                    alpha = input$pval, p.adj = input$padj, group = TRUE
+                  )$groups
+                },
+                LSD = {
+                  check_formula(formula)
+                  aov_res <- aov(formula, data = df)
+                  fit <- agricolae::LSD.test(aov_res,
+                    trt = indep,
+                    alpha = input$pval, p.adj = input$padj, group = TRUE
+                  )$groups
+                },
+                scheffe = {
+                  check_formula(formula)
+                  aov_res <- aov(formula, data = df)
+                  fit <- agricolae::scheffe.test(
+                    aov_res, trt = indep, alpha = input$pval, group = TRUE
+                  )$groups
+                },
+                REGW = {
+                  check_formula(formula)
+                  aov_res <- aov(formula, data = df)
+                  fit <- agricolae::REGW.test(
+                    aov_res, trt = indep, alpha = input$pval, group = TRUE
+                  )$groups
                 }
-                fit <- agricolae::HSD.test(aov_res,
-                  trt = indep,
-                  alpha = input$pval, group = TRUE, unbalanced = bal
-                )$groups
-              },
-              kruskalTest = {
-                check_formula(formula)
-                fit <- with(df, kruskal(df[, dep], df[, indep]),
-                  alpha = input$pval, p.adj = input$padj, group = TRUE
-                )$groups
-              },
-              LSD = {
-                check_formula(formula)
-                aov_res <- aov(formula, data = df)
-                fit <- agricolae::LSD.test(aov_res,
-                  trt = indep,
-                  alpha = input$pval, p.adj = input$padj, group = TRUE
-                )$groups
-              },
-              scheffe = {
-                check_formula(formula)
-                aov_res <- aov(formula, data = df)
-                fit <- agricolae::scheffe.test(aov_res, trt = indep, alpha = input$pval, group = TRUE)$groups
-              },
-              REGW = {
-                check_formula(formula)
-                aov_res <- aov(formula, data = df)
-                fit <- agricolae::REGW.test(aov_res, trt = indep, alpha = input$pval, group = TRUE)$groups
+              )
+            },
+              warning = function(warn) {
+                print_warn(warn$message)
+                invokeRestart("muffleWarning")
               }
             )
           },
@@ -300,10 +320,10 @@ testsServer <- function(id, data, listResults) {
         if (inherits(e, "try-error")) {
           err <- conditionMessage(attr(e, "condition"))
           err <- paste0(err, "\n", "Test did not run successfully")
-          print_noti(FALSE, err)
+          print_err(err)
         } else if (is.null(fit)) {
           err <- paste0(err, "\n", "Test did not run successfully")
-          print_noti(FALSE, err)
+          print_err(err)
         } else {
           fit <- cbind(fit, row.names(fit))
           names(fit)[ncol(fit)] <- paste0(indep, collapse = ".")

@@ -384,7 +384,7 @@ OperationEditorServer <- function(id, data, listResults) {
         observeEvent(input[[paste0("remove_iv_", name)]], {
           if (!is.null(r_vals$intermediate_vars[[name]])) {
             r_vals$intermediate_vars[[name]] <- NULL
-            showNotification(paste("Removed intermediate result:", name), type = "message")
+            print_success(paste("Removed intermediate result:", name))
           }
         }, ignoreInit = TRUE)
       }
@@ -407,28 +407,25 @@ OperationEditorServer <- function(id, data, listResults) {
 
     # Run operation and store in intermediate result
     observeEvent(input$run_op_intermediate, {
-      req(!is.null(r_vals$df))
-      req(is.data.frame(r_vals$df))
-      req(input$iv != "")
+      print_req(is.data.frame(r_vals$df), "The dataset is missing")
+      if (input$iv == "") {
+        runjs("document.getElementById('OP-iv').focus();")
+      }
+      print_req(input$iv != "", "Please set a name for the intermediate variable")
       var_name <- input$iv |> make.names()
       if (var_name %in% names(r_vals$df)) {
-        showNotification("Found invalid variable name",
-          type = "error"
-        )
+        print_err("Found invalid variable name")
         return()
       }
       if (var_name == r_vals$df_name) {
-        showNotification("Found invalid variable name df. This name is reserved for the dataset",
-          type = "error"
-        )
+        print_err("Found invalid variable name df. This name is reserved for the dataset")
         return()
       }
       code <- input$editable_code
-      op <- try(str2lang(code))
+      op <- try(str2lang(code), silent = TRUE)
       if (inherits(op, "try-error")) {
-        showNotification("Could not convert operation to R code",
-          type = "error"
-        )
+        print_err("Could not convert operation to R code")
+        print_err(op)
         return()
       }
       e <- try({
@@ -439,7 +436,7 @@ OperationEditorServer <- function(id, data, listResults) {
         check_ast(op, vars)
       })
       if (inherits(e, "try-error")) {
-        showNotification(e, type = "error")
+        print_err(e)
         return()
       }
       e <- try({
@@ -451,7 +448,7 @@ OperationEditorServer <- function(id, data, listResults) {
       })
       if (inherits(e, "try-error")) {
         err <- conditionMessage(attr(e, "condition"))
-        showNotification(err, type = "error")
+        print_err(err)
       } else {
         r_vals$intermediate_vars[[var_name]] <- new
         exportTestValues(
@@ -465,16 +462,16 @@ OperationEditorServer <- function(id, data, listResults) {
 
     # Run operation and append to df
     observeEvent(input$run_op, {
-      req(!is.null(r_vals$df))
-      req(is.data.frame(r_vals$df))
-      req(input$nc != "")
+      print_req(is.data.frame(r_vals$df), "The dataset is missing")
+      if (input$nc== "") {
+        runjs("document.getElementById('OP-nc').focus();")
+      }
+      print_req(input$nc != "", "Please set a name for the new column")
       new_col <- input$nc
       code <- input$editable_code
       op <- try(str2lang(code))
       if (inherits(op, "try-error")) {
-        showNotification("Could not convert operation to R code",
-          type = "error"
-        )
+        print_err("Could not convert operation to R code")
         return()
       }
       e <- try({
@@ -485,7 +482,7 @@ OperationEditorServer <- function(id, data, listResults) {
         check_ast(op, vars)
       })
       if (inherits(e, "try-error")) {
-        showNotification(e, type = "error")
+        print_err(e)
         return()
       }
       e <- try({
@@ -495,7 +492,6 @@ OperationEditorServer <- function(id, data, listResults) {
         new <- eval(parse(text = code), envir = eval_env)
         check_type_res(new)
         r_vals$df[, new_col] <- new
-
         if (!is.null(data$backup_df)) {
           eval_env <- new.env()
           list2env(r_vals$intermediate_vars, envir = eval_env)
@@ -503,12 +499,12 @@ OperationEditorServer <- function(id, data, listResults) {
           new <- eval(parse(text = code), envir = eval_env)
           check_type_res(new)
           data$backup_df[, new_col] <- new
-          showNotification("Conducted operation also for entire dataset and not only the subset")
+          print_warn("Conducted operation also for entire dataset and not only the subset")
         }
       })
       if (inherits(e, "try-error")) {
         err <- conditionMessage(attr(e, "condition"))
-        showNotification(err, type = "error")
+        print_err(err)
       }
       data$df <- r_vals$df
       output$head <- renderTable(head(r_vals$df, 10))

@@ -215,7 +215,7 @@ DoseResponseServer <- function(id, data, listResults) {
       neg <- input$negIdentifier
       req(input$posIdentifier)
       pos <- input$posIdentifier
-      print_noti(!is.null(data$formula), "You have to set a formula")
+      print_req(!is.null(data$formula), "You have to set a formula")
       req(!is.null(data$formula))
       r_vals$plots <- NULL # reset
       r_vals$names <- NULL # reset
@@ -258,7 +258,7 @@ DoseResponseServer <- function(id, data, listResults) {
       })
       if (inherits(e, "try-error")) {
         err <- conditionMessage(attr(e, "condition"))
-        print_noti(FALSE, err)
+        print_req(FALSE, err)
       } else {
         listResults$curr_data <- new("doseResponse", df = resDF, p = resPlot)
         listResults$curr_name <- paste("Test Nr", length(listResults$all_names) + 1, "Conducted dose response analysis")

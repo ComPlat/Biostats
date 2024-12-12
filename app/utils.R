@@ -356,7 +356,7 @@ split <- function(df, cols, levels) {
 }
 
 # check and print notifications
-print_noti <- function(expr, message) {
+print_req <- function(expr, message) {
   if (!expr) {
     showNotification(message)
   }

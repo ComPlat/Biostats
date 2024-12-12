@@ -365,32 +365,24 @@ visServer <- function(id, data, listResults) {
 
     # Plot stuff
     plotFct <- function(method) {
-      req(is.data.frame(data$df))
+      print_req(is.data.frame(data$df), "The dataset is missing")
       df <- data$df
-      req(input$yVar)
-      req(input$xVar)
       x <- input$xVar
       y <- input$yVar
       colNames <- names(df)
-      print_noti(x %in% colNames, "X variable not found")
-      print_noti(y %in% colNames, "Y variable not found")
       width <- input$widthPlot
       height <- input$heightPlot
       resolution <- input$resPlot
-      print_noti(width > 0, "width has to be a positive number; It is changed to 10 cm")
+      print_req(width > 0, "width has to be a positive number; It is changed to 10 cm")
       if (width <= 0) width <- 10
-      print_noti(height > 0, "height has to be a positive number; It is changed to 10 cm")
+      print_req(height > 0, "height has to be a positive number; It is changed to 10 cm")
       if (height <= 0) height <- 10
-      print_noti(width < 100, "width exceeds max value of 100; It is changed to 100 cm")
+      print_req(width < 100, "width exceeds max value of 100; It is changed to 100 cm")
       if (width > 100) width <- 100
-      print_noti(height < 100, "height exceeds max value of 100; It is changed to 100 cm")
+      print_req(height < 100, "height exceeds max value of 100; It is changed to 100 cm")
       if (height > 100) height <- 100
       col <- input$col
       fill <- input$fill
-      if (!(fill %in% names(df)) && (fill != "")) showNotification("fill variable not found", duration = 0)
-      if (!(col %in% names(df)) && (col != "")) showNotification("colour variable not found", duration = 0)
-      req((fill %in% names(df)) || (fill == ""))
-      req((col %in% names(df)) || (col == ""))
       fillTitle <- input$legendTitleFill
       colTitle <- input$legendTitleCol
       xlabel <- input$xaxisText
@@ -414,7 +406,7 @@ visServer <- function(id, data, listResults) {
       }
       yd <- as.numeric(df[, y])
       if (fitMethod != "none" && !is.null(fitMethod) && xtype != "numeric") {
-        showNotification("Fit method will be ignored as X variable is not numerical", duration = 0)
+        print_warn("Fit method will be ignored as X variable is not numerical")
         fitMethod <- "none"
       }
       p <- tryCatch(
@@ -433,7 +425,7 @@ visServer <- function(id, data, listResults) {
               req(input$k)
               k <- input$k
               if (k <= 0) {
-                showNotification("k has to be at least 1 and is set to this value")
+                print_warn("k has to be at least 1 and is set to this value")
                 k <- 1
               }
             }
@@ -456,11 +448,11 @@ visServer <- function(id, data, listResults) {
           p
         },
         warning = function(warn) {
-          showNotification(warn$message)
+          print_warn(warn$message)
           return(p)
         },
         error = function(err) {
-          showNotification(paste("An error occurred: ", conditionMessage(err)), duration = 0)
+          print_err(paste("An error occurred: ", conditionMessage(err)))
         }
       )
       exportTestValues(
@@ -472,17 +464,17 @@ visServer <- function(id, data, listResults) {
     }
 
     observeEvent(input$CreatePlotBox, {
-      req(is.data.frame(data$df))
+      print_req(is.data.frame(data$df), "The dataset is missing")
       plotFct("box")
     })
 
     observeEvent(input$CreatePlotScatter, {
-      req(is.data.frame(data$df))
+      print_req(is.data.frame(data$df), "The dataset is missing")
       plotFct("dot")
     })
 
     observeEvent(input$CreatePlotLine, {
-      req(is.data.frame(data$df))
+      print_req(is.data.frame(data$df), "The dataset is missing")
       plotFct("line")
     })
 

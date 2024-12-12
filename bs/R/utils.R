@@ -96,7 +96,6 @@ createExcelFile <- function(l) {
   # save data to excel file
   for (i in seq_along(l)) {
     if (inherits(l[[i]], "plot")) {
-      print("test")
       p <- l[[i]]@p
       width <- l[[i]]@width
       height <- l[[i]]@height
@@ -355,12 +354,47 @@ split <- function(df, cols, levels) {
   return(df_res)
 }
 
+# check and print warnings
+print_warn <- function(message) {
+  showNotification(message, type = "warning")
+}
+
+# check and print error
+print_err <- function(message) {
+  showNotification(message, type = "error")
+}
+
 # check and print notifications
-print_noti <- function(expr, message) {
+print_req <- function(expr, message) {
   if (!expr) {
-    showNotification(message)
+    showNotification(message, type = "message")
   }
   req(expr)
+}
+
+# print success
+print_success <- function(message) {
+  showNotification(message)
+}
+
+# check formula and open modal window if no formula is set
+print_form <- function(formula) {
+  if (is.null(formula)) {
+    showNotification("You have to set a formula",
+      action = tags$div(
+        showModal(modalDialog(
+          title = "FormulaEditor",
+          FormulaEditorUI("FO"),
+          easyClose = TRUE,
+          size = "l",
+          footer = tagList(
+            modalButton("Close")
+          )
+        ))
+      )
+    )
+  }
+  req(!is.null(formula))
 }
 
 # Check axis limits
@@ -533,7 +567,7 @@ elongate_col <- function(col, l) {
 # Check that enough memory is available
 # Add own function for seq which also checks the size and memory usage
 # Set a limit for the size of the imported data
-# Set a limit for the number of results in the results list. 
+# Set a limit for the number of results in the results list.
 # Set a memory limit for the results list
 DataFrame <- function(...) {
   columns <- list(...)

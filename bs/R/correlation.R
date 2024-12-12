@@ -27,13 +27,16 @@ corrSidebarUI <- function(id) {
     ),
     actionButton(NS(id, "pear"), "Pearson correlation",
       title =
-      "Measures the linear relationship between two continuous variables. Assumes normal distribution and equal variance."),
+        "Measures the linear relationship between two continuous variables. Assumes normal distribution and equal variance."
+    ),
     actionButton(NS(id, "spear"), "Spearman correlation",
       title =
-      "Measures the monotonic relationship between two variables using ranks. Suitable for ordinal data or non-linear relationships."),
+        "Measures the monotonic relationship between two variables using ranks. Suitable for ordinal data or non-linear relationships."
+    ),
     actionButton(NS(id, "kendall"), "Kendall correlation",
       title =
-      "Measures the strength of dependence between two variables based on rank concordance. Works well with small samples or tied ranks.")
+        "Measures the strength of dependence between two variables based on rank concordance. Works well with small samples or tied ranks."
+    )
   )
 }
 
@@ -124,41 +127,41 @@ corrServer <- function(id, data, listResults) {
     })
 
     corr_fct <- function(method) {
-      req(is.data.frame(data$df))
-      req(!is.null(data$formula))
+      print_req(is.data.frame(data$df), "The dataset is missing")
+      print_form(data$formula)
       f <- as.character(data$formula)
       dep <- f[2]
       indep <- f[3]
       d <- data$df
-      tryCatch({
-        check_ast(str2lang(indep), colnames(df)) # NOTE: check_ast throws error
-        check_ast(str2lang(dep), colnames(df))
-        fit <- withCallingHandlers(
-          expr = broom::tidy(
-            cor.test(d[, dep], d[, indep],
-              method = method,
-              alternative = input$alt,
-              conf.level = input$conflevel
-            )
-          ),
-          warning = function(warn) {
-            showNotification(warn$message, type = "warning")
-            invokeRestart("muffleWarning")
-          }
-        )
-        exportTestValues(
-          correlation_res = fit
-        )
-        listResults$counter <- listResults$counter + 1
-        new_name <- paste0(
-          "Correlation", method, "NR", listResults$counter
-        )
-        listResults$all_data[[new_name]] <- fit
-      },
+      tryCatch(
+        {
+          check_ast(str2lang(indep), colnames(df)) # NOTE: check_ast throws error
+          check_ast(str2lang(dep), colnames(df))
+          fit <- withCallingHandlers(
+            expr = broom::tidy(
+              cor.test(d[, dep], d[, indep],
+                method = method,
+                alternative = input$alt,
+                conf.level = input$conflevel
+              )
+            ),
+            warning = function(warn) {
+              print_warn(warn$message)
+              invokeRestart("muffleWarning")
+            }
+          )
+          exportTestValues(
+            correlation_res = fit
+          )
+          listResults$counter <- listResults$counter + 1
+          new_name <- paste0(
+            "Correlation", method, "NR", listResults$counter
+          )
+          listResults$all_data[[new_name]] <- fit
+        },
         error = function(err) {
           err <- err$message
-          showNotification(err)
-          print_noti(FALSE, err)
+          print_err(err)
         }
       )
     }
@@ -174,7 +177,6 @@ corrServer <- function(id, data, listResults) {
     observeEvent(input$kendall, {
       corr_fct("kendall")
     })
-
   })
 
   return(listResults)

@@ -37,7 +37,7 @@ args <- list(
 )
 for (i in seq_along(random_funcs)) {
   expr <- paste0(random_funcs[i], "(", args[[i]], ")")
-  print(expr)
+  # print(expr)
   res <- eval(parse(text = expr))
   func <- paste0("OP-", random_funcs[i])
   app$set_inputs(`OP-editable_code` = "")
@@ -382,7 +382,7 @@ for (i in operations) {
   app$click("OP-run_op_intermediate")
   app$wait_for_idle()
   iv_list <- app$get_values()$export[["OP-iv_list"]]
-  print(iv_list[[make.names(i)]])
+  # print(iv_list[[make.names(i)]])
   expect_equal(iv_list[[make.names(i)]], eval(parse(text = content)))
 }
 
@@ -409,7 +409,7 @@ for (i in operations) {
   app$click("OP-run_op_intermediate")
   app$wait_for_idle()
   iv_list <- app$get_values()$export[["OP-iv_list"]]
-  print(iv_list[[make.names(i)]])
+  # print(iv_list[[make.names(i)]])
   expect_equal(iv_list[[make.names(i)]], eval(parse(text = content)))
 }
 
@@ -492,7 +492,7 @@ for (i in operations) {
   app$click("OP-run_op_intermediate")
   app$wait_for_idle()
   iv_list <- app$get_values()$export[["OP-iv_list"]]
-  print(iv_list[[make.names(i)]])
+  # print(iv_list[[make.names(i)]])
   expect_equal(iv_list[[make.names(i)]], eval(parse(text = content)))
 }
 operations <- c(
@@ -514,7 +514,7 @@ for (i in operations) {
   app$click("OP-run_op_intermediate")
   app$wait_for_idle()
   iv_list <- app$get_values()$export[["OP-iv_list"]]
-  print(iv_list[[make.names(i)]])
+  # print(iv_list[[make.names(i)]])
   expect_equal(iv_list[[make.names(i)]], eval(parse(text = content)))
 }
 
@@ -551,5 +551,4 @@ for (i in operations) {
   iv_list <- app$get_values()$export[["OP-iv_list"]]
   expect_equal(iv_list[[i]], eval(parse(text = content)))
 }
-app$wait_for_idle()
 app$stop()

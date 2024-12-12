@@ -124,8 +124,12 @@ corrServer <- function(id, data, listResults) {
     })
 
     corr_fct <- function(method) {
-      req(is.data.frame(data$df))
-      req(!is.null(data$formula))
+      print(is.data.frame(data$df))
+      str(data$formula)
+      print_req(is.data.frame(data$df), "The dataset is missing")
+      # req(is.data.frame(data$df))
+      # req(!is.null(data$formula))
+      print_req(!is.null(data$formula), "The formula is missing")
       f <- as.character(data$formula)
       dep <- f[2]
       indep <- f[3]
@@ -158,7 +162,7 @@ corrServer <- function(id, data, listResults) {
         error = function(err) {
           err <- err$message
           showNotification(err)
-          print_noti(FALSE, err)
+          print_req(FALSE, err)
         }
       )
     }

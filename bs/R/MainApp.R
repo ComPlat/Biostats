@@ -10,6 +10,11 @@ app <- function() {
     sidebarLayout(
       sidebarPanel(
         div(
+          class = "boxed-output",
+          uiOutput("open_formula_editor_corr"),
+          verbatimTextOutput("formula")
+        ),
+        div(
           conditionalPanel(
             condition = "input.conditionedPanels == 'Data'",
             div(
@@ -266,9 +271,7 @@ app <- function() {
       file <- download(session, "/home/shiny/results") # NOTE: from COMELN
       df <- NULL
       df <- readData(file)
-      if (!is.data.frame(df)) {
-        showNotification("File can not be used. Upload into R failed!", duration = 0)
-      }
+      print_req(is.data.frame(df), "File can not be used. Upload into R failed!")
       tryCatch(
         {
           unlink(file)
@@ -301,7 +304,7 @@ app <- function() {
         df <- try(readData(input$file$datapath))
         if (inherits(df, "try-error")) {
           err <- conditionMessage(attr(df, "condition"))
-          showNotification(err)
+          print_err(err)
           return(NULL)
         }
         df <- create_r_names(df)
@@ -441,15 +444,15 @@ app <- function() {
     })
 
     observeEvent(input$download, {
-      print_noti(is_valid_filename(input$user_filename), "Defined filename is not valid")
-      print_noti(length(listResults$all_data) > 0, "No results to save")
+      print_req(is_valid_filename(input$user_filename), "Defined filename is not valid")
+      print_req(length(listResults$all_data) > 0, "No results to save")
       l <- listResults$all_data
       if (Sys.getenv("RUN_MODE") == "SERVER") {
-        print_noti(check_filename_for_server(input$user_filename), "Defined filename does not have xlsx as extension")
+        print_req(check_filename_for_server(input$user_filename), "Defined filename does not have xlsx as extension")
         excelFile <- createExcelFile(l)
         upload(session, excelFile, new_name = input$user_filename)
       } else {
-        print_noti(check_filename_for_serverless(input$user_filename), "Defined filename does not have zip as extension")
+        print_req(check_filename_for_serverless(input$user_filename), "Defined filename does not have zip as extension")
         jsString <- createJSString(l)
         session$sendCustomMessage(
           type = "downloadZip",

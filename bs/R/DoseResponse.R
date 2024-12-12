@@ -3,11 +3,6 @@ DoseResponseSidebarUI <- function(id) {
     "Dose Response analysis",
     div(
       style = "position: relative;",
-      div(
-        class = "boxed-output",
-        uiOutput(NS(id, "open_formula_editor_corr")),
-        verbatimTextOutput(NS(id, "formula"))
-      ),
       br(),
       div(
         class = "boxed-output",
@@ -175,293 +170,297 @@ DoseResponseServer <- function(id, data, listResults) {
     })
 
     reset_dr <- function() {
-      r_vals$plots <- NULL # reset
-      r_vals$names <- NULL # reset
-      r_vals$currentPage <- 1 # reset
-      r_vals$overview_plots <- NULL # reset
-      r_vals$currentPageOverview <- 1 # reset
+      r_vals$plots <- NULL
+      r_vals$names <- NULL
+      r_vals$currentPage <- 1
+      r_vals$overview_plots <- NULL
+      r_vals$currentPageOverview <- 1
       r_vals$outliers <- NULL
       r_vals$df_dr <- NULL
     }
 
-  check_dr <- function() {
-    req(is.data.frame(data$df))
-    req(input$substanceNames)
-    print_noti(!is.null(data$formula), "You have to set a formula")
-    req(!is.null(data$formula))
-  }
-
-  run_dr <- function(df, outliers) {
-    is_xlog <- input$xTransform
-    is_ylog <- input$yTransform
-    names <- input$substanceNames
-    f <- as.character(data$formula)
-    formula <- data$formula
-    dep <- f[2]
-    indep <- f[3]
-    resDF <- NULL
-    resPlot <- NULL
-    err <- try({
-      check_formula(formula)
-      check_ast(str2lang(indep), colnames(df))
-      check_ast(str2lang(dep), colnames(df))
-      res <- ic50(
-        df, dep,
-        indep, names, outliers,
-        is_xlog, is_ylog
-      )
-      if (inherits(res, "errorClass")) {
-        stop(res$error_message)
-      }
-      resDF <- lapply(res, function(x) {
-        if (inherits(x, "errorClass")) {
-          return(NULL)
-        }
-        return(x[[1]])
-      })
-      resDF <- resDF[!is.null(resDF)]
-      resDF <- resDF[!sapply(resDF, is.null)]
-      resDF <- Reduce(rbind, resDF)
-      resP <- lapply(res, function(x) {
-        if (inherits(x, "errorClass")) {
-          return(NULL)
-        }
-        return(x[[2]])
-      })
-      resP <- resP[!is.null(resP)]
-      resP <- resP[!sapply(resP, is.null)]
-    })
-    if (inherits(err, "try-error")) {
-      return(err)
+    check_dr <- function() {
+      print_req(is.data.frame(data$df), "The dataset is missing")
+      req(input$substanceNames)
+      print_form(data$formula)
+      req(!is.null(data$formula))
     }
-    return(list(resDF, resP))
-  }
 
-  dr_complete <- function() {
-    check_dr()
-    df <- data$df
-    reset_dr()
-    resDF <- NULL
-    resPlot <- NULL
-    e <- try(
-      {
-        res <- run_dr(df, NULL)
-        if (inherits(res, "try-error")) {
-          m <- conditionMessage(attr(res, "condition"))
-          stop(m)
+    run_dr <- function(df, outliers) {
+      is_xlog <- input$xTransform
+      is_ylog <- input$yTransform
+      names <- input$substanceNames
+      f <- as.character(data$formula)
+      formula <- data$formula
+      dep <- f[2]
+      indep <- f[3]
+      resDF <- NULL
+      resP <- NULL
+      err <- try({
+        check_formula(formula)
+        check_ast(str2lang(indep), colnames(df))
+        check_ast(str2lang(dep), colnames(df))
+        res <- ic50(
+          df, dep,
+          indep, names, outliers,
+          is_xlog, is_ylog
+        )
+        if (inherits(res, "errorClass")) {
+          stop(res$error_message)
         }
-        resDF <- res[[1]]
-        resP <- res[[2]]
-        r_vals$plots <- resP
-        r_vals$names <- resDF$name
-        r_vals$df_dr <- resDF
-        overviewPlots <- create_plot_pages(resP)
-        r_vals$overview_plots <- overviewPlots
-      },
-      silent = TRUE
-    )
-    if (inherits(e, "try-error")) {
-      err <- conditionMessage(attr(e, "condition"))
+        resDF <- lapply(res, function(x) {
+          if (inherits(x, "errorClass")) {
+            return(NULL)
+          }
+          return(x[[1]])
+        })
+        resDF <- resDF[!is.null(resDF)]
+        resDF <- resDF[!sapply(resDF, is.null)]
+        resDF <- Reduce(rbind, resDF)
+        resP <- lapply(res, function(x) {
+          if (inherits(x, "errorClass")) {
+            return(NULL)
+          }
+          return(x[[2]])
+        })
+        resP <- resP[!is.null(resP)]
+        resP <- resP[!sapply(resP, is.null)]
+      })
+      if (inherits(err, "try-error")) {
+        return(err)
+      }
+      return(list(resDF, resP))
+    }
+
+    dr_complete <- function() {
+      check_dr()
+      df <- data$df
       reset_dr()
-      output$dr_result <- renderTable(data.frame(), digits = 6)
-      print_noti(FALSE, err)
-    } else {
-      output$dr_result <- renderTable(resDF, digits = 6)
-      listResults$curr_data <- new("doseResponse", df = resDF, p = resPlot)
-      listResults$curr_name <- paste(
-        "Test Nr", length(listResults$all_names) + 1,
-        "Conducted dose response analysis"
+      resDF <- NULL
+      resPlot <- NULL
+      e <- try(
+        {
+          res <- run_dr(df, NULL)
+          if (inherits(res, "try-error")) {
+            m <- conditionMessage(attr(res, "condition"))
+            stop(m)
+          }
+          resDF <- res[[1]]
+          resP <- res[[2]]
+          r_vals$plots <- resP
+          r_vals$names <- resDF$name
+          r_vals$df_dr <- resDF
+          overviewPlots <- create_plot_pages(resP)
+          r_vals$overview_plots <- overviewPlots
+        },
+        silent = TRUE
       )
-      listResults$counter <- listResults$counter + 1
-      new_result_name <- paste0("DoseResponseNr", listResults$counter)
-      listResults$all_data[[new_result_name]] <- new(
-        "doseResponse",
-        df = resDF, p = resPlot
-      )
-      exportTestValues(
-        doseresponse_res = listResults$curr_data
-      )
-    }
-  }
-
-observeEvent(input$ic50, {
-  dr_complete()
-})
-
-# Display plots
-observe({
-  req(!is.null(r_vals$plots))
-  req(is.list(r_vals$plots))
-  output$dr_result_plot <- renderPlot(r_vals$plots[[r_vals$currentPage]])
-})
-
-output[["dropdown_plots"]] <- renderUI({
-  req(!is.null(r_vals$plots))
-  req(is.list(r_vals$plots))
-  req(length(r_vals$plots) > 1)
-  req(!is.null(r_vals$names))
-  req(length(r_vals$names) > 1)
-  selectInput(
-    inputId = "DOSERESPONSE-dropdown_plots",
-    label = "Select plot",
-    choices = r_vals$names,
-    selected = r_vals$names[1]
-  )
-})
-
-observeEvent(input$dropdown_plots, {
-  req(!is.null(r_vals$plots))
-  req(is.list(r_vals$plots))
-  req(length(r_vals$plots) > 1)
-  req(!is.null(r_vals$names))
-  req(length(r_vals$names) > 1)
-  r_vals$currentPage <- which(input$dropdown_plots == r_vals$names)
-})
-
-observeEvent(input$nextPage, {
-  req(!is.null(r_vals$plots))
-  req(is.list(r_vals$plots))
-  req(length(r_vals$plots) > 1)
-  if (r_vals$currentPage < length(r_vals$plots)) {
-    r_vals$currentPage <- r_vals$currentPage + 1
-  }
-})
-
-observeEvent(input$previousPage, {
-  req(!is.null(r_vals$plots))
-  req(is.list(r_vals$plots))
-  req(length(r_vals$plots) > 1)
-  if (r_vals$currentPage > 1) {
-    r_vals$currentPage <- r_vals$currentPage - 1
-  }
-})
-
-dr_partial <- function(df, name) {
-  check_dr()
-  resDF <- NULL
-  resPlot <- NULL
-  e <- try(
-    {
-      outliers <- list(r_vals$outliers[[name]])
-      names(outliers) <- name
-      res <- run_dr(df, outliers)
-      if (inherits(res, "try-error")) {
-        m <- conditionMessage(attr(res, "condition"))
-        stop(m)
-      }
-      names <- r_vals$names
-      idx <- which(name == names)
-      resDF <- res[[1]]
-      resP <- res[[2]][[1]]
-      old_plots <- r_vals$plots
-      old_df_dr <- r_vals$df_dr
-      old_plots[[idx]] <- resP
-      old_df_dr[idx, ] <- resDF
-      r_vals$plots <- old_plots
-      r_vals$df_dr <- old_df_dr
-      resP <- r_vals$plots
-      resDF <- r_vals$df_dr
-      overviewPlots <- create_plot_pages(resP)
-      r_vals$overview_plots <- overviewPlots
-    },
-    silent = TRUE
-  )
-  if (inherits(e, "try-error")) {
-    err <- conditionMessage(attr(e, "condition"))
-    output$dr_result <- renderTable(data.frame(), digits = 6)
-    print_noti(FALSE, err)
-  } else {
-    output$dr_result <- renderTable(resDF, digits = 6)
-    listResults$curr_data <- new("doseResponse", df = resDF, p = resPlot)
-    listResults$curr_name <- paste(
-      "Test Nr", length(listResults$all_names) + 1,
-      "Conducted dose response analysis"
-    )
-    listResults$counter <- listResults$counter + 1
-    new_result_name <- paste0("DoseResponseNr", listResults$counter)
-    listResults$all_data[[new_result_name]] <- new(
-      "doseResponse",
-      df = resDF, p = resPlot
-    )
-    exportTestValues(
-      doseresponse_res = listResults$curr_data
-    )
-  }
-}
-
-observeEvent(input$plot_click, {
-  req(!is.null(input$plot_click))
-  req(is.data.frame(data$df))
-  print_noti(!is.null(data$formula), "You have to set a formula")
-  try({
-    click <- input$plot_click
-    name_col <- input$substanceNames
-    df <- data$df
-    sub_df <- df[df[, name_col] == r_vals$names[r_vals$currentPage], ]
-    f <- as.character(data$formula)
-    formula <- data$formula
-    check_formula(formula)
-    dep <- f[2]
-    indep <- f[3]
-    x <- as.numeric(sub_df[, indep])
-    y <- as.numeric(sub_df[, dep])
-    x <- x[!is.na(x)]
-    y <- y[!is.na(y)]
-    x_range <- range(x, na.rm = TRUE)
-    y_range <- range(y, na.rm = TRUE)
-    x_normalized <- (x - x_range[1]) / (x_range[2] - x_range[1])
-    y_normalized <- (y - y_range[1]) / (y_range[2] - y_range[1])
-    click_x_normalized <- (click$x - x_range[1]) / (x_range[2] - x_range[1])
-    click_y_normalized <- (click$y - y_range[1]) / (y_range[2] - y_range[1])
-    distances <- sqrt((x_normalized - click_x_normalized)^2 + (y_normalized - click_y_normalized)^2)
-    nearest <- which.min(distances)
-    if (distances[nearest] < 0.1) {
-      name <- r_vals$names[r_vals$currentPage]
-      old_outliers <- r_vals$outliers[[name]]
-      if (is.null(old_outliers)) {
-        r_vals$outliers[[name]] <- nearest
+      if (inherits(e, "try-error")) {
+        err <- conditionMessage(attr(e, "condition"))
+        reset_dr()
+        output$dr_result <- renderTable(data.frame(), digits = 6)
+        print_err(err)
       } else {
-        if (nearest %in% old_outliers) {
-          old_outliers <- old_outliers[old_outliers != nearest]
-        } else {
-          old_outliers <- c(old_outliers, nearest)
-        }
-        r_vals$outliers[[name]] <- old_outliers
+        output$dr_result <- renderTable(resDF, digits = 6)
+        listResults$curr_data <- new("doseResponse", df = resDF, p = resPlot)
+        listResults$curr_name <- paste(
+          "Test Nr", length(listResults$all_names) + 1,
+          "Conducted dose response analysis"
+        )
+        listResults$counter <- listResults$counter + 1
+        new_result_name <- paste0("DoseResponseNr", listResults$counter)
+        listResults$all_data[[new_result_name]] <- new(
+          "doseResponse",
+          df = resDF, p = resPlot
+        )
+        exportTestValues(
+          doseresponse_res = listResults$curr_data
+        )
       }
-      old_current_page <- r_vals$currentPage
-      dr_partial(sub_df, name)
-      r_vals$currentPage <- old_current_page
     }
+
+    observeEvent(input$ic50, {
+      dr_complete()
+    })
+
+    # Display plots
+    observe({
+      req(!is.null(r_vals$plots))
+      req(is.list(r_vals$plots))
+      output$dr_result_plot <- renderPlot(r_vals$plots[[r_vals$currentPage]])
+    })
+
+    output[["dropdown_plots"]] <- renderUI({
+      req(!is.null(r_vals$plots))
+      req(is.list(r_vals$plots))
+      req(length(r_vals$plots) > 1)
+      req(!is.null(r_vals$names))
+      req(length(r_vals$names) > 1)
+      selectInput(
+        inputId = "DOSERESPONSE-dropdown_plots",
+        label = "Select plot",
+        choices = r_vals$names,
+        selected = r_vals$names[1]
+      )
+    })
+
+    observeEvent(input$dropdown_plots, {
+      req(!is.null(r_vals$plots))
+      req(is.list(r_vals$plots))
+      req(length(r_vals$plots) > 1)
+      req(!is.null(r_vals$names))
+      req(length(r_vals$names) > 1)
+      r_vals$currentPage <- which(input$dropdown_plots == r_vals$names)
+    })
+
+    observeEvent(input$nextPage, {
+      req(!is.null(r_vals$plots))
+      req(is.list(r_vals$plots))
+      req(length(r_vals$plots) > 1)
+      if (r_vals$currentPage < length(r_vals$plots)) {
+        r_vals$currentPage <- r_vals$currentPage + 1
+      }
+    })
+
+    observeEvent(input$previousPage, {
+      req(!is.null(r_vals$plots))
+      req(is.list(r_vals$plots))
+      req(length(r_vals$plots) > 1)
+      if (r_vals$currentPage > 1) {
+        r_vals$currentPage <- r_vals$currentPage - 1
+      }
+    })
+
+    dr_partial <- function(df, name) {
+      check_dr()
+      resDF <- NULL
+      resPlot <- NULL
+      e <- try(
+        {
+          outliers <- list(r_vals$outliers[[name]])
+          names(outliers) <- name
+          if (length(outliers[[name]]) == 0) {
+            outliers <- list(NULL)
+            names(outliers) <- name
+          }
+          res <- run_dr(df, outliers)
+          if (inherits(res, "try-error")) {
+            m <- conditionMessage(attr(res, "condition"))
+            stop(m)
+          }
+          names <- r_vals$names
+          idx <- which(name == names)
+          resDF <- res[[1]]
+          resP <- res[[2]][[1]]
+          old_plots <- r_vals$plots
+          old_df_dr <- r_vals$df_dr
+          old_plots[[idx]] <- resP
+          old_df_dr[idx, ] <- resDF
+          r_vals$plots <- old_plots
+          r_vals$df_dr <- old_df_dr
+          resP <- r_vals$plots
+          resDF <- r_vals$df_dr
+          overviewPlots <- create_plot_pages(resP)
+          r_vals$overview_plots <- overviewPlots
+        },
+        silent = TRUE
+      )
+      if (inherits(e, "try-error")) {
+        err <- conditionMessage(attr(e, "condition"))
+        output$dr_result <- renderTable(data.frame(), digits = 6)
+        print_err(err)
+      } else {
+        output$dr_result <- renderTable(resDF, digits = 6)
+        listResults$curr_data <- new("doseResponse", df = resDF, p = resPlot)
+        listResults$curr_name <- paste(
+          "Test Nr", length(listResults$all_names) + 1,
+          "Conducted dose response analysis"
+        )
+        listResults$counter <- listResults$counter + 1
+        new_result_name <- paste0("DoseResponseNr", listResults$counter)
+        listResults$all_data[[new_result_name]] <- new(
+          "doseResponse",
+          df = resDF, p = resPlot
+        )
+        exportTestValues(
+          doseresponse_res = listResults$curr_data
+        )
+      }
+    }
+
+    observeEvent(input$plot_click, {
+      req(!is.null(input$plot_click))
+      req(is.data.frame(data$df))
+      print_req(!is.null(data$formula), "You have to set a formula")
+      try({
+        click <- input$plot_click
+        name_col <- input$substanceNames
+        df <- data$df
+        sub_df <- df[df[, name_col] == r_vals$names[r_vals$currentPage], ]
+        f <- as.character(data$formula)
+        formula <- data$formula
+        check_formula(formula)
+        dep <- f[2]
+        indep <- f[3]
+        x <- as.numeric(sub_df[, indep])
+        y <- as.numeric(sub_df[, dep])
+        x <- x[!is.na(x)]
+        y <- y[!is.na(y)]
+        x_range <- range(x, na.rm = TRUE)
+        y_range <- range(y, na.rm = TRUE)
+        x_normalized <- (x - x_range[1]) / (x_range[2] - x_range[1])
+        y_normalized <- (y - y_range[1]) / (y_range[2] - y_range[1])
+        click_x_normalized <- (click$x - x_range[1]) / (x_range[2] - x_range[1])
+        click_y_normalized <- (click$y - y_range[1]) / (y_range[2] - y_range[1])
+        distances <- sqrt((x_normalized - click_x_normalized)^2 + (y_normalized - click_y_normalized)^2)
+        nearest <- which.min(distances)
+        if (distances[nearest] < 0.1) {
+          name <- r_vals$names[r_vals$currentPage]
+          old_outliers <- r_vals$outliers[[name]]
+          if (is.null(old_outliers)) {
+            r_vals$outliers[[name]] <- nearest
+          } else {
+            if (nearest %in% old_outliers) {
+              old_outliers <- old_outliers[old_outliers != nearest]
+            } else {
+              old_outliers <- c(old_outliers, nearest)
+            }
+            r_vals$outliers[[name]] <- old_outliers
+          }
+          old_current_page <- r_vals$currentPage
+          dr_partial(sub_df, name)
+          r_vals$currentPage <- old_current_page
+        }
+      })
+    })
+
+    # Display overview plots
+    observe({
+      req(!is.null(r_vals$overview_plots))
+      req(is.list(r_vals$overview_plots))
+      output$dr_overview_plot <- renderPlot(
+        r_vals$overview_plots[[r_vals$currentPageOverview]]
+      )
+    })
+
+    observeEvent(input$nextPageOverview, {
+      req(!is.null(r_vals$overview_plots))
+      req(is.list(r_vals$overview_plots))
+      req(length(r_vals$overview_plots) > 1)
+      if (r_vals$currentPageOverview < length(r_vals$overview_plots)) {
+        r_vals$currentPageOverview <- r_vals$currentPageOverview + 1
+      }
+    })
+
+    observeEvent(input$previousPageOverview, {
+      req(!is.null(r_vals$overview_plots))
+      req(is.list(r_vals$overview_plots))
+      req(length(r_vals$overview_plots) > 1)
+      if (r_vals$currentPageOverview > 1) {
+        r_vals$currentPageOverview <- r_vals$currentPageOverview - 1
+      }
+    })
   })
-})
 
-# Display overview plots
-observe({
-  req(!is.null(r_vals$overview_plots))
-  req(is.list(r_vals$overview_plots))
-  output$dr_overview_plot <- renderPlot(
-    r_vals$overview_plots[[r_vals$currentPageOverview]]
-  )
-})
-
-observeEvent(input$nextPageOverview, {
-  req(!is.null(r_vals$overview_plots))
-  req(is.list(r_vals$overview_plots))
-  req(length(r_vals$overview_plots) > 1)
-  if (r_vals$currentPageOverview < length(r_vals$overview_plots)) {
-    r_vals$currentPageOverview <- r_vals$currentPageOverview + 1
-  }
-})
-
-observeEvent(input$previousPageOverview, {
-  req(!is.null(r_vals$overview_plots))
-  req(is.list(r_vals$overview_plots))
-  req(length(r_vals$overview_plots) > 1)
-  if (r_vals$currentPageOverview > 1) {
-    r_vals$currentPageOverview <- r_vals$currentPageOverview - 1
-  }
-})
-})
-
-return(listResults)
+  return(listResults)
 }

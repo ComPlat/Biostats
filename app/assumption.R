@@ -174,7 +174,7 @@ assServer <- function(id, data, listResults) {
           output$curr_error <- renderText(err)
         } else {
           err <- conditionMessage(attr(e, "condition"))
-          print_noti(FALSE, err)
+          print_req(FALSE, err)
         }
       }
     }
@@ -207,7 +207,7 @@ assServer <- function(id, data, listResults) {
         output$curr_error <- renderText(err)
       } else {
         err <- conditionMessage(attr(e, "condition"))
-        print_noti(FALSE, err)
+        print_req(FALSE, err)
       }
     }
     observeEvent(input$shapiroResiduals, {
@@ -227,7 +227,7 @@ assServer <- function(id, data, listResults) {
       }, silent = TRUE)
       if (inherits(e, "try-error")) {
         err <- conditionMessage(attr(e, "condition"))
-        print_noti(FALSE, err)
+        print_req(FALSE, err)
       } else {
         exportTestValues(
           assumption_res  = fit
@@ -256,7 +256,7 @@ assServer <- function(id, data, listResults) {
       }, silent = TRUE)
       if (inherits(e, "try-error")) {
         err <- conditionMessage(attr(e, "condition"))
-        print_noti(FALSE, err)
+        print_req(FALSE, err)
       } else {
         exportTestValues(
           assumption_res  = p

@@ -372,18 +372,18 @@ visServer <- function(id, data, listResults) {
       x <- input$xVar
       y <- input$yVar
       colNames <- names(df)
-      print_noti(x %in% colNames, "X variable not found")
-      print_noti(y %in% colNames, "Y variable not found")
+      print_req(x %in% colNames, "X variable not found")
+      print_req(y %in% colNames, "Y variable not found")
       width <- input$widthPlot
       height <- input$heightPlot
       resolution <- input$resPlot
-      print_noti(width > 0, "width has to be a positive number; It is changed to 10 cm")
+      print_req(width > 0, "width has to be a positive number; It is changed to 10 cm")
       if (width <= 0) width <- 10
-      print_noti(height > 0, "height has to be a positive number; It is changed to 10 cm")
+      print_req(height > 0, "height has to be a positive number; It is changed to 10 cm")
       if (height <= 0) height <- 10
-      print_noti(width < 100, "width exceeds max value of 100; It is changed to 100 cm")
+      print_req(width < 100, "width exceeds max value of 100; It is changed to 100 cm")
       if (width > 100) width <- 100
-      print_noti(height < 100, "height exceeds max value of 100; It is changed to 100 cm")
+      print_req(height < 100, "height exceeds max value of 100; It is changed to 100 cm")
       if (height > 100) height <- 100
       col <- input$col
       fill <- input$fill
