@@ -349,7 +349,7 @@ app <- function() {
 
     # Render results list
     output$Results <- renderUI({
-      if (input$conditionedPanels == "DataWrangling" || input$conditionedPanels == "Dose Response analysis") {
+      if (input$conditionedPanels == "DataWrangling") {
         return(
           div(
             class = "var-box-output",
@@ -543,15 +543,30 @@ app <- function() {
     })
 
     observeEvent(input$download, {
-      print_req(is_valid_filename(input$user_filename), "Defined filename is not valid")
+      if (!is_valid_filename(input$user_filename)) {
+        runjs("document.getElementById('user_filename').focus();")
+        print_noti(
+          why_filename_invalid(input$user_filename)
+        )
+      }
+      print_req(
+        is_valid_filename(input$user_filename),
+        "Defined filename is not valid"
+      )
       print_req(length(listResults$all_data) > 0, "No results to save")
       l <- listResults$all_data
       if (Sys.getenv("RUN_MODE") == "SERVER") {
-        print_req(check_filename_for_server(input$user_filename), "Defined filename does not have xlsx as extension")
+        print_req(
+          check_filename_for_server(input$user_filename),
+          "Defined filename does not have xlsx as extension"
+        )
         excelFile <- createExcelFile(l)
         upload(session, excelFile, new_name = input$user_filename)
       } else {
-        print_req(check_filename_for_serverless(input$user_filename), "Defined filename does not have zip as extension")
+        print_req(
+          check_filename_for_serverless(input$user_filename),
+          "Defined filename does not have zip as extension"
+        )
         jsString <- createJSString(l)
         session$sendCustomMessage(
           type = "downloadZip",

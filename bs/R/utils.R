@@ -372,6 +372,11 @@ print_req <- function(expr, message) {
   req(expr)
 }
 
+# print notification without check
+print_noti<- function(message) {
+  showNotification(message, type = "message")
+}
+
 # print success
 print_success <- function(message) {
   showNotification(message)
@@ -512,6 +517,32 @@ is_valid_filename <- function(filename) {
       return(FALSE)
     }
     return(TRUE)
+  })
+}
+
+why_filename_invalid <- function(filename) {
+  try({
+    if (!is.character(filename)) {
+      return("Filename has to consist of characters")
+    }
+    if (grepl(" ", filename)) {
+      return("Found spaces in filename")
+    }
+    invalid_chars <- "[<>:\"/\\|?*]"
+    if (grepl(invalid_chars, filename)) {
+      return("Found invalid chars in filename: [<>:\"\\|?*")
+    }
+    if (nchar(filename) == 0) {
+      return("Filename is empty")
+    }
+    if (nchar(filename) >= 100) {
+      return("Filename is too long (> 100 characters)")
+    }
+    ex <- strsplit(basename(filename), split = "\\.")[[1]]
+    if (length(ex) == 1) { # no extension found
+      return("Filename extension is missing")
+    }
+    return("")
   })
 }
 
