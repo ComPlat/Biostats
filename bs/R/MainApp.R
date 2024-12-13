@@ -1,11 +1,14 @@
 app <- function() {
   ui <- fluidPage(
     useShinyjs(),
+    includeScript(system.file("www/FileSaver.min.js", package = "bs")),
+    includeScript(system.file("www/html2canvas.min.js", package = "bs")),
+    includeScript(system.file("www/jszip.min.js", package = "bs")),
     includeScript(system.file("www/download.js", package = "bs")),
     tags$head(
-      tags$script(src = "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"),
-      tags$script(src = "https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"),
-      tags$script(src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/0.4.1/html2canvas.min.js"),
+      # tags$script(src = "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"),
+      # tags$script(src = "https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"),
+      # tags$script(src tags$script(src = "js/jszip.min.js"),
       tags$style(HTML("
         .boxed-output {
         border: 2px solid #900C3F;
