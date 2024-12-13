@@ -84,7 +84,7 @@ app <- function() {
           )
         ),
         uiOutput("open_formula_editor_main"),
-        verbatimTextOutput("formula"),
+        uiOutput("formulaUI"),
         br(),
         uiOutput("open_split_by_group"),
         uiOutput("data_splitted"),
@@ -287,7 +287,10 @@ app <- function() {
       file <- download(session, "/home/shiny/results") # NOTE: from COMELN
       df <- NULL
       df <- readData(file)
-      print_req(is.data.frame(df), "File can not be used. Upload into R failed!")
+      print_req(
+        is.data.frame(df),
+        "File can not be used. Upload into R failed!"
+      )
       tryCatch(
         {
           unlink(file)
@@ -490,6 +493,14 @@ app <- function() {
       output$formula <- renderText({
         deparse(dataSet$formula)
       })
+    })
+    output[["formulaUI"]] <- renderUI({
+      if (input$conditionedPanels == "DataWrangling" ||
+        input$conditionedPanels == "Visualisation") {
+        return()
+      } else {
+        verbatimTextOutput("formula")
+      }
     })
 
     # Render split by group
