@@ -62,6 +62,7 @@ corrServer <- function(id, data, listResults) {
           exportTestValues(
             correlation_res = fit
           )
+          check_rls(listResults$all_data, fit)
           listResults$counter <- listResults$counter + 1
           new_name <- paste0(
             "Correlation", method, "NR", listResults$counter

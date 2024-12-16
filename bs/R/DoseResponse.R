@@ -276,6 +276,7 @@ DoseResponseServer <- function(id, data, listResults) {
           resDF <- r_vals$df_dr
           overviewPlots <- create_plot_pages(resP)
           r_vals$overview_plots <- overviewPlots
+          check_rls(listResults$all_data, res)
         },
         silent = TRUE
       )
@@ -284,6 +285,8 @@ DoseResponseServer <- function(id, data, listResults) {
         output$dr_result <- renderTable(data.frame(), digits = 6)
         print_err(err)
       } else {
+        # TODO: add version for Substance. _S4_V1, _S4_V2 ...
+        # Why does it jump after update?
         output$dr_result <- renderTable(resDF, digits = 6)
         listResults$curr_data <- new("doseResponse", df = resDF, p = resP)
         listResults$curr_name <- paste(

@@ -588,6 +588,19 @@ create_plot_pages <- function(plotList) {
   })
 }
 
+# check result list size (rls)
+# Here also the length is checked
+check_rls <- function(listResults, newObj) {
+  if (length(listResults) > 1000) {
+    stop("You can only store 1000 results. Consider removing some results")
+  }
+  current_size <- object.size(listResults)
+  max_size <- 500 * 1024^2 # 500 MB per user
+  if (current_size + object.size(newObj) > max_size) {
+    stop("Memory limit exceeded for user results. Consider removing some results.")
+  }
+}
+
 # internal dataframe function
 elongate_col <- function(col, l) {
   times <- l / length(col)

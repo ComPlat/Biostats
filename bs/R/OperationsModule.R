@@ -373,6 +373,7 @@ OperationEditorServer <- function(id, data, listResults) {
         check_length_code(code)
         new <- eval(parse(text = code), envir = eval_env)
         check_type_res(new)
+        check_rls(listResults$all_data, new)
       })
       if (inherits(e, "try-error")) {
         err <- conditionMessage(attr(e, "condition"))
@@ -420,6 +421,7 @@ OperationEditorServer <- function(id, data, listResults) {
         check_length_code(code)
         new <- eval(parse(text = code), envir = eval_env)
         check_type_res(new)
+        check_rls(listResults$all_data, new)
         r_vals$df[, new_col] <- new
         if (!is.null(data$backup_df)) {
           eval_env <- new.env()

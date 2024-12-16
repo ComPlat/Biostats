@@ -117,6 +117,7 @@ testsServer <- function(id, data, listResults) {
               data = df, conf.level = input$confLevel,
               alternative = input$altHyp, var.equal = eq
             ))
+            check_rls(listResults$all_data)
           },
           warning = function(warn) {
             print_warn(warn$message)
@@ -223,6 +224,7 @@ testsServer <- function(id, data, listResults) {
                     )$groups
                   }
                 )
+                check_rls(listResults$all_data, fit)
               },
               warning = function(warn) {
                 print_warn(warn$message)
