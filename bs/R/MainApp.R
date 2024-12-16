@@ -71,6 +71,16 @@ app <- function() {
         border-radius: 5px;
         margin-top: 10px;
         }
+        .nav-tabs > li > a {
+          text-decoration: none;
+          color: #900C3F;
+          font-weight: bold;
+          margin-right: 15px;
+        }
+        .nav-tabs > li > a:hover {
+        text-decoration: underline;
+        color: #333;
+        }
         "))
     ),
     sidebarLayout(
