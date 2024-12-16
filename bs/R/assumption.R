@@ -77,6 +77,7 @@ assServer <- function(id, data, listResults) {
                 }
                 res <- do.call(rbind, res)
                 check_rls(listResults$all_data, res)
+                res
               },
               warning = function(warn) {
                 print_warn(warn$message)
@@ -120,6 +121,7 @@ assServer <- function(id, data, listResults) {
               res <- broom::tidy(shapiro.test(r))
               res$`Residuals normal distributed` <- res$p.value > 0.05
               check_rls(listResults$all_data, res)
+              res
             },
             warning = function(warn) {
               print_warn(warn$message)
@@ -160,6 +162,7 @@ assServer <- function(id, data, listResults) {
               fit <- broom::tidy(car::leveneTest(formula, data = df, center = input$center))
               fit$`Variance homogenity` <- fit$p.value > 0.05
               check_rls(listResults$all_data, fit)
+              fit
             },
             warning = function(warn) {
               print_warn(warn$message)
@@ -199,6 +202,7 @@ assServer <- function(id, data, listResults) {
             {
               p <- diagnosticPlots(df, formula)
               check_rls(listResults$all_data, p)
+              p
             },
             warning = function(warn) {
               print_warn(warn$message)

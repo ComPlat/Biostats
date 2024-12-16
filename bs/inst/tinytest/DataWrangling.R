@@ -1,4 +1,3 @@
-# TODO: Add tests for the following: DataFrame & seq
 library(shinytest2)
 library(tinytest)
 library(bs)
@@ -21,6 +20,49 @@ app$wait_for_idle()
 # Switch to data wrangling
 app$set_inputs(`conditionedPanels` = "DataWrangling")
 app$wait_for_idle()
+
+# Seq tests
+app$click("OP-seq")
+app$wait_for_idle()
+content <- app$get_values()$input[["OP-editable_code"]]
+app$set_inputs(
+  `OP-editable_code` = 
+  paste0(
+    content, "1, 100, 1"
+  )
+)
+app$click("OP-bracket_close")
+app$wait_for_idle()
+app$set_inputs(`OP-iv` = "Seq")
+app$wait_for_idle()
+app$click("OP-run_op_intermediate")
+app$wait_for_idle()
+content <- app$get_values()$input[["OP-editable_code"]]
+expect_equal(content, " Seq(1, 100, 1 )")
+iv_list <- app$get_values()$export[["OP-iv_list"]]
+expect_equal(iv_list$Seq, seq(1, 100, 1))
+
+# dataframe tests
+app$set_inputs(`OP-editable_code` = "")
+app$click("OP-df")
+app$wait_for_idle()
+app$click("OP-colnames_conc_0")
+app$click("OP-comma")
+app$click("OP-colnames_conc_0")
+app$click("OP-bracket_close")
+content <- app$get_values()$input[["OP-editable_code"]]
+app$wait_for_idle()
+app$set_inputs(`OP-iv` = "df_new")
+app$wait_for_idle()
+app$click("OP-run_op_intermediate")
+app$wait_for_idle()
+content <- app$get_values()$input[["OP-editable_code"]]
+expect_equal(content, " DataFrame( conc , conc )")
+iv_list <- app$get_values()$export[["OP-iv_list"]]
+df_new <- data.frame(CO2$conc, CO2$conc)
+names(df_new) <- c("conc", "conc")
+expect_equal(iv_list$df_new, df_new)
+app$set_inputs(`OP-editable_code` = "")
 
 # random tests
 random_funcs <- c(
@@ -57,7 +99,7 @@ for (i in seq_along(random_funcs)) {
   app$wait_for_idle()
   iv_list <- app$get_values()$export[["OP-iv_list"]]
   output <- iv_list[[make.names(func)]]
-  expect_equal(output, res)
+  expect_equal(output, res) |> print()
 }
 
 # NOTE: this is necessary as no seed can be set
@@ -77,10 +119,10 @@ validate_distribution <- function(values, dist, ...) {
     prob_success <- 0.5
     expect_true(abs(mean(values) - (n_trials * prob_success)) < 0.5,
       info = "Binomial mean should be close to n * p"
-    )
+    ) |> print()
     expect_true(abs(var(values) - (n_trials * prob_success * (1 - prob_success))) < 0.5,
       info = "Binomial variance should be close to n * p * (1 - p)"
-    )
+    ) |> print()
   }
 }
 random_funcs <- c(
@@ -351,12 +393,12 @@ Num <- -1.5
 expect_equal(iv_list$MATH4, eval(parse(text = content)))
 
 # Test comparison operations
-app$set_inputs(`OP-editable_code` = "c(1, 2, 2, 2)")
+app$set_inputs(`OP-editable_code` = "C(1, 2, 2, 2)")
 app$set_inputs(`OP-iv` = "Vec1")
 app$wait_for_idle()
 app$click("OP-run_op_intermediate")
 app$wait_for_idle()
-app$set_inputs(`OP-editable_code` = "c(1, 2, 3, 4)")
+app$set_inputs(`OP-editable_code` = "C(1, 2, 3, 4)")
 app$set_inputs(`OP-iv` = "Vec2")
 app$wait_for_idle()
 app$click("OP-run_op_intermediate")
@@ -383,7 +425,7 @@ for (i in operations) {
   app$wait_for_idle()
   iv_list <- app$get_values()$export[["OP-iv_list"]]
   # print(iv_list[[make.names(i)]])
-  expect_equal(iv_list[[make.names(i)]], eval(parse(text = content)))
+  expect_equal(iv_list[[make.names(i)]], eval(parse(text = content))) |> print()
 }
 
 # Test statistical operations and utilities
@@ -410,7 +452,7 @@ for (i in operations) {
   app$wait_for_idle()
   iv_list <- app$get_values()$export[["OP-iv_list"]]
   # print(iv_list[[make.names(i)]])
-  expect_equal(iv_list[[make.names(i)]], eval(parse(text = content)))
+  expect_equal(iv_list[[make.names(i)]], eval(parse(text = content))) |> print()
 }
 
 app$set_inputs(`OP-editable_code` = "")
@@ -455,13 +497,13 @@ expect_equal(iv_list[["get_cols"]], CO2[, c("conc", "conc", "uptake")])
 
 
 # Test string functions
-app$set_inputs(`OP-editable_code` = 'c("A", "B", "C")')
+app$set_inputs(`OP-editable_code` = 'C("A", "B", "C")')
 app$wait_for_idle()
 app$set_inputs(`OP-iv` = "S1")
 app$wait_for_idle()
 app$click("OP-run_op_intermediate")
 app$wait_for_idle()
-app$set_inputs(`OP-editable_code` = 'c("d", "e", "f")')
+app$set_inputs(`OP-editable_code` = 'C("d", "e", "f")')
 app$wait_for_idle()
 app$set_inputs(`OP-iv` = "S2")
 app$wait_for_idle()
@@ -493,7 +535,7 @@ for (i in operations) {
   app$wait_for_idle()
   iv_list <- app$get_values()$export[["OP-iv_list"]]
   # print(iv_list[[make.names(i)]])
-  expect_equal(iv_list[[make.names(i)]], eval(parse(text = content)))
+  expect_equal(iv_list[[make.names(i)]], eval(parse(text = content))) |> print()
 }
 operations <- c(
   "OP-tolower", "OP-toupper"
@@ -515,11 +557,11 @@ for (i in operations) {
   app$wait_for_idle()
   iv_list <- app$get_values()$export[["OP-iv_list"]]
   # print(iv_list[[make.names(i)]])
-  expect_equal(iv_list[[make.names(i)]], eval(parse(text = content)))
+  expect_equal(iv_list[[make.names(i)]], eval(parse(text = content))) |> print()
 }
 
 # Test casts
-app$set_inputs(`OP-editable_code` = 'c("10.5", "1.4", "1.3", 3.14)')
+app$set_inputs(`OP-editable_code` = 'C("10.5", "1.4", "1.3", 3.14)')
 app$wait_for_idle()
 app$set_inputs(`OP-iv` = "S1")
 app$wait_for_idle()
@@ -549,6 +591,6 @@ for (i in operations) {
   app$click("OP-run_op_intermediate")
   app$wait_for_idle()
   iv_list <- app$get_values()$export[["OP-iv_list"]]
-  expect_equal(iv_list[[i]], eval(parse(text = content)))
+  expect_equal(iv_list[[make.names(i)]], eval(parse(text = content))) |> print()
 }
 app$stop()

@@ -1,6 +1,11 @@
 # Upload data into R
 readData <- function(path) {
   stopifnot(is.character(path))
+  max_file_size <- 50 * 1024^2 # 50 MB in bytes
+  file_size <- file.info(path)$size
+  if (is.na(file_size) || file_size > max_file_size) {
+    stop("File size exceeds the 50 MB limit. Please upload a smaller file.")
+  }
   df <- NULL
   df <- try(as.data.frame(readxl::read_excel(
     path,
@@ -43,6 +48,15 @@ readData <- function(path) {
     }
     df <- Map(conv, check, df)
     df <- data.frame(df)
+  }
+  # Check data frame dimensions
+  max_rows <- 1e6
+  max_cols <- 1000
+  if (nrow(df) > max_rows || ncol(df) > max_cols) {
+    stop(sprintf(
+      "Data exceeds the limit of %d rows or %d columns. Please upload a smaller dataset.",
+      max_rows, max_cols
+    ))
   }
   return(df)
 }
@@ -426,7 +440,7 @@ check_axis_limits <- function(col, min, max) {
 
 # check that result is only of allowed type
 check_type_res <- function(res) {
-  allowed <- c("numeric", "integer", "logical", "character", "data.frame")
+  allowed <- c("numeric", "factor", "integer", "logical", "character", "data.frame")
   if (!(class(res) %in% allowed)) {
     stop(paste0("Found result with unallowed type: ", class(res)))
   }

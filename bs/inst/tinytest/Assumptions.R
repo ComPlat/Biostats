@@ -18,7 +18,7 @@ app$set_inputs(conditionedPanels = "Assumption")
 app$wait_for_idle()
 app$set_window_size(width = 2259, height = 1326)
 app$wait_for_idle()
-app$click("ASS-open_formula_editor")
+app$click("open_formula_editor")
 app$wait_for_idle()
 app$set_inputs(`FO-colnames-dropdown_0` = "uptake")
 app$wait_for_idle()
@@ -38,6 +38,7 @@ expected <- rbind(
 )
 expected$variable <- c("nonchilled", "chilled")
 expected$`Normal distributed` <- expected$p.value > 0.05
+res
 tinytest::expect_equal(res[[1]], expected)
 
 # Update output value

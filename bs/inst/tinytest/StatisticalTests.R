@@ -14,7 +14,7 @@ app$set_inputs(conditionedPanels = "Tests")
 app$wait_for_idle()
 
 # Define formula
-app$click("TESTS-open_formula_editor")
+app$click("open_formula_editor")
 app$wait_for_idle()
 app$set_inputs(`FO-colnames-dropdown_0` = "uptake")
 app$wait_for_idle()
@@ -40,7 +40,7 @@ names(expected)[ncol(expected)] <- paste0("conc * Treatment + Type", collapse = 
 tinytest::expect_equal(res[[1]], expected)
 
 # Kruskal-Wallis
-app$click("TESTS-open_formula_editor")
+app$click("open_formula_editor")
 app$wait_for_idle()
 app$set_inputs(`FO-colnames-dropdown_0` = "uptake")
 app$wait_for_idle()

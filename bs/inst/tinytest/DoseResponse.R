@@ -14,7 +14,7 @@ app$set_inputs(conditionedPanels = "Dose Response analysis")
 app$wait_for_idle()
 
 # Define formula
-app$click("DOSERESPONSE-open_formula_editor")
+app$click("open_formula_editor")
 app$wait_for_idle()
 app$set_inputs(`FO-colnames-dropdown_0` = "abs")
 app$wait_for_idle()
