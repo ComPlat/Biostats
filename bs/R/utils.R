@@ -373,7 +373,7 @@ print_req <- function(expr, message) {
 }
 
 # print notification without check
-print_noti<- function(message) {
+print_noti <- function(message) {
   showNotification(message, type = "message")
 }
 
@@ -429,6 +429,13 @@ check_type_res <- function(res) {
   allowed <- c("numeric", "integer", "logical", "character", "data.frame")
   if (!(class(res) %in% allowed)) {
     stop(paste0("Found result with unallowed type: ", class(res)))
+  }
+}
+
+# Check length of input code
+check_length_code <- function(code) {
+  if (nchar(code) > 4000) {
+    stop("The code is too long to be evaluated")
   }
 }
 
@@ -594,12 +601,6 @@ elongate_col <- function(col, l) {
   }
 }
 
-# TODO: for dataframe
-# Check that enough memory is available
-# Add own function for seq which also checks the size and memory usage
-# Set a limit for the size of the imported data
-# Set a limit for the number of results in the results list.
-# Set a memory limit for the results list
 DataFrame <- function(...) {
   columns <- list(...)
   s <- substitute(list(...))
@@ -611,6 +612,14 @@ DataFrame <- function(...) {
     if (length(x) == 0) stop("Found empty column")
   })
   rows <- max(sapply(columns, length))
+  total_bytes <- sum(sapply(columns, function(col) {
+    type <- typeof(col)
+    element_size <- if (type %in% c("double", "integer", "numeric")) 8 else nchar(type) # Approximate for other types
+    rows * element_size
+  }))
+  if (total_bytes > 10^8) {
+    stop("The total size of the data frame is too large")
+  }
   columns <- lapply(columns, function(col) {
     elongate_col(col, rows)
   })
@@ -618,3 +627,129 @@ DataFrame <- function(...) {
   names(df) <- args
   return(df)
 }
+
+Seq <- function(...) {
+  args <- list(...)
+  start <- args[[1]]
+  end <- args[[2]]
+  by <- args[[3]]
+  number_of_elems <- floor(abs(end - start) / by) + 1
+  n_bytes <- number_of_elems * 8 # Assume that each element is a double
+  if (n_bytes > 10^8) {
+    stop("The size of the sequence is too large")
+  }
+  return(seq(start, end, by))
+}
+
+C <- function(...) {
+  c(...)
+}
+
+Dnorm <- function(...) {
+  dnorm(...)
+}
+
+Pnorm <- function(...) {
+  pnorm(...)
+}
+
+Qnorm <- function(...) {
+  qnorm(...)
+}
+
+Rnorm <- function(...) {
+  args <- list(...)
+  n <- args[[1]]
+  if (!is.numeric(n) && !is.integer(n)) {
+    n <- length(n)
+  }
+  if (is.numeric(n) && floor(n) != n) {
+    n <- floor(n)
+  }
+  n_bytes <- n * 8
+  if (n_bytes > 10^8) {
+    stop("The size of the sequence is too large")
+  }
+  rnorm(...)
+}
+
+Dbinom <- function(...) {
+  dbinom(...)
+}
+
+Pbinom <- function(...) {
+  pbinom(...)
+}
+
+Qbinom <- function(...) {
+  qbinom(...)
+}
+
+Rbinom <- function(...) {
+  args <- list(...)
+  n <- args[[1]]
+  if (!is.numeric(n) && !is.integer(n)) {
+    n <- length(n)
+  }
+  if (is.numeric(n) && floor(n) != n) {
+    n <- floor(n)
+  }
+  n_bytes <- n * 8
+  if (n_bytes > 10^8) {
+    stop("The size of the sequence is too large")
+  }
+  rbinom(...)
+}
+
+Dpois <- function(...) {
+  dpois(...)
+}
+
+Ppois <- function(...) {
+  ppois(...)
+}
+
+Rpois <- function(...) {
+  args <- list(...)
+  n <- args[[1]]
+  if (!is.numeric(n) && !is.integer(n)) {
+    n <- length(n)
+  }
+  if (is.numeric(n) && floor(n) != n) {
+    n <- floor(n)
+  }
+  n_bytes <- n * 8
+  if (n_bytes > 10^8) {
+    stop("The size of the sequence is too large")
+  }
+  rpois(...)
+}
+
+Dunif <- function(...) {
+  dunif(...)
+}
+
+Punif <- function(...) {
+  punif(...)
+}
+
+Qunif <- function(...) {
+  qunif(...)
+}
+
+Runif <- function(...) {
+  args <- list(...)
+  n <- args[[1]]
+  if (!is.numeric(n) && !is.integer(n)) {
+    n <- length(n)
+  }
+  if (is.numeric(n) && floor(n) != n) {
+    n <- floor(n)
+  }
+  n_bytes <- n * 8
+  if (n_bytes > 10^8) {
+    stop("The size of the sequence is too large")
+  }
+  runif(...)
+}
+

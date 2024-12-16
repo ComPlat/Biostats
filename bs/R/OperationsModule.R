@@ -58,8 +58,8 @@ OperatorEditorSidebar <- function(id) {
       actionButton(NS(id, "sum"), "Sum", class = "add-button", title = "Add up all the numbers Sum(ColName)"),
       actionButton(NS(id, "min"), "Min", class = "add-button", title = "Find the smallest number (e.g., Min(c(1, 2, 3)) gives 1)"),
       actionButton(NS(id, "max"), "Max", class = "add-button", title = "Find the largest number (e.g., Max(c(1, 2, 3)) gives 3)"),
-      actionButton(NS(id, "c"), "concatenate", class = "add-button", title = "Combine values into a list (e.g., c(1, 2, 3) gives [1, 2, 3])"),
-      actionButton(NS(id, "seq"), "sequence", class = "add-button", title = "Create a sequence of elements (e.g. seq(1, 10, 0.1) which creates a sequence starting from 1 to 10 in steps of 0.1)."),
+      actionButton(NS(id, "c"), "concatenate", class = "add-button", title = "Combine values into a list (e.g., C(1, 2, 3) gives [1, 2, 3])"),
+      actionButton(NS(id, "seq"), "sequence", class = "add-button", title = "Create a sequence of elements (e.g. Seq(1, 10, 0.1) which creates a sequence starting from 1 to 10 in steps of 0.1)."),
       actionButton(NS(id, "df"), "DataFrame", class = "add-button", title = "Create a table (e.g. DataFrame(Variable1, Variable2))"),
       actionButton(NS(id, "get_elem"), "get one element", class = "add-button",
       title = "Extract one element from a variable. This can either be ColName or a tabular dataset. In case it is a ColName the syntax is get_elem(ColName, idx) where idx is an integer number e.g. 1. In case one specific element of a dataset should be retrieved the syntax is get_elem(df, idx_row, idx_col). Again idx_row and idx_col have to be integers. The first one specifies the row number and the second one the column number."),
@@ -96,36 +96,36 @@ OperatorEditorSidebar <- function(id) {
     ),
     div(
       h3("Random number functions"),
-      actionButton(NS(id, "dnorm"), "dnorm", class = "add-button",
-        title = "Probability density function for normal distribution (e.g., dnorm(0) gives the height of the normal curve at 0)"),
-      actionButton(NS(id, "pnorm"), "pnorm", class = "add-button",
-        title = "Cumulative distribution function for normal distribution (e.g., pnorm(1) gives the probability that a random variable is less than 1)"),
-      actionButton(NS(id, "qnorm"), "qnorm", class = "add-button",
-        title = "Quantile function for normal distribution (e.g., qnorm(0.95) gives the value corresponding to the 95th percentile)"),
-      actionButton(NS(id, "rnorm"), "rnorm", class = "add-button",
-        title = "Generate random numbers from a normal distribution (e.g., rnorm(5) gives 5 random numbers from a normal distribution)"),
-      actionButton(NS(id, "dbinom"), "dbinom", class = "add-button",
-        title = "Probability mass function for binomial distribution (e.g., dbinom(2, 5, 0.5) gives the probability of getting exactly 2 successes in 5 trials with probability 0.5)"),
-      actionButton(NS(id, "pbinom"), "pbinom", class = "add-button",
-        title = "Cumulative distribution function for binomial distribution (e.g., pbinom(2, 5, 0.5) gives the probability of getting 2 or fewer successes in 5 trials)"),
-      actionButton(NS(id, "qbinom"), "qbinom", class = "add-button",
-        title = "Quantile function for binomial distribution (e.g., qbinom(0.95, 5, 0.5) gives the number of successes corresponding to the 95th percentile)"),
-      actionButton(NS(id, "rbinom"), "rbinom", class = "add-button",
-        title = "Generate random numbers from a binomial distribution (e.g., rbinom(5, 10, 0.5) gives 5 random binomial values with 10 trials and probability 0.5)"),
-      actionButton(NS(id, "dpois"), "dpois", class = "add-button",
-        title = "Probability mass function for Poisson distribution (e.g., dpois(3, 2) gives the probability of getting exactly 3 events when the average is 2)"),
-      actionButton(NS(id, "ppois"), "ppois", class = "add-button",
-        title = "Cumulative distribution function for Poisson distribution (e.g., ppois(3, 2) gives the probability of getting 3 or fewer events when the average is 2)"),
-      actionButton(NS(id, "rpois"), "rpois", class = "add-button",
-        title = "Generate random numbers from a Poisson distribution (e.g., rpois(5, 2) gives 5 random Poisson values with mean 2)"),
-      actionButton(NS(id, "dunif"), "dunif", class = "add-button",
-        title = "Probability density function for uniform distribution (e.g., dunif(0.5, min = 0, max = 1) gives the height of the uniform distribution at 0.5)"),
-      actionButton(NS(id, "punif"), "punif", class = "add-button",
-        title = "Cumulative distribution function for uniform distribution (e.g., punif(0.5, min = 0, max = 1) gives the probability of getting a value less than or equal to 0.5)"),
-      actionButton(NS(id, "qunif"), "qunif", class = "add-button",
-        title = "Quantile function for uniform distribution (e.g., qunif(0.95, min = 0, max = 1) gives the value corresponding to the 95th percentile)"),
-      actionButton(NS(id, "runif"), "runif", class = "add-button",
-        title = "Generate random numbers from a uniform distribution (e.g., runif(5, min = 0, max = 1) gives 5 random values between 0 and 1)"),
+      actionButton(NS(id, "dnorm"), "Dnorm", class = "add-button",
+        title = "Probability density function for normal distribution (e.g., Dnorm(0) gives the height of the normal curve at 0)"),
+      actionButton(NS(id, "pnorm"), "Pnorm", class = "add-button",
+        title = "Cumulative distribution function for normal distribution (e.g., Pnorm(1) gives the probability that a random variable is less than 1)"),
+      actionButton(NS(id, "qnorm"), "Qnorm", class = "add-button",
+        title = "Quantile function for normal distribution (e.g., Qnorm(0.95) gives the value corresponding to the 95th percentile)"),
+      actionButton(NS(id, "rnorm"), "Rnorm", class = "add-button",
+        title = "Generate random numbers from a normal distribution (e.g., Rnorm(5) gives 5 random numbers from a normal distribution)"),
+      actionButton(NS(id, "dbinom"), "Dbinom", class = "add-button",
+        title = "Probability mass function for binomial distribution (e.g., Dbinom(2, 5, 0.5) gives the probability of getting exactly 2 successes in 5 trials with probability 0.5)"),
+      actionButton(NS(id, "pbinom"), "Pbinom", class = "add-button",
+        title = "Cumulative distribution function for binomial distribution (e.g., Pbinom(2, 5, 0.5) gives the probability of getting 2 or fewer successes in 5 trials)"),
+      actionButton(NS(id, "qbinom"), "Qbinom", class = "add-button",
+        title = "Quantile function for binomial distribution (e.g., Qbinom(0.95, 5, 0.5) gives the number of successes corresponding to the 95th percentile)"),
+      actionButton(NS(id, "rbinom"), "Rbinom", class = "add-button",
+        title = "Generate random numbers from a binomial distribution (e.g., Rbinom(5, 10, 0.5) gives 5 random binomial values with 10 trials and probability 0.5)"),
+      actionButton(NS(id, "dpois"), "Dpois", class = "add-button",
+        title = "Probability mass function for Poisson distribution (e.g., Dpois(3, 2) gives the probability of getting exactly 3 events when the average is 2)"),
+      actionButton(NS(id, "ppois"), "Ppois", class = "add-button",
+        title = "Cumulative distribution function for Poisson distribution (e.g., Ppois(3, 2) gives the probability of getting 3 or fewer events when the average is 2)"),
+      actionButton(NS(id, "rpois"), "Rpois", class = "add-button",
+        title = "Generate random numbers from a Poisson distribution (e.g., Rpois(5, 2) gives 5 random Poisson values with mean 2)"),
+      actionButton(NS(id, "dunif"), "Dunif", class = "add-button",
+        title = "Probability density function for uniform distribution (e.g., Dunif(0.5, min = 0, max = 1) gives the height of the uniform distribution at 0.5)"),
+      actionButton(NS(id, "punif"), "Punif", class = "add-button",
+        title = "Cumulative distribution function for uniform distribution (e.g., Punif(0.5, min = 0, max = 1) gives the probability of getting a value less than or equal to 0.5)"),
+      actionButton(NS(id, "qunif"), "Qunif", class = "add-button",
+        title = "Quantile function for uniform distribution (e.g., Qunif(0.95, min = 0, max = 1) gives the value corresponding to the 95th percentile)"),
+      actionButton(NS(id, "runif"), "Runif", class = "add-button",
+        title = "Generate random numbers from a uniform distribution (e.g., Runif(5, min = 0, max = 1) gives 5 random values between 0 and 1)"),
 
       class = "boxed-output"
     )
@@ -370,6 +370,7 @@ OperationEditorServer <- function(id, data, listResults) {
         eval_env <- new.env()
         list2env(r_vals$intermediate_vars, envir = eval_env)
         list2env(r_vals$df, envir = eval_env) # NOTE: this adds each column as own variable
+        check_length_code(code)
         new <- eval(parse(text = code), envir = eval_env)
         check_type_res(new)
       })
@@ -416,6 +417,7 @@ OperationEditorServer <- function(id, data, listResults) {
         eval_env <- new.env()
         list2env(r_vals$intermediate_vars, envir = eval_env)
         list2env(r_vals$df, envir = eval_env)  # NOTE: this adds each column as own variable
+        check_length_code(code)
         new <- eval(parse(text = code), envir = eval_env)
         check_type_res(new)
         r_vals$df[, new_col] <- new
@@ -674,12 +676,12 @@ OperationEditorServer <- function(id, data, listResults) {
     })
     observeEvent(input$c, {
       current_text <- input$editable_code
-      updated_text <- paste(current_text, "c(", sep = " ")
+      updated_text <- paste(current_text, "C(", sep = " ")
       updateTextAreaInput(session, "editable_code", value = updated_text)
     })
     observeEvent(input$seq, {
       current_text <- input$editable_code
-      updated_text <- paste(current_text, "seq(", sep = " ")
+      updated_text <- paste(current_text, "Seq(", sep = " ")
       updateTextAreaInput(session, "editable_code", value = updated_text)
     })
     observeEvent(input$df, {
@@ -709,77 +711,77 @@ OperationEditorServer <- function(id, data, listResults) {
     })
     observeEvent(input$dnorm, {
       current_text <- input$editable_code
-      updated_text <- paste(current_text, "dnorm(", sep = " ")
+      updated_text <- paste(current_text, "Dnorm(", sep = " ")
       updateTextAreaInput(session, "editable_code", value = updated_text)
     })
     observeEvent(input$pnorm, {
       current_text <- input$editable_code
-      updated_text <- paste(current_text, "pnorm(", sep = " ")
+      updated_text <- paste(current_text, "Pnorm(", sep = " ")
       updateTextAreaInput(session, "editable_code", value = updated_text)
     })
     observeEvent(input$qnorm, {
       current_text <- input$editable_code
-      updated_text <- paste(current_text, "qnorm(", sep = " ")
+      updated_text <- paste(current_text, "Qnorm(", sep = " ")
       updateTextAreaInput(session, "editable_code", value = updated_text)
     })
     observeEvent(input$rnorm, {
       current_text <- input$editable_code
-      updated_text <- paste(current_text, "rnorm(", sep = " ")
+      updated_text <- paste(current_text, "Rnorm(", sep = " ")
       updateTextAreaInput(session, "editable_code", value = updated_text)
     })
     observeEvent(input$dbinom, {
       current_text <- input$editable_code
-      updated_text <- paste(current_text, "dbinom(", sep = " ")
+      updated_text <- paste(current_text, "Dbinom(", sep = " ")
       updateTextAreaInput(session, "editable_code", value = updated_text)
     })
     observeEvent(input$pbinom, {
       current_text <- input$editable_code
-      updated_text <- paste(current_text, "pbinom(", sep = " ")
+      updated_text <- paste(current_text, "Pbinom(", sep = " ")
       updateTextAreaInput(session, "editable_code", value = updated_text)
     })
     observeEvent(input$qbinom, {
       current_text <- input$editable_code
-      updated_text <- paste(current_text, "qbinom(", sep = " ")
+      updated_text <- paste(current_text, "Qbinom(", sep = " ")
       updateTextAreaInput(session, "editable_code", value = updated_text)
     })
     observeEvent(input$rbinom, {
       current_text <- input$editable_code
-      updated_text <- paste(current_text, "rbinom(", sep = " ")
+      updated_text <- paste(current_text, "Rbinom(", sep = " ")
       updateTextAreaInput(session, "editable_code", value = updated_text)
     })
     observeEvent(input$dpois, {
       current_text <- input$editable_code
-      updated_text <- paste(current_text, "dpois(", sep = " ")
+      updated_text <- paste(current_text, "Dpois(", sep = " ")
       updateTextAreaInput(session, "editable_code", value = updated_text)
     })
     observeEvent(input$ppois, {
       current_text <- input$editable_code
-      updated_text <- paste(current_text, "ppois(", sep = " ")
+      updated_text <- paste(current_text, "Ppois(", sep = " ")
       updateTextAreaInput(session, "editable_code", value = updated_text)
     })
     observeEvent(input$rpois, {
       current_text <- input$editable_code
-      updated_text <- paste(current_text, "rpois(", sep = " ")
+      updated_text <- paste(current_text, "Rpois(", sep = " ")
       updateTextAreaInput(session, "editable_code", value = updated_text)
     })
     observeEvent(input$dunif, {
       current_text <- input$editable_code
-      updated_text <- paste(current_text, "dunif(", sep = " ")
+      updated_text <- paste(current_text, "Dunif(", sep = " ")
       updateTextAreaInput(session, "editable_code", value = updated_text)
     })
     observeEvent(input$punif, {
       current_text <- input$editable_code
-      updated_text <- paste(current_text, "punif(", sep = " ")
+      updated_text <- paste(current_text, "Punif(", sep = " ")
       updateTextAreaInput(session, "editable_code", value = updated_text)
     })
     observeEvent(input$qunif, {
       current_text <- input$editable_code
-      updated_text <- paste(current_text, "qunif(", sep = " ")
+      updated_text <- paste(current_text, "Qunif(", sep = " ")
       updateTextAreaInput(session, "editable_code", value = updated_text)
     })
     observeEvent(input$runif, {
       current_text <- input$editable_code
-      updated_text <- paste(current_text, "runif(", sep = " ")
+      updated_text <- paste(current_text, "Runif(", sep = " ")
       updateTextAreaInput(session, "editable_code", value = updated_text)
     })
 
