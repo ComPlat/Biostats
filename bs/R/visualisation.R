@@ -108,7 +108,6 @@ visUI <- function(id) {
 
 visServer <- function(id, data, listResults) {
   moduleServer(id, function(input, output, session) {
-
     # Render axis limits
     output[["XRangeUI"]] <- renderUI({
       req(!is.null(data$df))
@@ -133,7 +132,7 @@ visServer <- function(id, data, listResults) {
       } else {
         choices <- unique(df[[x]])
         return(
-          shinyWidgets::sliderTextInput( # TODO: add everywhere shinyWidgets
+          shinyWidgets::sliderTextInput(
             "VIS-XRange",
             "Select range for x axis:",
             selected = c(choices[1], choices[length(choices)]),
@@ -166,7 +165,7 @@ visServer <- function(id, data, listResults) {
       } else {
         choices <- unique(df[[y]])
         return(
-          shinyWidgets::sliderTextInput( # TODO: add everywhere shinyWidgets
+          shinyWidgets::sliderTextInput(
             "VIS-YRange",
             "Select range for x axis:",
             selected = c(choices[1], choices[length(choices)]),
@@ -355,41 +354,43 @@ visServer <- function(id, data, listResults) {
       }
       p <- tryCatch(
         {
-          withCallingHandlers({
-            if (method == "box") {
-              p <- BoxplotFct(
-                df, x, y, xlabel, ylabel,
-                fill, fillTitle, themeFill,
-                col, colTitle, theme,
-                facetMode, facet, facetScales,
-                input$XRange[1], input$XRange[2], input$YRange[1], input$YRange[2]
-              )
-            } else if (method == "dot") {
-              k <- NULL
-              if (fitMethod == "gam") {
-                req(input$k)
-                k <- input$k
-                if (k <= 0) {
-                  print_warn("k has to be at least 1 and is set to this value")
-                  k <- 1
+          withCallingHandlers(
+            {
+              if (method == "box") {
+                p <- BoxplotFct(
+                  df, x, y, xlabel, ylabel,
+                  fill, fillTitle, themeFill,
+                  col, colTitle, theme,
+                  facetMode, facet, facetScales,
+                  input$XRange[1], input$XRange[2], input$YRange[1], input$YRange[2]
+                )
+              } else if (method == "dot") {
+                k <- NULL
+                if (fitMethod == "gam") {
+                  req(input$k)
+                  k <- input$k
+                  if (k <= 0) {
+                    print_warn("k has to be at least 1 and is set to this value")
+                    k <- 1
+                  }
                 }
+                p <- DotplotFct(
+                  df, x, y, xlabel, ylabel,
+                  fitMethod,
+                  col, colTitle, theme,
+                  facetMode, facet, facetScales, k,
+                  input$XRange[1], input$XRange[2], input$YRange[1], input$YRange[2]
+                )
+              } else if (method == "line") {
+                p <- LineplotFct(
+                  df, x, y, xlabel, ylabel,
+                  col, colTitle, theme,
+                  facetMode, facet, facetScales,
+                  input$XRange[1], input$XRange[2], input$YRange[1], input$YRange[2]
+                )
               }
-              p <- DotplotFct(
-                df, x, y, xlabel, ylabel,
-                fitMethod,
-                col, colTitle, theme,
-                facetMode, facet, facetScales, k,
-                input$XRange[1], input$XRange[2], input$YRange[1], input$YRange[2]
-              )
-            } else if (method == "line") {
-              p <- LineplotFct(
-                df, x, y, xlabel, ylabel,
-                col, colTitle, theme,
-                facetMode, facet, facetScales,
-                input$XRange[1], input$XRange[2], input$YRange[1], input$YRange[2]
-              )
-            }
-          }, warning = function(warn) {
+            },
+            warning = function(warn) {
               print_warn(warn$message)
               invokeRestart("muffleWarning")
             }
@@ -428,6 +429,5 @@ visServer <- function(id, data, listResults) {
       print_req(is.data.frame(data$df), "The dataset is missing")
       plotFct("line")
     })
-
   })
 }

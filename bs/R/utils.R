@@ -97,10 +97,21 @@ setClass("diagnosticPlot",
   )
 )
 
+create_outlier_info <- function(l) {
+  res <- sapply(
+    seq_len(length(l)), function(idx) {
+      n <- names(l)[idx]
+      points <- paste0(l[[idx]], collapse = ", ")
+      paste0(n, ": ", points)
+    }
+  )
+  res
+}
 setClass("doseResponse",
   slots = c(
     df = "data.frame",
-    p = "ANY"
+    p = "ANY",
+    outlier_info = "character"
   )
 )
 
@@ -421,7 +432,8 @@ print_form <- function(formula) {
             modalButton("Close")
           )
         ))
-      )
+      ),
+      type = "message"
     )
   }
   req(!is.null(formula))
@@ -441,7 +453,7 @@ check_axis_limits <- function(col, min, max) {
     choices <- unique(col)
     if (length(choices) == 1) {
       if (!(min == choices && max == choices)) {
-       stop("If only one level is available the max and min value have to be set to this value!")
+        stop("If only one level is available the max and min value have to be set to this value!")
       }
     } else {
       if (!(min %in% choices) || !(max %in% choices)) {
@@ -599,7 +611,8 @@ check_filename_for_serverless <- function(filename) {
 # Split list of plots into panels of 9 plots
 create_plot_pages <- function(plotList) {
   if (length(plotList) == 0) {
-    plotList <- list(ggplot2::ggplot() + ggplot2::geom_point())
+    plotList <- list(ggplot2::ggplot() +
+      ggplot2::geom_point())
   }
   n_full_pages <- floor(length(plotList) / 9)
   if (n_full_pages == 0) {

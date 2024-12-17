@@ -444,7 +444,11 @@ app <- function() {
           } else if (inherits(temp, "plot")) {
             output[[paste0("res_", name)]] <- renderPlot(temp@p)
           } else if (inherits(temp, "doseResponse")) {
-            message <- "Dose Response Analysis. Too large to display."
+            message <- paste0(
+              "Dose response analysis. (Outliers: ",
+              paste0(temp@outlier_info, collapse = ";"),
+              "). Too long to display", collapse = " "
+            )
             output[[paste0("res_", name)]] <- renderPrint(message)
           } else {
             output[[paste0("res_", name)]] <- renderPrint(temp)

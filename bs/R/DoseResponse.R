@@ -176,7 +176,7 @@ DoseResponseServer <- function(id, data, listResults) {
         print_err(err)
       } else {
         output$dr_result <- renderTable(resDF, digits = 6)
-        listResults$curr_data <- new("doseResponse", df = resDF, p = resP)
+        listResults$curr_data <- new("doseResponse", df = resDF, p = resP, outlier_info = "")
         listResults$curr_name <- paste(
           "Test Nr", length(listResults$all_names) + 1,
           "Conducted dose response analysis"
@@ -185,7 +185,7 @@ DoseResponseServer <- function(id, data, listResults) {
         new_result_name <- paste0("DoseResponseNr", listResults$counter)
         listResults$all_data[[new_result_name]] <- new(
           "doseResponse",
-          df = resDF, p = resP
+          df = resDF, p = resP, outlier_info = ""
         )
         exportTestValues(
           doseresponse_res = listResults$curr_data
@@ -249,6 +249,7 @@ DoseResponseServer <- function(id, data, listResults) {
       check_dr()
       resDF <- NULL
       resP <- NULL
+      outliers <- NULL
       e <- try(
         {
           outliers <- list(r_vals$outliers[[name]])
@@ -285,10 +286,11 @@ DoseResponseServer <- function(id, data, listResults) {
         output$dr_result <- renderTable(data.frame(), digits = 6)
         print_err(err)
       } else {
-        # TODO: add version for Substance. _S4_V1, _S4_V2 ...
-        # Why does it jump after update?
         output$dr_result <- renderTable(resDF, digits = 6)
-        listResults$curr_data <- new("doseResponse", df = resDF, p = resP)
+        listResults$curr_data <- new(
+          "doseResponse",
+          df = resDF, p = resP, outlier_info = create_outlier_info(r_vals$outliers)
+        )
         listResults$curr_name <- paste(
           "Test Nr", length(listResults$all_names) + 1,
           "Conducted dose response analysis"
@@ -297,7 +299,7 @@ DoseResponseServer <- function(id, data, listResults) {
         new_result_name <- paste0("DoseResponseNr", listResults$counter)
         listResults$all_data[[new_result_name]] <- new(
           "doseResponse",
-          df = resDF, p = resP
+          df = resDF, p = resP, outlier_info = create_outlier_info(r_vals$outliers)
         )
         exportTestValues(
           doseresponse_res = listResults$curr_data
