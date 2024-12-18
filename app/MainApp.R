@@ -1,6 +1,6 @@
 
 js_scripts <- function() {
-     if (Sys.getenv("RUN_MODE") != "SERVER") {
+     if (Sys.getenv("RUN_MODE") == "BROWSER") {
       tagList(
         includeScript("www/FileSaver.min.js"),
         includeScript("www/html2canvas.min.js"),
@@ -355,7 +355,9 @@ app <- function() {
 
     output$conditional_data_ui <- renderUI({
       showNotification(Sys.getenv("RUN_MODE"), duration = 0)
+      showNotification(as.character(Sys.getenv("RUN_MODE") != "SERVER"), duration = 0)
       if (Sys.getenv("RUN_MODE") != "SERVER") {
+      showNotification("Test", duration = 0)
         res <- conditionalPanel(
           condition = "input.conditionedPanels == 'Data'",
           fileInput("file", "Choose CSV File",
