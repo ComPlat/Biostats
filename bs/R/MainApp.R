@@ -356,6 +356,7 @@ app <- function() {
     output$conditional_data_ui <- renderUI({
       showNotification(Sys.getenv("RUN_MODE"), duration = 0)
       if (Sys.getenv("RUN_MODE") != "SERVER") {
+      showNotification("Test", duration = 0)
         res <- conditionalPanel(
           condition = "input.conditionedPanels == 'Data'",
           fileInput("file", "Choose CSV File",
