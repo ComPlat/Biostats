@@ -1,6 +1,6 @@
 # Copy R files from bs
 # ========================================
-files <- list.files("./bs/R/", pattern = ".R", full.names = TRUE)
+files <- list.files("./bs/R", pattern = ".R", full.names = TRUE)
 print(files)
 file.copy(files, "./app/")
 
