@@ -45,6 +45,7 @@ jobs:
           any::ggplot2
           any::base64enc
           any::shinyjs
+          any::shinyWidgets
           any::mgcv
           any::RColorBrewer
           any::tidyr
