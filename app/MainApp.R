@@ -17,6 +17,24 @@ js_scripts <- function() {
     }
 }
 
+upload_fct <- function() {
+  if (Sys.getenv("RUN_MODE") != "SERVER") {
+    res <- conditionalPanel(
+      condition = "input.conditionedPanels == 'Data'",
+      fileInput("file", "Choose CSV File",
+        accept = c(
+          "text/csv",
+          "text/comma-separated-values,text/plain",
+          ".csv"
+        )
+      )
+    )
+    return(res)
+  }
+  return(NULL)
+}
+uf <- upload_fct()
+
 app <- function() {
   js <- js_scripts()
   ui <- fluidPage(
@@ -354,22 +372,23 @@ app <- function() {
     })
 
     output$conditional_data_ui <- renderUI({
-      if (Sys.getenv("RUN_MODE") != "SERVER") {
-        res <- div(
-          class = "var-box-output",
-          conditionalPanel(
-            condition = "input.conditionedPanels == 'Data'",
-            fileInput("file", "Choose CSV File",
-              accept = c(
-                "text/csv",
-                "text/comma-separated-values,text/plain",
-                ".csv"
-              )
-            )
-          )
-        )
-        return(res)
-      }
+      uf
+      # if (Sys.getenv("RUN_MODE") != "SERVER") {
+      #   res <- div(
+      #     class = "var-box-output",
+      #     conditionalPanel(
+      #       condition = "input.conditionedPanels == 'Data'",
+      #       fileInput("file", "Choose CSV File",
+      #         accept = c(
+      #           "text/csv",
+      #           "text/comma-separated-values,text/plain",
+      #           ".csv"
+      #         )
+      #       )
+      #     )
+      #   )
+      #   return(res)
+      # }
     })
 
     download_file <- reactive({
