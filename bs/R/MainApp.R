@@ -18,25 +18,24 @@ js_scripts <- function() {
 }
 
 upload_fct <- function() {
-  output$conditional_data_ui <- renderUI({
-    if (Sys.getenv("RUN_MODE") != "SERVER") {
-      res <- conditionalPanel(
-        condition = "input.conditionedPanels == 'Data'",
-        fileInput("file", "Choose CSV File",
-          accept = c(
-            "text/csv",
-            "text/comma-separated-values,text/plain",
-            ".csv"
-          )
+  if (Sys.getenv("RUN_MODE") != "SERVER") {
+    res <- conditionalPanel(
+      condition = "input.conditionedPanels == 'Data'",
+      fileInput("file", "Choose CSV File",
+        accept = c(
+          "text/csv",
+          "text/comma-separated-values,text/plain",
+          ".csv"
         )
       )
-      return(res)
-    }
-  })
+    )
+    return(res)
+  }
 }
 
 app <- function() {
   js <- js_scripts()
+  uf <- upload_fct()
   ui <- fluidPage(
     useShinyjs(),
 
@@ -144,7 +143,8 @@ app <- function() {
         div(
           conditionalPanel(
             condition = "input.conditionedPanels == 'Data'",
-            uiOutput("conditional_data_ui"),
+            # uiOutput("conditional_data_ui"),
+            uf,
             tags$hr()
           ),
           conditionalPanel(
@@ -386,7 +386,6 @@ app <- function() {
             )
           )
         )
-        showNotification(as.character(res))
         return(res)
       }
     })
