@@ -356,6 +356,7 @@ app <- function() {
     output$conditional_data_ui <- renderUI({
       showNotification(Sys.getenv("RUN_MODE"), duration = 0)
       showNotification(as.character(Sys.getenv("RUN_MODE") != "SERVER"), duration = 0)
+      res <- NULL
       if (Sys.getenv("RUN_MODE") != "SERVER") {
       showNotification("Test", duration = 0)
         res <- conditionalPanel(
@@ -368,8 +369,10 @@ app <- function() {
             )
           )
         )
-        return(res)
+        # return(res)
       }
+      str(res)
+      return(res)
     })
 
     download_file <- reactive({
