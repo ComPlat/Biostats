@@ -144,7 +144,17 @@ app <- function() {
           conditionalPanel(
             condition = "input.conditionedPanels == 'Data'",
             # uiOutput("conditional_data_ui"),
-            uf,
+            # uf,
+            conditionalPanel(
+              condition = "input.conditionedPanels == 'Data'",
+              fileInput("file", "Choose CSV File",
+                accept = c(
+                  "text/csv",
+                  "text/comma-separated-values,text/plain",
+                  ".csv"
+                )
+              )
+            ),
             tags$hr()
           ),
           conditionalPanel(
@@ -371,24 +381,25 @@ app <- function() {
       ))
     })
 
-    output$conditional_data_ui <- renderUI({
-      if (Sys.getenv("RUN_MODE") != "SERVER") {
-        res <- div(
-          class = "var-box-output",
-          conditionalPanel(
-            condition = "input.conditionedPanels == 'Data'",
-            fileInput("file", "Choose CSV File",
-              accept = c(
-                "text/csv",
-                "text/comma-separated-values,text/plain",
-                ".csv"
-              )
-            )
-          )
-        )
-        return(res)
-      }
-    })
+    # TODO: not needed anymore?
+    # output$conditional_data_ui <- renderUI({
+    #   if (Sys.getenv("RUN_MODE") != "SERVER") {
+    #     res <- div(
+    #       class = "var-box-output",
+    #       conditionalPanel(
+    #         condition = "input.conditionedPanels == 'Data'",
+    #         fileInput("file", "Choose CSV File",
+    #           accept = c(
+    #             "text/csv",
+    #             "text/comma-separated-values,text/plain",
+    #             ".csv"
+    #           )
+    #         )
+    #       )
+    #     )
+    #     return(res)
+    #   }
+    # })
 
     download_file <- reactive({
       file <- download(session, "/home/shiny/results") # NOTE: from COMELN
