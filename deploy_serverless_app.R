@@ -1,24 +1,24 @@
 # Copy R files from bs
 # ========================================
-files <- list.files("/home/konrad/Documents/Biostats/bs/R/", pattern = ".R", full.names = TRUE)
-file.copy(files, "/home/konrad/Documents/Biostats/app/", overwrite = TRUE)
+files <- list.files("./bs/R/", pattern = ".R", full.names = TRUE)
+file.copy(files, "./app/", overwrite = TRUE)
 
 # Copy www files from bs
 # ========================================
-destination_folder <- "/home/konrad/Documents/Biostats/app/www/"
+destination_folder <- "./app/www/"
 if (!dir.exists(destination_folder)) {
   dir.create(destination_folder)
 }
 file.copy(
-  from = list.files("/home/konrad/Documents/Biostats/bs/inst/www", full.names = TRUE),
+  from = list.files("./bs/inst/www", full.names = TRUE),
   to = destination_folder,
   recursive = TRUE, overwrite = TRUE
 )
 
 # Create app.R
 # ========================================
-file.create("/home/konrad/Documents/Biostats/app/app.R", overwrite = TRUE)
-con <- file("/home/konrad/Documents/Biostats/app/app.R")
+file.create("./app/app.R", overwrite = TRUE)
+con <- file("./app/app.R")
 code <- function() {
   library(shiny)
   library(shinyWidgets)
@@ -51,22 +51,15 @@ code <- code[2:(length(code) - 1)]
 writeLines(code, con)
 close(con)
 
-stop()
-
 # Build serverless app
 # ========================================
-destination_folder <- "/home/konrad/Documents/Biostats/serverless/"
-if (!dir.exists(destination_folder)) {
-  dir.create(destination_folder)
-}
-
-setwd("/home/konrad/Documents/Biostats")
-shinylive::export(
-  appdir = "./app",
-  destdir = "./app/serverless/",
-  quiet = FALSE
-)
+# shinylive::export(
+#   appdir = "./app",
+#   destdir = "./app/serverless/",
+#   quiet = FALSE
+# )
+shinylive::export("./app", "_site")
 
 # Start app
 # ========================================
-httpuv::runStaticServer("./app/serverless/")
+# httpuv::runStaticServer("./app/serverless/")
