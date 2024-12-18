@@ -120,11 +120,11 @@ app <- function() {
         uiOutput("open_split_by_group"),
         uiOutput("data_splitted"),
         verbatimTextOutput("applied_filter"),
+        uiOutput("conditional_data_ui"),
         br(),
         div(
           conditionalPanel(
             condition = "input.conditionedPanels == 'Data'",
-            uiOutput("conditional_data_ui"),
             tags$hr()
           ),
           conditionalPanel(

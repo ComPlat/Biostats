@@ -1,13 +1,6 @@
 # Copy R files from bs
 # ========================================
 files <- list.files("./bs/R", pattern = ".R", full.names = TRUE)
-print(files)
-print(getwd())
-print(
-  list.files(
-    path = ".", recursive = TRUE, full.names = TRUE
-  )
-)
 file.copy(files, "./app/")
 
 # Copy www files from bs
