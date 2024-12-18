@@ -18,22 +18,22 @@ js_scripts <- function() {
 }
 
 upload_fct <- function() {
-  if (Sys.getenv("RUN_MODE") != "SERVER") {
-    res <- conditionalPanel(
-      condition = "input.conditionedPanels == 'Data'",
-      fileInput("file", "Choose CSV File",
-        accept = c(
-          "text/csv",
-          "text/comma-separated-values,text/plain",
-          ".csv"
+  output$conditional_data_ui <- renderUI({
+    if (Sys.getenv("RUN_MODE") != "SERVER") {
+      res <- conditionalPanel(
+        condition = "input.conditionedPanels == 'Data'",
+        fileInput("file", "Choose CSV File",
+          accept = c(
+            "text/csv",
+            "text/comma-separated-values,text/plain",
+            ".csv"
+          )
         )
       )
-    )
-    return(res)
-  }
-  return(NULL)
+      return(res)
+    }
+  })
 }
-uf <- upload_fct()
 
 app <- function() {
   js <- js_scripts()
@@ -372,23 +372,23 @@ app <- function() {
     })
 
     output$conditional_data_ui <- renderUI({
-      uf
-      # if (Sys.getenv("RUN_MODE") != "SERVER") {
-      #   res <- div(
-      #     class = "var-box-output",
-      #     conditionalPanel(
-      #       condition = "input.conditionedPanels == 'Data'",
-      #       fileInput("file", "Choose CSV File",
-      #         accept = c(
-      #           "text/csv",
-      #           "text/comma-separated-values,text/plain",
-      #           ".csv"
-      #         )
-      #       )
-      #     )
-      #   )
-      #   return(res)
-      # }
+      if (Sys.getenv("RUN_MODE") != "SERVER") {
+        res <- div(
+          class = "var-box-output",
+          conditionalPanel(
+            condition = "input.conditionedPanels == 'Data'",
+            fileInput("file", "Choose CSV File",
+              accept = c(
+                "text/csv",
+                "text/comma-separated-values,text/plain",
+                ".csv"
+              )
+            )
+          )
+        )
+        showNotification(as.character(res))
+        return(res)
+      }
     })
 
     download_file <- reactive({
