@@ -1,6 +1,12 @@
 # Upload data into R
 readData <- function(path) {
   stopifnot(is.character(path))
+  if (!file.exists(path)) stop("File does not exists")
+  max_file_size <- 50 * 1024^2 # 50 MB in bytes
+  file_size <- file.info(path)$size
+  if (is.na(file_size) || file_size > max_file_size) {
+    stop("File size exceeds the 50 MB limit. Please upload a smaller file.")
+  }
   df <- NULL
   df <- try(as.data.frame(readxl::read_excel(
     path,
@@ -20,11 +26,11 @@ readData <- function(path) {
     } else if (tab == TRUE) {
       seperator <- "\t"
     } else {
-      return("error")
+      stop("Could not identiy the seperator. Please upload a file with a known seperator.")
     }
     df <- try(read.csv(path, header = TRUE, sep = seperator))
     if (class(df) == "try-error") {
-      return("error")
+      stop(conditionMessage(df))
     }
   } else {
     f <- function(x) {
@@ -44,20 +50,36 @@ readData <- function(path) {
     df <- Map(conv, check, df)
     df <- data.frame(df)
   }
+  # Check data frame dimensions
+  if (nrow(df) == 0) {
+    stop("The uploaded file is empty. Please upload a file with data.")
+  }
+  max_cols <- 1000
+  max_rows <- 1e6
+  if (nrow(df) > max_rows || ncol(df) > max_cols) {
+    stop(sprintf(
+      "Data exceeds the limit of %d rows or %d columns. Please upload a smaller dataset.",
+      max_rows, max_cols
+    ))
+  }
   return(df)
 }
 
 DF2String <- function(df) {
+  stopifnot(
+    "Input to DF2String is not of type DataFrame" = is.data.frame(df)
+  )
   resNames <- names(df)
   resNames <- paste(resNames, collapse = "\t")
-  resNames <- paste(resNames, "\n")
   res <- apply(df, 1, function(x) {
     x <- as.character(x)
     x <- paste(x, collapse = "\t")
     return(x)
   })
-  res <- paste0(resNames, "\n", res, collapse = "")
+  res <- c(resNames, res)
   res <- paste0(res, "\n")
+  res <- Reduce(paste0, res)
+  return(res)
 }
 
 setClass("plot",
@@ -75,16 +97,27 @@ setClass("diagnosticPlot",
   )
 )
 
+create_outlier_info <- function(l) {
+  res <- sapply(
+    seq_len(length(l)), function(idx) {
+      n <- names(l)[idx]
+      points <- paste0(l[[idx]], collapse = ", ")
+      paste0(n, ": ", points)
+    }
+  )
+  res
+}
 setClass("doseResponse",
   slots = c(
     df = "data.frame",
-    p = "ANY"
+    p = "ANY",
+    outlier_info = "character"
   )
 )
 
 createExcelFile <- function(l) {
   if (length(l) == 0) {
-    showNotification("Nothing to upload")
+    print_warn("Nothing to upload")
     return(NULL)
   }
 
@@ -96,7 +129,6 @@ createExcelFile <- function(l) {
   # save data to excel file
   for (i in seq_along(l)) {
     if (inherits(l[[i]], "plot")) {
-      print("test")
       p <- l[[i]]@p
       width <- l[[i]]@width
       height <- l[[i]]@height
@@ -145,7 +177,10 @@ createExcelFile <- function(l) {
 
   # create temporary file
   file <- function() {
-    tempfile <- tempfile(tmpdir = "/home/shiny/results", fileext = ".xlsx")
+    # TODO: is it necessary to store this in this folder. Or could i use tempfile without dir argument?
+    # Is it needed in the docker container?
+    # tempfile <- tempfile(tmpdir = "/home/shiny/results", fileext = ".xlsx")
+    tempfile <- tempfile(fileext = ".xlsx")
     return(tempfile)
   }
   fn <- file()
@@ -157,7 +192,7 @@ createExcelFile <- function(l) {
       openxlsx::saveWorkbook(wb, fn)
     },
     error = function(e) {
-      showNotification("Error saving file")
+      print_err("Error saving file")
     }
   )
 
@@ -252,8 +287,9 @@ combine <- function(new, vec, df, first) {
 splitData <- function(df, formula) {
   df <- model.frame(formula, data = df)
   stopifnot(ncol(df) >= 2)
-  res <- data.frame(value = df[, 1], interaction = interaction(df[, 2:ncol(df)]))
-  names(res) <- c("value", interaction = paste0(names(df)[2:ncol(df)], collapse = "."))
+  res <- data.frame(
+    value = df[, 1], interaction = interaction(df[, 2:ncol(df)])
+  )
   res
 }
 
@@ -275,13 +311,17 @@ get_elem <- function(df, ...) {
     if (!is.numeric(args[[1]]) || !is.numeric(args[[2]])) {
       stop("The index arguments have to be of type numeric")
     }
-    return(df[args[[1]], args[[2]]])
+    res <- df[args[[1]], args[[2]]]
+    if (is.null(res)) stop("Cannot access the element")
+    return(res)
   }
   if (is.vector(df)) {
     if (!is.numeric(args[[1]])) {
       stop("The index arguments have to be of type numeric")
     }
-    return(df[args[[1]]])
+    res <- df[args[[1]]]
+    if (is.na(res)) stop("Cannot access the element")
+    return(res)
   }
 }
 
@@ -289,6 +329,7 @@ get_cols <- function(df, ...) {
   stopifnot("Expected dataframe" = is.data.frame(df))
   s <- substitute(list(...))
   args <- as.list(s[-1])
+  stopifnot("No columns are specified" = length(args) >= 1)
   lapply(args, function(x) {
     name <- deparse(x)
     stopifnot("Column not found" = name %in% names(df))
@@ -339,28 +380,63 @@ as.fact <- function(v) {
 }
 
 # Split groups
-# FIX: this works only for one column
 split <- function(df, cols, levels) {
-  df_res <- NULL
-  levels_temp <- NULL
+  df_res <- df
   for (i in seq_along(cols)) {
-    if (i == 1) {
-      levels_temp <- levels[levels %in% unique(df[, cols[i]])]
-    } else {
-      levels_temp <- levels[levels %in% unique(df_res[, cols[i]])]
-    }
-    df_res <- rbind(df_res, df[df[, cols[i]] == levels_temp, ])
+    levels_temp <- levels[levels %in% unique(df_res[, cols[i]])]
+    df_res <- df_res[df_res[, cols[i]] %in% levels_temp, ]
   }
-  if (nrow(df) == 0) stop("Subset contains 0 rows")
+  if (nrow(df_res) == 0) stop("Subset contains 0 rows")
   return(df_res)
+}
+
+# check and print warnings
+print_warn <- function(message) {
+  showNotification(message, type = "warning")
+}
+
+# check and print error
+print_err <- function(message) {
+  showNotification(message, type = "error")
 }
 
 # check and print notifications
 print_req <- function(expr, message) {
   if (!expr) {
-    showNotification(message)
+    showNotification(message, type = "message")
   }
   req(expr)
+}
+
+# print notification without check
+print_noti <- function(message) {
+  showNotification(message, type = "message")
+}
+
+# print success
+print_success <- function(message) {
+  showNotification(message)
+}
+
+# check formula and open modal window if no formula is set
+print_form <- function(formula) {
+  if (is.null(formula)) {
+    showNotification("You have to set a formula",
+      action = tags$div(
+        showModal(modalDialog(
+          title = "FormulaEditor",
+          FormulaEditorUI("FO"),
+          easyClose = TRUE,
+          size = "l",
+          footer = tagList(
+            modalButton("Close")
+          )
+        ))
+      ),
+      type = "message"
+    )
+  }
+  req(!is.null(formula))
 }
 
 # Check axis limits
@@ -375,11 +451,17 @@ check_axis_limits <- function(col, min, max) {
     return()
   } else {
     choices <- unique(col)
-    if (!(min %in% choices) || !(max %in% choices)) {
-      stop("Found invalid axis limits")
-    }
-    if (which(max == choices) <= which(min == choices)) {
-      stop("Found invalid axis limits. The max value is found before the min value")
+    if (length(choices) == 1) {
+      if (!(min == choices && max == choices)) {
+        stop("If only one level is available the max and min value have to be set to this value!")
+      }
+    } else {
+      if (!(min %in% choices) || !(max %in% choices)) {
+        stop("Found invalid axis limits")
+      }
+      if (which(max == choices) <= which(min == choices)) {
+        stop("Found invalid axis limits. The max value is found before the min value")
+      }
     }
     return()
   }
@@ -387,9 +469,16 @@ check_axis_limits <- function(col, min, max) {
 
 # check that result is only of allowed type
 check_type_res <- function(res) {
-  allowed <- c("numeric", "integer", "logical", "character", "data.frame")
+  allowed <- c("numeric", "factor", "integer", "logical", "character", "data.frame")
   if (!(class(res) %in% allowed)) {
     stop(paste0("Found result with unallowed type: ", class(res)))
+  }
+}
+
+# Check length of input code
+check_length_code <- function(code) {
+  if (nchar(code) > 4000) {
+    stop("The code is too long to be evaluated")
   }
 }
 
@@ -481,6 +570,32 @@ is_valid_filename <- function(filename) {
   })
 }
 
+why_filename_invalid <- function(filename) {
+  try({
+    if (!is.character(filename)) {
+      return("Filename has to consist of characters")
+    }
+    if (grepl(" ", filename)) {
+      return("Found spaces in filename")
+    }
+    invalid_chars <- "[<>:\"/\\|?*]"
+    if (grepl(invalid_chars, filename)) {
+      return("Found invalid chars in filename: [<>:\"\\|?*")
+    }
+    if (nchar(filename) == 0) {
+      return("Filename is empty")
+    }
+    if (nchar(filename) >= 100) {
+      return("Filename is too long (> 100 characters)")
+    }
+    ex <- strsplit(basename(filename), split = "\\.")[[1]]
+    if (length(ex) == 1) { # no extension found
+      return("Filename extension is missing")
+    }
+    return("")
+  })
+}
+
 check_filename_for_server <- function(filename) {
   ex <- strsplit(basename(filename), split = "\\.")[[1]]
   ex <- ex[[length(ex)]]
@@ -495,6 +610,10 @@ check_filename_for_serverless <- function(filename) {
 
 # Split list of plots into panels of 9 plots
 create_plot_pages <- function(plotList) {
+  if (length(plotList) == 0) {
+    plotList <- list(ggplot2::ggplot() +
+      ggplot2::geom_point())
+  }
   n_full_pages <- floor(length(plotList) / 9)
   if (n_full_pages == 0) {
     return(list(cowplot::plot_grid(plotlist = plotList)))
@@ -516,6 +635,19 @@ create_plot_pages <- function(plotList) {
   })
 }
 
+# check result list size (rls)
+# Here also the length is checked
+check_rls <- function(listResults, newObj) {
+  if (length(listResults) > 1000) {
+    stop("You can only store 1000 results. Consider removing some results")
+  }
+  current_size <- object.size(listResults)
+  max_size <- 500 * 1024^2 # 500 MB per user
+  if (current_size + object.size(newObj) > max_size) {
+    stop("Memory limit exceeded for user results. Consider removing some results.")
+  }
+}
+
 # internal dataframe function
 elongate_col <- function(col, l) {
   times <- l / length(col)
@@ -529,6 +661,7 @@ elongate_col <- function(col, l) {
   }
 }
 
+# TODO: for a later update keep the type of the original cols
 DataFrame <- function(...) {
   columns <- list(...)
   s <- substitute(list(...))
@@ -540,10 +673,147 @@ DataFrame <- function(...) {
     if (length(x) == 0) stop("Found empty column")
   })
   rows <- max(sapply(columns, length))
+  total_bytes <- sum(sapply(columns, function(col) {
+    type <- typeof(col)
+    element_size <- if (type %in% c("double", "integer", "numeric")) 8 else nchar(type) # Approximate for other types
+    rows * element_size
+  }))
+  if (total_bytes > 10^8) {
+    stop("The total size of the data frame is too large")
+  }
   columns <- lapply(columns, function(col) {
     elongate_col(col, rows)
   })
   df <- do.call(cbind, columns) |> as.data.frame()
   names(df) <- args
   return(df)
+}
+
+Seq <- function(...) {
+  args <- list(...)
+  start <- args[[1]]
+  end <- args[[2]]
+  by <- args[[3]]
+  number_of_elems <- floor(abs(end - start) / by) + 1
+  n_bytes <- number_of_elems * 8 # Assume that each element is a double
+  if (n_bytes > 10^8) {
+    stop("The size of the sequence is too large")
+  }
+  return(seq(start, end, by))
+}
+
+C <- function(...) {
+  c(...)
+}
+
+Dnorm <- function(...) {
+  dnorm(...)
+}
+
+Pnorm <- function(...) {
+  pnorm(...)
+}
+
+Qnorm <- function(...) {
+  qnorm(...)
+}
+
+Rnorm <- function(...) {
+  args <- list(...)
+  n <- args[[1]]
+  if (length(n) > 1) stop("Length of size input to Rnorm > 1")
+  if (!is.numeric(n) && !is.integer(n)) {
+    n <- length(n)
+  }
+  if (is.numeric(n) && floor(n) != n) {
+    n <- floor(n)
+  }
+  n_bytes <- n * 8
+  if (n_bytes > 10^8) {
+    stop("The size of the sequence is too large")
+  }
+  rnorm(...)
+}
+
+Dbinom <- function(...) {
+  dbinom(...)
+}
+
+Pbinom <- function(...) {
+  pbinom(...)
+}
+
+Qbinom <- function(...) {
+  qbinom(...)
+}
+
+Rbinom <- function(...) {
+  args <- list(...)
+  n <- args[[1]]
+  if (length(n) > 1) stop("Length of size input to Rbinom > 1")
+  if (!is.numeric(n) && !is.integer(n)) {
+    n <- length(n)
+  }
+  if (is.numeric(n) && floor(n) != n) {
+    n <- floor(n)
+  }
+  n_bytes <- n * 8
+  if (n_bytes > 10^8) {
+    stop("The size of the sequence is too large")
+  }
+  rbinom(...)
+}
+
+Dpois <- function(...) {
+  dpois(...)
+}
+
+Ppois <- function(...) {
+  ppois(...)
+}
+
+Rpois <- function(...) {
+  args <- list(...)
+  n <- args[[1]]
+  if (length(n) > 1) stop("Length of size input to Rpois > 1")
+  if (!is.numeric(n) && !is.integer(n)) {
+    n <- length(n)
+  }
+  if (is.numeric(n) && floor(n) != n) {
+    n <- floor(n)
+  }
+  n_bytes <- n * 8
+  if (n_bytes > 10^8) {
+    stop("The size of the sequence is too large")
+  }
+  rpois(...)
+}
+
+Dunif <- function(...) {
+  dunif(...)
+}
+
+Punif <- function(...) {
+  punif(...)
+}
+
+Qunif <- function(...) {
+  qunif(...)
+}
+
+Runif <- function(...) {
+  args <- list(...)
+  n <- args[[1]]
+  if (length(n) > 1) stop("Length of size input to Runif > 1")
+  if (!is.numeric(n) && !is.integer(n)) {
+    n <- length(n)
+  }
+  if (is.numeric(n) && floor(n) != n) {
+    n <- floor(n)
+  }
+  n_bytes <- n * 8
+  if (n_bytes > 10^8) {
+    stop("The size of the sequence is too large")
+  }
+  runif(...)
 }

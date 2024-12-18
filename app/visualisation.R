@@ -1,12 +1,7 @@
 visSidebarUI <- function(id) {
   tabPanel(
     "Visualisation",
-    div(
-      class = "boxed-output",
-      uiOutput(NS(id, "open_split_by_group")),
-      uiOutput(NS(id, "data_splitted")),
-      verbatimTextOutput(NS(id, "applied_filter"))
-    ),
+    br(),
     div(
       class = "boxed-output",
       uiOutput(NS(id, "yVarUI")),
@@ -113,7 +108,6 @@ visUI <- function(id) {
 
 visServer <- function(id, data, listResults) {
   moduleServer(id, function(input, output, session) {
-
     # Render axis limits
     output[["XRangeUI"]] <- renderUI({
       req(!is.null(data$df))
@@ -138,7 +132,7 @@ visServer <- function(id, data, listResults) {
       } else {
         choices <- unique(df[[x]])
         return(
-          shinyWidgets::sliderTextInput( # TODO: add everywhere shinyWidgets
+          shinyWidgets::sliderTextInput(
             "VIS-XRange",
             "Select range for x axis:",
             selected = c(choices[1], choices[length(choices)]),
@@ -171,7 +165,7 @@ visServer <- function(id, data, listResults) {
       } else {
         choices <- unique(df[[y]])
         return(
-          shinyWidgets::sliderTextInput( # TODO: add everywhere shinyWidgets
+          shinyWidgets::sliderTextInput(
             "VIS-YRange",
             "Select range for x axis:",
             selected = c(choices[1], choices[length(choices)]),
@@ -312,68 +306,13 @@ visServer <- function(id, data, listResults) {
       )
     })
 
-    # Render split by group
-    output[["open_split_by_group"]] <- renderUI({
-      actionButton(NS(id, "open_split_by_group"),
-        "Open the split by group functionality",
-        title = "Open the split by group helper window",
-        disabled = is.null(data$df) || !is.data.frame(data$df) || !is.null(data$backup_df)
-      )
-    })
-
-    observeEvent(input[["open_split_by_group"]], {
-      showModal(modalDialog(
-        title = "SplitByGroup",
-        SplitByGroupUI("SG"),
-        easyClose = TRUE,
-        size = "l",
-        footer = NULL
-      ))
-    })
-
-    # check if data is splitted
-    output$data_splitted <- renderUI({
-      actionButton(NS(id, "remove_filter"),
-        "Remove the filter from the dataset",
-        title = "remove the filter of the dataset",
-        disabled = is.null(data$backup_df) || !is.data.frame(data$backup_df)
-      )
-    })
-
-    observe({
-      output$applied_filter <- renderText(NULL)
-      req(!is.null(data$filter_col))
-      req(!is.null(data$filter_group))
-      output$applied_filter <- renderText({
-        paste(
-          "The dataset is splitted by the variable(s): [",
-          paste(data$filter_col, collapse = ", "),
-          "] group(s) are set to: [",
-          paste(data$filter_group, collapse = ", "),
-          "]"
-        )
-      })
-    })
-
-    # Remove filter
-    observeEvent(input[["remove_filter"]], {
-      data$df <- data$backup_df
-      data$backup_df <- NULL
-      data$filter_col <- NULL
-      data$filter_group <- NULL
-    })
-
     # Plot stuff
     plotFct <- function(method) {
-      req(is.data.frame(data$df))
+      print_req(is.data.frame(data$df), "The dataset is missing")
       df <- data$df
-      req(input$yVar)
-      req(input$xVar)
       x <- input$xVar
       y <- input$yVar
       colNames <- names(df)
-      print_req(x %in% colNames, "X variable not found")
-      print_req(y %in% colNames, "Y variable not found")
       width <- input$widthPlot
       height <- input$heightPlot
       resolution <- input$resPlot
@@ -387,10 +326,6 @@ visServer <- function(id, data, listResults) {
       if (height > 100) height <- 100
       col <- input$col
       fill <- input$fill
-      if (!(fill %in% names(df)) && (fill != "")) showNotification("fill variable not found", duration = 0)
-      if (!(col %in% names(df)) && (col != "")) showNotification("colour variable not found", duration = 0)
-      req((fill %in% names(df)) || (fill == ""))
-      req((col %in% names(df)) || (col == ""))
       fillTitle <- input$legendTitleFill
       colTitle <- input$legendTitleCol
       xlabel <- input$xaxisText
@@ -414,53 +349,62 @@ visServer <- function(id, data, listResults) {
       }
       yd <- as.numeric(df[, y])
       if (fitMethod != "none" && !is.null(fitMethod) && xtype != "numeric") {
-        showNotification("Fit method will be ignored as X variable is not numerical", duration = 0)
+        print_warn("Fit method will be ignored as X variable is not numerical")
         fitMethod <- "none"
       }
       p <- tryCatch(
         {
-          if (method == "box") {
-            p <- BoxplotFct(
-              df, x, y, xlabel, ylabel,
-              fill, fillTitle, themeFill,
-              col, colTitle, theme,
-              facetMode, facet, facetScales,
-              input$XRange[1], input$XRange[2], input$YRange[1], input$YRange[2]
-            )
-          } else if (method == "dot") {
-            k <- NULL
-            if (fitMethod == "gam") {
-              req(input$k)
-              k <- input$k
-              if (k <= 0) {
-                showNotification("k has to be at least 1 and is set to this value")
-                k <- 1
+          withCallingHandlers(
+            {
+              if (method == "box") {
+                p <- BoxplotFct(
+                  df, x, y, xlabel, ylabel,
+                  fill, fillTitle, themeFill,
+                  col, colTitle, theme,
+                  facetMode, facet, facetScales,
+                  input$XRange[1], input$XRange[2], input$YRange[1], input$YRange[2]
+                )
+              } else if (method == "dot") {
+                k <- NULL
+                if (fitMethod == "gam") {
+                  req(input$k)
+                  k <- input$k
+                  if (k <= 0) {
+                    print_warn("k has to be at least 1 and is set to this value")
+                    k <- 1
+                  }
+                }
+                p <- DotplotFct(
+                  df, x, y, xlabel, ylabel,
+                  fitMethod,
+                  col, colTitle, theme,
+                  facetMode, facet, facetScales, k,
+                  input$XRange[1], input$XRange[2], input$YRange[1], input$YRange[2]
+                )
+              } else if (method == "line") {
+                p <- LineplotFct(
+                  df, x, y, xlabel, ylabel,
+                  col, colTitle, theme,
+                  facetMode, facet, facetScales,
+                  input$XRange[1], input$XRange[2], input$YRange[1], input$YRange[2]
+                )
               }
+            },
+            warning = function(warn) {
+              print_warn(warn$message)
+              invokeRestart("muffleWarning")
             }
-            p <- DotplotFct(
-              df, x, y, xlabel, ylabel,
-              fitMethod,
-              col, colTitle, theme,
-              facetMode, facet, facetScales, k,
-              input$XRange[1], input$XRange[2], input$YRange[1], input$YRange[2]
-            )
-          } else if (method == "line") {
-            p <- LineplotFct(
-              df, x, y, xlabel, ylabel,
-              col, colTitle, theme,
-              facetMode, facet, facetScales,
-              input$XRange[1], input$XRange[2], input$YRange[1], input$YRange[2]
-            )
-          }
+          )
+          check_rls(listResults$all_data, p)
           ggplot_build(p) # NOTE: invokes errors and warnings by building but not rendering plot
           p
         },
         warning = function(warn) {
-          showNotification(warn$message)
+          print_warn(warn$message)
           return(p)
         },
         error = function(err) {
-          showNotification(paste("An error occurred: ", conditionMessage(err)), duration = 0)
+          print_err(paste("An error occurred: ", conditionMessage(err)))
         }
       )
       exportTestValues(
@@ -472,19 +416,18 @@ visServer <- function(id, data, listResults) {
     }
 
     observeEvent(input$CreatePlotBox, {
-      req(is.data.frame(data$df))
+      print_req(is.data.frame(data$df), "The dataset is missing")
       plotFct("box")
     })
 
     observeEvent(input$CreatePlotScatter, {
-      req(is.data.frame(data$df))
+      print_req(is.data.frame(data$df), "The dataset is missing")
       plotFct("dot")
     })
 
     observeEvent(input$CreatePlotLine, {
-      req(is.data.frame(data$df))
+      print_req(is.data.frame(data$df), "The dataset is missing")
       plotFct("line")
     })
-
   })
 }

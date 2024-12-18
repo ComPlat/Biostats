@@ -1,107 +1,156 @@
+
+js_scripts <- function() {
+     if (Sys.getenv("RUN_MODE") != "SERVER") {
+      tagList(
+        includeScript("www/FileSaver.min.js"),
+        includeScript("www/html2canvas.min.js"),
+        includeScript("www/jszip.min.js"),
+        includeScript("www/download.js")
+      )
+    } else {
+      tagList(
+        includeScript(system.file("www/FileSaver.min.js", package = "bs")),
+        includeScript(system.file("www/html2canvas.min.js", package = "bs")),
+        includeScript(system.file("www/jszip.min.js", package = "bs")),
+        includeScript(system.file("www/download.js", package = "bs"))
+      )
+    }
+}
+
 app <- function() {
+  js <- js_scripts()
   ui <- fluidPage(
     useShinyjs(),
-    includeScript("www/download.js"),
+
+    js,
+
+    #includeScript(system.file("www/FileSaver.min.js", package = "bs")),
+    #includeScript(system.file("www/html2canvas.min.js", package = "bs")),
+    #includeScript(system.file("www/jszip.min.js", package = "bs")),
+    #includeScript(system.file("www/download.js", package = "bs")),
     tags$head(
-      tags$script(src = "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"),
-      tags$script(src = "https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"),
-      tags$script(src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/0.4.1/html2canvas.min.js")
+      # tags$script(src = "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"),
+      # tags$script(src = "https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"),
+      # tags$script(src tags$script(src = "js/jszip.min.js"),
+      tags$style(HTML("
+        .boxed-output {
+        border: 2px solid #900C3F;
+        padding: 10px;
+        border-radius: 5px;
+        margin-top: 10px;
+        }
+        .add-button {
+        position: relative;
+        padding-right: 20px;
+        }
+        .add-button::after {
+        content: '\\2295';
+        position: absolute;
+        top: 1.1px;
+        right: 5px;
+        font-size: 16px;
+        font-weight: bold;
+        color: #900C3F;
+        width: 15px;
+        height: 15px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        }
+        .model {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border: 2px solid #c8c8c8;
+        border-radius: 5px;
+        margin-top: 10px;
+        }
+        .title {
+        font-size: 14px;
+        font-weight: bold;
+        margin-bottom: 10px;
+        color: #333;
+        }
+        .create_button{
+        background-color: #04AA6D; /* Green */
+        border: none;
+        color: black;
+        padding: 15px 32px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 16px;
+        }
+        .var-output {
+        border: 2px solid #900C3F;
+        padding: 10px;
+        border-radius: 5px;
+        margin-top: 10px;
+        display: inline-block;
+        width: auto;
+        }
+        .var-box-output {
+        border: 2px solid #900C3F;
+        padding: 10px;
+        border-radius: 5px;
+        margin-top: 10px;
+        }
+        .nav-tabs > li > a {
+          text-decoration: none;
+          color: #900C3F;
+          font-weight: bold;
+          margin-right: 15px;
+        }
+        .nav-tabs > li > a:hover {
+        text-decoration: underline;
+        color: #333;
+        }
+        "))
     ),
     sidebarLayout(
       sidebarPanel(
         div(
+          style = "position: relative",
+          actionButton(
+            "docu",
+            label = NULL,
+            icon = icon("question-circle")
+          )
+        ),
+        uiOutput("open_formula_editor_main"),
+        uiOutput("formulaUI"),
+        br(),
+        uiOutput("open_split_by_group"),
+        uiOutput("data_splitted"),
+        verbatimTextOutput("applied_filter"),
+        br(),
+        div(
           conditionalPanel(
             condition = "input.conditionedPanels == 'Data'",
-            div(
-              style = "position: relative",
-              actionButton(
-                "data_docu",
-                label = NULL,
-                icon = icon("question-circle")
-              )
-            ),
-            conditionalPanel(
-              condition = "input.conditionedPanels == 'Data'",
-              fileInput("file", "Choose CSV File",
-                accept = c(
-                  "text/csv",
-                  "text/comma-separated-values,text/plain",
-                  ".csv"
-                )
-              )
-            ),
+            uiOutput("conditional_data_ui"),
             tags$hr()
           ),
           conditionalPanel(
             condition = "input.conditionedPanels == 'DataWrangling'",
-            div(
-              style = "position: relative",
-              actionButton(
-                "datawrangling_docu",
-                label = NULL,
-                icon = icon("question-circle")
-              )
-            ),
             OperatorEditorSidebar("OP")
           ),
           conditionalPanel(
             condition = "input.conditionedPanels == 'Visualisation'",
-            div(
-              style = "position: relative;",
-              actionButton(
-                "visualization_docu",
-                label = NULL,
-                icon = icon("question-circle")
-              )
-            ),
             visSidebarUI("VIS")
           ),
           conditionalPanel(
             condition = "input.conditionedPanels == 'Assumption'",
-            div(
-              style = "position: relative",
-              actionButton(
-                "ass_docu",
-                label = NULL,
-                icon = icon("question-circle")
-              )
-            ),
             assSidebarUI("ASS")
           ),
           conditionalPanel(
             condition = "input.conditionedPanels == 'Correlation'",
-            div(
-              style = "position: relative",
-              actionButton(
-                "corr_docu",
-                label = NULL,
-                icon = icon("question-circle")
-              )
-            ),
             corrSidebarUI("CORR")
           ),
           conditionalPanel(
             condition = "input.conditionedPanels == 'Tests'",
-            div(
-              style = "position: relative",
-              actionButton(
-                "test_docu",
-                label = NULL,
-                icon = icon("question-circle")
-              )
-            ),
             testsSidebarUI("TESTS")
           ),
           conditionalPanel(
             condition = "input.conditionedPanels == 'Dose Response analysis'",
-            div(
-              style = "position: relative;",
-              actionButton(
-                "doseresponse_docu",
-                label = NULL,
-                icon = icon("question-circle")
-              )
-            ),
             DoseResponseSidebarUI("DOSERESPONSE")
           )
         )
@@ -155,90 +204,133 @@ app <- function() {
       counter = 0
     )
 
-    # docu data
-    observeEvent(input[["data_docu"]], {
-      showModal(modalDialog(
-        title = "Example Dataframe",
-        includeHTML("www/data.html"),
-        easyClose = TRUE,
-        footer = NULL
-      ))
-    })
-    observeEvent(input[["datawrangling_docu"]], {
-      showModal(modalDialog(
-        title = "Data wrangling",
-        includeHTML("www/operations.html"),
-        easyClose = TRUE,
-        footer = NULL
-      ))
-    })
-    observeEvent(input[["corr_docu"]], {
-      showModal(modalDialog(
-        title = "Correlation",
-        includeHTML("www/data.html"),
-        easyClose = TRUE,
-        footer = NULL
-      ))
-    })
-    observeEvent(input[["ass_docu"]], {
-      showModal(modalDialog(
-        title = "Testing assumptions",
-        includeHTML("www/assumptions.html"),
-        easyClose = TRUE,
-        footer = NULL
-      ))
-    })
-    observeEvent(input[["test_docu"]], {
-      showModal(modalDialog(
-        title = "Statistical tests",
-        includeHTML("www/tests.html"),
-        easyClose = TRUE,
-        footer = NULL
-      ))
-    })
-    # docu dose response
-    observeEvent(input[["doseresponse_docu"]], {
-      showModal(modalDialog(
-        title = "Doseresponse analysis",
-        includeHTML("www/doseresponse.html"),
-        easyClose = TRUE,
-        footer = NULL
-      ))
-    })
-    # docu visualisation
-    observeEvent(input[["visualization_docu"]], {
-      showModal(modalDialog(
-        title = "Visualization",
-        includeHTML("www/visualization1.html"),
-        br(),
-        renderImage(
-          {
-            list(
-              src = "www/DocuPlot.jpg",
-              contentType = "image/jpg",
-              width = 650,
-              height = 500,
-              alt = "Basic Plot"
-            )
-          },
-          deleteFile = FALSE
-        ),
-        br(),
-        br(),
-        br(),
-        br(),
-        br(),
-        includeHTML("www/visualization2.html"),
-        easyClose = TRUE,
-        footer = NULL,
-        size = "l"
-      ))
+    # docu
+    observeEvent(input[["docu"]], {
+      path <- ""
+      if (input$conditionedPanels == "Data") {
+        if (Sys.getenv("RUN_MODE") != "SERVER") {
+          path <- "./www/data.html"
+        } else {
+          path <- system.file("www/data.html", package = "bs")
+        }
+        showModal(modalDialog(
+          title = "Example Dataframe",
+          includeHTML(path),
+          easyClose = TRUE,
+          footer = NULL
+        ))
+      } else if (input$conditionedPanels == "DataWrangling") {
+        if (Sys.getenv("RUN_MODE") != "SERVER") {
+          path <- "./www/operations.html"
+        } else {
+          path <- system.file("www/operations.html", package = "bs")
+        }
+        showModal(modalDialog(
+          title = "Data wrangling",
+          includeHTML(path),
+          easyClose = TRUE,
+          footer = NULL
+        ))
+      } else if (input$conditionedPanels == "Visualisation") {
+        path1 <- ""
+        path2 <- ""
+        plot_path <- ""
+        if (Sys.getenv("RUN_MODE") != "SERVER") {
+          path1 <- "./www/visualization1.html"
+          path2 <- "./www/visualization2.html"
+          plot_path <- "www/DocuPlot.jpg"
+        } else {
+          path1 <- system.file("www/visualization1.html", package = "bs")
+          path2 <- system.file("www/visualization2.html", package = "bs")
+          plot_path <- system.file("www/DocuPlot.jpg", package = "bs")
+        }
+        showModal(modalDialog(
+          title = "Visualization",
+          includeHTML(path1),
+          br(),
+          renderImage(
+            {
+              list(
+                src = plot_path,
+                contentType = "image/jpg",
+                width = 650,
+                height = 500,
+                alt = "Basic Plot"
+              )
+            },
+            deleteFile = FALSE
+          ),
+          br(),
+          br(),
+          br(),
+          br(),
+          br(),
+          includeHTML(path2),
+          easyClose = TRUE,
+          footer = NULL,
+          size = "l"
+        ))
+      } else if (input$conditionedPanels == "Assumption") {
+        if (Sys.getenv("RUN_MODE") != "SERVER") {
+          path <- "./www/assumptions.html"
+        } else {
+          path <- system.file("www/assumptions.html", package = "bs")
+        }
+        showModal(modalDialog(
+          title = "Testing assumptions",
+          includeHTML(path),
+          easyClose = TRUE,
+          footer = NULL
+        ))
+      } else if (input$conditionedPanels == "Correlation") {
+        if (Sys.getenv("RUN_MODE") != "SERVER") {
+          path <- "./www/correlation.html"
+        } else {
+          path <- system.file("www/correlation.html", package = "bs")
+        }
+        showModal(modalDialog(
+          title = "Correlation",
+          includeHTML(path),
+          easyClose = TRUE,
+          footer = NULL
+        ))
+      } else if (input$conditionedPanels == "Tests") {
+        if (Sys.getenv("RUN_MODE") != "SERVER") {
+          path <- "./www/tests.html"
+        } else {
+          path <- system.file("www/tests.html", package = "bs")
+        }
+        showModal(modalDialog(
+          title = "Statistical tests",
+          includeHTML(path),
+          easyClose = TRUE,
+          footer = NULL
+        ))
+      } else if (input$conditionedPanels == "Dose Response analysis") {
+        if (Sys.getenv("RUN_MODE") != "SERVER") {
+          path <- "./www/doseresponse.html"
+        } else {
+          path <- system.file("www/doseresponse.html", package = "bs")
+        }
+        showModal(modalDialog(
+          title = "Doseresponse analysis",
+          includeHTML(path),
+          easyClose = TRUE,
+          footer = NULL
+        ))
+      }
     })
     # docu formula editor
     observeEvent(input[["FO-formula_docu"]], {
+      path <- ""
+      if (Sys.getenv("RUN_MODE") != "SERVER") {
+        path <- "./www/formula.html"
+      } else {
+        path <- system.file("www/formula.html", package = "bs")
+      }
       showModal(modalDialog(
         title = "Defining the formula",
-        includeHTML(system.file("www/formula.html", package = "bs")),
+        includeHTML(path),
         easyClose = TRUE,
         footer = NULL,
         size = "l"
@@ -246,9 +338,15 @@ app <- function() {
     })
     # docu split by group
     observeEvent(input[["SG-split_docu"]], {
+      path <- ""
+      if (Sys.getenv("RUN_MODE") != "SERVER") {
+        path <- "./www/SplitData.html"
+      } else {
+        path <- system.file("www/SplitData.html", package = "bs")
+      }
       showModal(modalDialog(
         title = "Subsetting the dataset",
-        includeHTML(system.file("www/SplitData.html", package = "bs")),
+        includeHTML(path),
         easyClose = TRUE,
         footer = NULL,
         size = "l"
@@ -275,18 +373,19 @@ app <- function() {
       file <- download(session, "/home/shiny/results") # NOTE: from COMELN
       df <- NULL
       df <- readData(file)
-      if (!is.data.frame(df)) {
-        showNotification("File can not be used. Upload into R failed!", duration = 0)
-      }
+      print_req(
+        is.data.frame(df),
+        "File can not be used. Upload into R failed!"
+      )
       tryCatch(
         {
           unlink(file)
         },
         warning = function(warn) {
-          showNotification(paste("A warning occurred: ", conditionMessage(warn)), duration = 0)
+          print_warn(paste("A warning occurred: ", conditionMessage(warn)))
         },
         error = function(err) {
-          showNotification(paste("An error occurred: ", conditionMessage(err)), duration = 0)
+          print_err(paste("An error occurred: ", conditionMessage(err)))
         }
       )
       req(is.data.frame(df))
@@ -310,7 +409,7 @@ app <- function() {
         df <- try(readData(input$file$datapath))
         if (inherits(df, "try-error")) {
           err <- conditionMessage(attr(df, "condition"))
-          showNotification(err)
+          print_err(err)
           return(NULL)
         }
         df <- create_r_names(df)
@@ -339,7 +438,7 @@ app <- function() {
 
     # Render results list
     output$Results <- renderUI({
-      if (input$conditionedPanels == "DataWrangling" || input$conditionedPanels == "Dose Response analysis") {
+      if (input$conditionedPanels == "DataWrangling") {
         return(
           div(
             class = "var-box-output",
@@ -421,7 +520,12 @@ app <- function() {
           } else if (inherits(temp, "plot")) {
             output[[paste0("res_", name)]] <- renderPlot(temp@p)
           } else if (inherits(temp, "doseResponse")) {
-            message <- "Dose Response Analysis. Too large to display."
+            message <- paste0(
+              "Dose response analysis. (Outliers: ",
+              paste0(temp@outlier_info, collapse = ";"),
+              "). Too long to display",
+              collapse = " "
+            )
             output[[paste0("res_", name)]] <- renderPrint(message)
           } else {
             output[[paste0("res_", name)]] <- renderPrint(temp)
@@ -449,16 +553,125 @@ app <- function() {
       })
     })
 
+    # Observe open formula editor
+    output$open_formula_editor_main <- renderUI({
+      if (input$conditionedPanels == "DataWrangling" ||
+        input$conditionedPanels == "Visualisation") {
+        return()
+      }
+      div(
+        class = "boxed-output",
+        actionButton("open_formula_editor",
+          "Open formula editor",
+          title = "Open the formula editor to create or modify a formula",
+          disabled = is.null(dataSet$df) || !is.data.frame(dataSet$df)
+        )
+      )
+    })
+    observeEvent(input[["open_formula_editor"]], {
+      showModal(modalDialog(
+        title = "FormulaEditor",
+        FormulaEditorUI("FO"),
+        easyClose = TRUE,
+        size = "l",
+        footer = tagList(
+          modalButton("Close")
+        )
+      ))
+    })
+    # display current formula
+    observe({
+      req(!is.null(dataSet$formula))
+      output$formula <- renderText({
+        deparse(dataSet$formula)
+      })
+    })
+    output[["formulaUI"]] <- renderUI({
+      if (input$conditionedPanels == "DataWrangling" ||
+        input$conditionedPanels == "Visualisation") {
+        return()
+      } else {
+        verbatimTextOutput("formula")
+      }
+    })
+
+    # Render split by group
+    output[["open_split_by_group"]] <- renderUI({
+      if (input$conditionedPanels == "DataWrangling") {
+        return()
+      }
+      div(
+        class = "boxed-output",
+        actionButton("open_split_by_group",
+          "Open the split by group functionality",
+          title = "Open the split by group helper window",
+          disabled = is.null(dataSet$df) ||
+            !is.data.frame(dataSet$df) ||
+            !is.null(dataSet$backup_df)
+        ),
+        actionButton("remove_filter",
+          "Remove the filter from the dataset",
+          title = "remove the filter of the dataset",
+          disabled = is.null(dataSet$backup_df) || !is.data.frame(dataSet$backup_df)
+        )
+      )
+    })
+    observeEvent(input[["open_split_by_group"]], {
+      showModal(modalDialog(
+        title = "SplitByGroup",
+        SplitByGroupUI("SG"),
+        easyClose = TRUE,
+        size = "l",
+        footer = NULL
+      ))
+    })
+    observe({
+      output$applied_filter <- renderText(NULL)
+      req(!is.null(dataSet$filter_col))
+      req(!is.null(dataSet$filter_group))
+      output$applied_filter <- renderText({
+        paste(
+          "The dataset is splitted by the variable(s): [",
+          paste(dataSet$filter_col, collapse = ", "),
+          "] group(s) are set to: [",
+          paste(dataSet$filter_group, collapse = ", "),
+          "]"
+        )
+      })
+    })
+    # Remove filter
+    observeEvent(input[["remove_filter"]], {
+      dataSet$df <- dataSet$backup_df
+      dataSet$backup_df <- NULL
+      dataSet$filter_col <- NULL
+      dataSet$filter_group <- NULL
+    })
+
     observeEvent(input$download, {
-      print_req(is_valid_filename(input$user_filename), "Defined filename is not valid")
+      if (!is_valid_filename(input$user_filename)) {
+        runjs("document.getElementById('user_filename').focus();")
+        print_noti(
+          why_filename_invalid(input$user_filename)
+        )
+      }
+      print_req(
+        is_valid_filename(input$user_filename),
+        "Defined filename is not valid"
+      )
       print_req(length(listResults$all_data) > 0, "No results to save")
       l <- listResults$all_data
       if (Sys.getenv("RUN_MODE") == "SERVER") {
-        print_req(check_filename_for_server(input$user_filename), "Defined filename does not have xlsx as extension")
+        print_req(
+          check_filename_for_server(input$user_filename),
+          "Defined filename does not have xlsx as extension"
+        )
         excelFile <- createExcelFile(l)
         upload(session, excelFile, new_name = input$user_filename)
       } else {
-        print_req(check_filename_for_serverless(input$user_filename), "Defined filename does not have zip as extension")
+        print_req(
+          check_filename_for_serverless(input$user_filename),
+          "Defined filename does not have zip as extension"
+        )
         jsString <- createJSString(l)
         session$sendCustomMessage(
           type = "downloadZip",

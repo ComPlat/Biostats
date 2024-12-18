@@ -1,47 +1,5 @@
 SplitByGroupUI <- function(id) {
   ui <- fluidPage(
-    tags$head(
-      tags$style(HTML("
-        .boxed-output {
-        border: 2px solid #900C3F;
-        padding: 10px;
-        border-radius: 5px;
-        margin-top: 10px;
-        }
-        .add-button {
-        position: relative;
-        padding-right: 20px;
-        }
-        .add-button::after {
-        content: '\\2295';
-        position: absolute;
-        top: 1.1px;
-        right: 5px;
-        font-size: 16px;
-        font-weight: bold;
-        color: #900C3F;
-        background-color: white;
-        width: 15px;
-        height: 15px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        }
-        .model {
-        background-color: #f8f9fa;
-        padding: 15px;
-        border: 2px solid #c8c8c8;
-        border-radius: 5px;
-        margin-top: 10px;
-        }
-        .title {
-        font-size: 14px;
-        font-weight: bold;
-        margin-bottom: 10px;
-        color: #333;
-        }
-        "))
-    ),
     fluidRow(
       div(
         actionButton(
@@ -125,8 +83,7 @@ SplitByGroupServer <- function(id, data) {
 
     # React to split data
     observeEvent(input$split_data, {
-      req(!is.null(r_vals$df))
-      req(is.data.frame(r_vals$df))
+      print_req(is.data.frame(r_vals$df), "The dataset is missing")
       e <- try({
         selected_cols <- input[[paste0("colnames-dropdown_")]]
         selected_groups <- input[[paste0("levels-dropdown_")]]
@@ -139,7 +96,7 @@ SplitByGroupServer <- function(id, data) {
         data$filter_group <- selected_groups
       }, silent = TRUE)
       if (inherits(e, "try-error")) {
-        showNotification(e, type = "error")
+        print_err(e)
       }
     })
   })

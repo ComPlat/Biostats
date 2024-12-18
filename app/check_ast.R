@@ -7,12 +7,12 @@ allowed_fcts <- function() {
     ">", "<", "<=", ">=", "==", "!=",
     "abs", "ceiling", "floor", "trunc", "round",
     "paste", "paste0", "tolower", "toupper",
-    "dnorm", "pnorm", "qnorm", "rnorm", "dbinom",
-    "pbinom", "qbinom", "rbinom", "dpois",
-    "ppois", "rpois", "dunif", "punif", "qunif", "runif",
+    "Dnorm", "Pnorm", "Qnorm", "Rnorm", "Dbinom",
+    "Pbinom", "Qbinom", "Rbinom", "Dpois",
+    "Ppois", "Rpois", "Dunif", "Punif", "Qunif", "Runif",
     "Mean", "SD", "Median", "quantile", "range",
     "Sum", "diff", "Min", "Max", "scale",
-    "c", "seq", "DataFrame", "vector", "length", "matrix", "~",
+    "C", "Seq", "DataFrame", "vector", "length", "matrix", "~",
     "get_rows", "get_cols", "get_elem",
     "as.char", "as.int", "as.real", "as.fact"
   )

@@ -1,15 +1,22 @@
-# TODO: deploy app to GitHub.io
-# All those copying etc. should be done within the github workflow
-# Find a solution to show the static html files of the documentation
-# automatically copy the www folder to the folder app
-# automatically copy the system.files to the folder app
-# automatically parse the upload filed as the environment variable is ignored?
+# Copy R files from bs
+# ========================================
 files <- list.files("/home/konrad/Documents/Biostats/bs/R/", pattern = ".R", full.names = TRUE)
 file.copy(files, "/home/konrad/Documents/Biostats/app/", overwrite = TRUE)
-# Replace the upload field
-# Copy folder www
-# replace system.files with www folder paths
 
+# Copy www files from bs
+# ========================================
+destination_folder <- "/home/konrad/Documents/Biostats/app/www/"
+if (!dir.exists(destination_folder)) {
+  dir.create(destination_folder)
+}
+file.copy(
+  from = list.files("/home/konrad/Documents/Biostats/bs/inst/www", full.names = TRUE),
+  to = destination_folder,
+  recursive = TRUE, overwrite = TRUE
+)
+
+# Create app.R
+# ========================================
 file.create("/home/konrad/Documents/Biostats/app/app.R", overwrite = TRUE)
 con <- file("/home/konrad/Documents/Biostats/app/app.R")
 code <- function() {
@@ -44,6 +51,20 @@ code <- code[2:(length(code) - 1)]
 writeLines(code, con)
 close(con)
 
-setwd("/home/konrad/Documents/Biostats/app")
-shinylive::export(appdir = "./app/", destdir = "./app", quiet = FALSE)
-httpuv::runStaticServer(".")
+# Build serverless app
+# ========================================
+destination_folder <- "/home/konrad/Documents/Biostats/serverless/"
+if (!dir.exists(destination_folder)) {
+  dir.create(destination_folder)
+}
+
+setwd("/home/konrad/Documents/Biostats")
+shinylive::export(
+  appdir = "./app",
+  destdir = "./app/serverless/",
+  quiet = FALSE
+)
+
+# Start app
+# ========================================
+httpuv::runStaticServer("./app/serverless/")

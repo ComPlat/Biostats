@@ -1,57 +1,5 @@
 FormulaEditorUI <- function(id) {
   ui <- fluidPage(
-    tags$head(
-      tags$style(HTML("
-        .boxed-output {
-        border: 2px solid #900C3F;
-        padding: 10px;
-        border-radius: 5px;
-        margin-top: 10px;
-        }
-        .add-button {
-        position: relative;
-        padding-right: 20px;
-        }
-        .add-button::after {
-        content: '\\2295';
-        position: absolute;
-        top: 1.1px;
-        right: 5px;
-        font-size: 16px;
-        font-weight: bold;
-        color: #900C3F;
-        background-color: white;
-        width: 15px;
-        height: 15px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        }
-        .model {
-        background-color: #f8f9fa;
-        padding: 15px;
-        border: 2px solid #c8c8c8;
-        border-radius: 5px;
-        margin-top: 10px;
-        }
-        .title {
-        font-size: 14px;
-        font-weight: bold;
-        margin-bottom: 10px;
-        color: #333;
-        }
-        .create_button{
-        background-color: #04AA6D; /* Green */
-        border: none;
-        color: black;
-        padding: 15px 32px;
-        text-align: center;
-        text-decoration: none;
-        display: inline-block;
-        font-size: 16px;
-        }
-        "))
-    ),
     fluidRow(
       uiOutput(NS(id, "model")),
       column(
@@ -251,31 +199,33 @@ FormulaEditorServer <- function(id, data) {
 
     # React to create formula
     observeEvent(input$create_formula, {
-      req(!is.null(r_vals$df))
-      req(is.data.frame(r_vals$df))
-      e <- try({
-        selected_col <- input[[paste0("colnames-dropdown_", r_vals$counter_id)]]
-        current_text <- input[["editable_code"]]
-        formula <- paste(selected_col, " ~ ", current_text)
-        formula <- as.formula(formula)
-        # check formula
-        e <- try({
-          check_ast(formula, colnames(r_vals$df))
-        })
-        if (inherits(e, "try-error")) {
-          showNotification(e, type = "error")
-          return()
+      print_req(is.data.frame(r_vals$df), "The dataset is missing")
+      tryCatch({
+        withCallingHandlers(
+          expr = {
+            selected_col <- input[[paste0("colnames-dropdown_", r_vals$counter_id)]]
+            current_text <- input[["editable_code"]]
+            formula <- paste(selected_col, " ~ ", current_text)
+            formula <- as.formula(formula)
+            check_ast(formula, colnames(r_vals$df))
+            data$formula <- formula
+            model <- lm(formula, data = r_vals$df)
+            model_latex <- extract_eq(model, wrap = TRUE)
+            output$model <- renderUI({
+              withMathJax(HTML(paste0("$$", model_latex, "$$")))
+            })
+          },
+          warning = function(warn) {
+            print_warn(warn$message)
+            invokeRestart("muffleWarning")
+          }
+        )},
+        error = function(err){
+          print_err("Invalid formula")
+          print_err(err$message)
         }
-        data$formula <- formula
-        model <- lm(formula, data = r_vals$df)
-        model_latex <- extract_eq(model, wrap = TRUE)
-        output$model <- renderUI({
-          withMathJax(HTML(paste0("$$", model_latex, "$$")))
-        })
-      })
-      if (inherits(e, "try-error")) {
-        showNotification("Invalid formula", type = "error")
-      }
+      )
     })
+
   })
 }

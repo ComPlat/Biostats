@@ -23,4 +23,3 @@
     Sys.setenv(RUN_MODE = "BROWSER")
     app <- app()
     shiny::shinyApp(app$ui, app$server)
-
