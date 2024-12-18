@@ -64,7 +64,7 @@ jobs:
     # Step 5: Export Shiny app as a static website
     - name: Export Shiny app
       run: |
-        Rscript -e 'shinylive::export("./app", "_site")'
+        Rscript -e '  Sys.setenv(RUN_MODE = "BROWSER"); shinylive::export("./app", "_site")'
 
     # Step 6: Upload artifact for deployment
     - name: Upload Pages artifact

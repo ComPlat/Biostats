@@ -51,6 +51,8 @@ code <- code[2:(length(code) - 1)]
 writeLines(code, con)
 close(con)
 
+stop()
+
 # Build serverless app
 # ========================================
 destination_folder <- "/home/konrad/Documents/Biostats/serverless/"

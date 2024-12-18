@@ -354,6 +354,7 @@ app <- function() {
     })
 
     output$conditional_data_ui <- renderUI({
+      showNotification(Sys.getenv("RUN_MODE"), duration = 0)
       if (Sys.getenv("RUN_MODE") != "SERVER") {
         res <- conditionalPanel(
           condition = "input.conditionedPanels == 'Data'",
