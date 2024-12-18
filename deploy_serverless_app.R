@@ -2,6 +2,7 @@
 # ========================================
 files <- list.files("./bs/R", pattern = ".R", full.names = TRUE)
 print(files)
+print(getwd())
 file.copy(files, "./app/")
 
 # Copy www files from bs
