@@ -1,7 +1,15 @@
 # Copy R files from bs
 # ========================================
 files <- list.files("./bs/R", pattern = ".R", full.names = TRUE)
-file.copy(files, "./app/")
+file.copy(files, "./app/", overwrite = TRUE)
+
+file <- "./app/MainApp.R"
+content <- readLines(file)
+content <- gsub("uploadUIField",
+                "fileInput(\"file\", \"Choose CSV File\",\n        accept = c(\n            \"text/csv\",\n            \"text/comma-separated-values,text/plain\",\n            \".csv\"\n          )\n        ),\n", 
+                content)
+writeLines(content, file)
+
 
 # Copy www files from bs
 # ========================================

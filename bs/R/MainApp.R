@@ -17,8 +17,25 @@ js_scripts <- function() {
     }
 }
 
+upload_ui_field <- function() {
+  if (Sys.getenv("RUN_MODE") != "SERVER") {
+    res <- conditionalPanel(
+        condition = "input.conditionedPanels == 'Data'",
+        fileInput("file", "Choose CSV File",
+          accept = c(
+            "text/csv",
+            "text/comma-separated-values,text/plain",
+            ".csv"
+          )
+        )
+      )
+    return(res)
+  }
+}
+
 app <- function() {
   js <- js_scripts()
+  uploadUIField <- upload_ui_field()
   ui <- fluidPage(
     useShinyjs(),
     js,
@@ -120,11 +137,12 @@ app <- function() {
         uiOutput("open_split_by_group"),
         uiOutput("data_splitted"),
         verbatimTextOutput("applied_filter"),
-        uiOutput("conditional_data_ui"),
         br(),
         div(
           conditionalPanel(
             condition = "input.conditionedPanels == 'Data'",
+            # uiOutput("conditional_data_ui"),
+            uploadUIField,
             tags$hr()
           ),
           conditionalPanel(
@@ -349,26 +367,6 @@ app <- function() {
         footer = NULL,
         size = "l"
       ))
-    })
-
-    # TODO: not needed anymore?
-    output$conditional_data_ui <- renderUI({
-      if (Sys.getenv("RUN_MODE") != "SERVER") {
-        res <- div(
-          class = "var-box-output",
-          conditionalPanel(
-            condition = "input.conditionedPanels == 'Data'",
-            fileInput("file", "Choose CSV File",
-              accept = c(
-                "text/csv",
-                "text/comma-separated-values,text/plain",
-                ".csv"
-              )
-            )
-          )
-        )
-        return(res)
-      }
     })
 
     download_file <- reactive({
