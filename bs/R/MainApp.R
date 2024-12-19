@@ -220,6 +220,7 @@ app <- function() {
       counter = 0
     )
 
+
     # docu
     observeEvent(input[["docu"]], {
       path <- ""
