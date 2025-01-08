@@ -4,7 +4,8 @@ This application provides a user-friendly interface for conducting basic data wr
 
 ## Usage
 
-Visit the app hosted as static website [Biostats](https://complat.github.io/Biostats/)
+Visit the app hosted as static website [Biostats](https://complat.github.io/Biostats/).
+If you want to run it locally follow the guide below.
 
 ## Features
 
@@ -15,4 +16,51 @@ Visit the app hosted as static website [Biostats](https://complat.github.io/Bios
 - Data Visualization: Visualize your data using ggplot2, including boxplots, point plots, line plots, andsmoothing  with annotations.
 
 
+## Local version
+
+#### Step 1: Install R
+
+##### Linux (Ubuntu)
+```bash
+sudo apt update
+sudo apt install -y r-base
+```
+Verify installation:
+```bash
+R --version
+```
+
+##### Windows/Mac
+- Download R from [CRAN](https://cran.r-project.org/).
+- Follow the installer instructions.
+
+#### Step 2: Install RStudio
+1. Download RStudio Desktop (free version) from [RStudio's website](https://posit.co/download/rstudio-desktop/).
+2. Install it by following the installation steps for your operating system.
+
+#### Step 3: Install `remotes` for GitHub Packages
+1. Open R or RStudio.
+2. Install the `remotes` package:
+```R
+install.packages("remotes")
+```
+
+#### Step 4: Install a Package from GitHub
+1. Load the `remotes` library:
+```R
+library(remotes)
+```
+2. Use the `install_github` function to install the package "COMELN".
+```R
+remotes::install_github("ComPlat/Biostats", subdir = "comeln")
+remotes::install_github("ComPlat/Biostats", subdir = "bs")
+```
+
+3. Restart R/RStudio and start the app
+
+```R
+Sys.setenv(RUN_MODE = "BROWSER")
+app <- bs::app()
+shiny::shinyApp(app$ui, app$server)
+```
 
