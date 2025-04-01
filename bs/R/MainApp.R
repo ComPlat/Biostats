@@ -1,34 +1,33 @@
-
 js_scripts <- function() {
-     if (Sys.getenv("RUN_MODE") == "BROWSER") {
-      tagList(
-        includeScript("www/FileSaver.min.js"),
-        includeScript("www/html2canvas.min.js"),
-        includeScript("www/jszip.min.js"),
-        includeScript("www/download.js")
-      )
-    } else {
-      tagList(
-        includeScript(system.file("www/FileSaver.min.js", package = "bs")),
-        includeScript(system.file("www/html2canvas.min.js", package = "bs")),
-        includeScript(system.file("www/jszip.min.js", package = "bs")),
-        includeScript(system.file("www/download.js", package = "bs"))
-      )
-    }
+  if (Sys.getenv("RUN_MODE") == "BROWSER") {
+    tagList(
+      includeScript("www/FileSaver.min.js"),
+      includeScript("www/html2canvas.min.js"),
+      includeScript("www/jszip.min.js"),
+      includeScript("www/download.js")
+    )
+  } else {
+    tagList(
+      includeScript(system.file("www/FileSaver.min.js", package = "bs")),
+      includeScript(system.file("www/html2canvas.min.js", package = "bs")),
+      includeScript(system.file("www/jszip.min.js", package = "bs")),
+      includeScript(system.file("www/download.js", package = "bs"))
+    )
+  }
 }
 
 upload_ui_field <- function() {
   if (Sys.getenv("RUN_MODE") != "SERVER") {
     res <- conditionalPanel(
-        condition = "input.conditionedPanels == 'Data'",
-        fileInput("file", "Choose CSV File",
-          accept = c(
-            "text/csv",
-            "text/comma-separated-values,text/plain",
-            ".csv"
-          )
+      condition = "input.conditionedPanels == 'Data'",
+      fileInput("file", "Choose CSV File",
+        accept = c(
+          "text/csv",
+          "text/comma-separated-values,text/plain",
+          ".csv"
         )
       )
+    )
     return(res)
   }
 }
@@ -39,10 +38,10 @@ app <- function() {
   ui <- fluidPage(
     useShinyjs(),
     js,
-    #includeScript(system.file("www/FileSaver.min.js", package = "bs")),
-    #includeScript(system.file("www/html2canvas.min.js", package = "bs")),
-    #includeScript(system.file("www/jszip.min.js", package = "bs")),
-    #includeScript(system.file("www/download.js", package = "bs")),
+    # includeScript(system.file("www/FileSaver.min.js", package = "bs")),
+    # includeScript(system.file("www/html2canvas.min.js", package = "bs")),
+    # includeScript(system.file("www/jszip.min.js", package = "bs")),
+    # includeScript(system.file("www/download.js", package = "bs")),
     tags$head(
       # tags$script(src = "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"),
       # tags$script(src = "https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"),
@@ -679,7 +678,8 @@ app <- function() {
           list(
             numberOfResults = length(jsString),
             FileContent = jsString,
-            Filename = input$user_filename
+            Filename = input$user_filename,
+            ResultNames = names(l)
           )
         )
       }

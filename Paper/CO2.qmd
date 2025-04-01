@@ -1,0 +1,31 @@
+---
+title: "CO2 dataset"
+author: "Konrad Krämer"
+format: 
+  pdf:
+    code-fold: true
+---
+
+## CO2 dataset
+
+The CO2 dataset is available in R via the *datasets* package. Furthermore, the original data
+is from Potvin1990. This study aims to convey statistical knowledge by analysing a dataset
+form Potvin1986. The aim was to investigate the cold tolerance of C~4~ plants *Echinocloa crus-galli*.
+Northern and southern plants of that species were subjected to day time chilling.
+Moreover, the CO~2~ uptake was measured in dependence of the CO~2~ concentriation.
+
+### Details 
+
+- CO~2~ concentrations [mL/L]
+
+```{r}
+#| echo: false
+df <- CO2
+res <- unique(df$conc) |> t()
+summary(df)
+knitr::kable(res)
+```
+
+- Uptake in [µmol / m^2^ sec]
+
+

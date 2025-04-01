@@ -1,0 +1,45 @@
+---
+title: Tests
+sidebar_label: Tests
+sidebar_position: 8
+---
+
+### Two groups (t-test)
+
+- A slider to set the confidence level for the interval, ranging from 0 to 1 (default is 0.95).
+- A dropdown menu for selecting the type of alternative hypothesis (two-sided, less, or greater).
+- **Variance Equality:** Decide if the variances of the two groups are equal or not.
+
+---
+
+### **Multiple Group Tests:**
+
+For cases with more than two groups, users can perform:
+- **ANOVA:** Conduct an analysis of variance test.
+- **Kruskal-Wallis Test:** Non-parametric test for comparing more than two groups.
+
+---
+
+### **Post Hoc Tests:**
+
+After conducting ANOVA, users can select and run post hoc tests, including:
+- **Tukey HSD (Honestly Significant Difference):** A test used to compare all pairs of group means to determine which pairs are significantly different. This test is suitable for balanced designs with equal sample sizes in each group and is often used after ANOVA to perform pairwise comparisons.
+- **Kruskal-Wallis post hoc test:** A non-parametric method used to compare more than two groups. If the Kruskal-Wallis test finds a significant difference, post hoc pairwise comparisons can be performed using the Dunn test or other similar methods to identify which groups differ.
+- **Least Significant Difference (LSD) test:** A post hoc test that compares all pairs of means, but unlike Tukey’s HSD, it does not adjust for multiple comparisons. It is more sensitive but less conservative, which increases the chance of Type I errors (false positives).
+- **Scheffe post hoc test:** A very conservative test that can be used to make all pairwise comparisons and contrasts between groups. It is robust to unequal sample sizes and can be used after ANOVA with more than two levels, especially when there are complex contrasts.
+- **REGW (Revised Generalized Welch’s) post hoc test:** This is a robust method for comparing group means when the assumption of equal variances is violated (heteroscedasticity). It is designed to work with unequal sample sizes and unequal variances.
+
+Users can also adjust the p-value threshold and choose between balanced or unbalanced designs.
+
+#### **Adjusted p-Value Method:**
+
+When applicable, users can select the method for adjusting p-values for multiple comparisons, including:
+- **Holm:** A step-down method for controlling the family-wise error rate (FWER). It adjusts p-values sequentially from the smallest to the largest.
+- **Hommel:** A more powerful adjustment for controlling the FWER, often used when performing multiple comparisons.
+- **Hochberg:** A step-up method for controlling the FWER. It is more powerful than Bonferroni but may be less robust under certain conditions.
+- **Bonferroni:** A conservative method for controlling the FWER. It divides the significance level (alpha) by the number of tests performed to reduce the likelihood of Type I errors.
+- **BH (Benjamini-Hochberg):** A method to control the false discovery rate (FDR). It is less conservative than Bonferroni and is useful when performing a large number of comparisons.
+- **BY (Benjamini-Yekutieli):** An extension of the Benjamini-Hochberg method that controls FDR in situations where the tests are dependent.
+- **FDR (False Discovery Rate):** An alternative to controlling FWER, this method allows for a specified proportion of false positives among the rejected hypotheses.
+
+---

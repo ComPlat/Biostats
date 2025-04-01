@@ -1,0 +1,24 @@
+---
+title: Correlations
+sidebar_label: Correlations
+sidebar_position: 8
+---
+
+### **Features:**
+- **Formula Editor:** Allows users to define a formula thereby mapping the response variable to the predictor variable(s).
+  
+**Data Grouping and Splitting**  
+Use these options to separate data into groups or apply filters dynamically:
+- **Split by Group:** Enables user to subset data using one or more column(s).
+
+- **Correlation Type Selection:**  
+Users can choose between Pearson, Spearman, or Kendall correlation methods by clicking on the respective buttons.
+
+- **Confidence Level:**  
+A slider to set the confidence level for the correlation interval, ranging from 0 to 1 (default is 0.95).
+
+- **Alternative Hypothesis:**  
+A dropdown menu to select the type of alternative hypothesis (two-sided, less, or greater).
+
+---
+

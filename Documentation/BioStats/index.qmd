@@ -1,0 +1,36 @@
+---
+title: "BioStats"
+author: "Konrad Krämer"
+format: pptx
+---
+
+## **Features**
+
+- DataWrangling
+- Visualization
+- testing Assumption of the model
+- Correlations
+- Tests
+  * Two groups can be tested via t-test
+  * More than two groups:
+  * Determine which groups differ from each other via PostHoc tests
+- Dose-response analysis
+- Create a statistical model
+
+## Supported data formats
+
+Only tabular data stored in text, CSV or xlsx files can be used in BioStats.
+The table below displays a sample dataset in a tabular format.
+
+![Dataset](./Overview.png)
+
+
+
+
+
+
+
+
+
+
+

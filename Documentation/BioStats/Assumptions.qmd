@@ -1,0 +1,27 @@
+---
+title: Assumptions testing
+sidebar_label: Assumptions testing
+sidebar_position: 8
+---
+
+### **Features:**
+
+- **Normality Tests**:
+  This section allows users to conduct tests for normal distribution:
+  - **Shapiro Test for Individual Groups**:
+    Performs the Shapiro-Wilk test for normality on each group.
+  - **Shapiro Test for Residuals**:
+    Tests the residuals of the linear model for normality.
+
+- **Variance Homogeneity Tests**:
+  Users can check for equal variances across groups:
+  - **Levene Test**:
+    Conducts Levene's test for homogeneity of variances.
+  - **Center Selection**:
+    Choose the data center for each group: mean or median.
+
+- **Visual Tests**:
+  Allows users to generate diagnostic plots to assess the assumptions visually:
+  - **Diagnostic Plots**:
+    Generates various diagnostic plots for model validation.
+---
