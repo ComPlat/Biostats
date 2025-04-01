@@ -126,8 +126,11 @@ createExcelFile <- function(l) {
 
   curr_row <- 1
   plot_files <- c()
+  line_style <- openxlsx::createStyle(border = "bottom", borderStyle = "thick")
   # save data to excel file
   for (i in seq_along(l)) {
+    openxlsx::writeData(wb, "Results", names(l)[i], startRow = curr_row)
+    curr_row <- curr_row + 2
     if (inherits(l[[i]], "plot")) {
       p <- l[[i]]@p
       width <- l[[i]]@width
@@ -141,6 +144,12 @@ createExcelFile <- function(l) {
       plot_files <- c(plot_files, fn)
       openxlsx::insertImage(wb, "Results", fn, startRow = curr_row)
       curr_row <- curr_row + 20
+      openxlsx::addStyle(
+        wb, sheet = "Results", style = line_style, rows = curr_row,
+        cols = 1:width,
+        gridExpand = TRUE
+      )
+      curr_row <- curr_row + 2
     } else if (inherits(l[[i]], "diagnosticPlot")) {
       p <- l[[i]]@p
       width <- l[[i]]@width
@@ -155,6 +164,12 @@ createExcelFile <- function(l) {
       curr_row <- curr_row + 20
       plot_files <- c(plot_files, l[[i]]@p)
       plot_files <- c(plot_files, fn)
+      openxlsx::addStyle(
+        wb, sheet = "Results", style = line_style, rows = curr_row,
+        cols = 1:width,
+        gridExpand = TRUE
+      )
+      curr_row <- curr_row + 5
     } else if (inherits(l[[i]], "doseResponse")) {
       openxlsx::writeData(wb, "Results", l[[i]]@df, startRow = curr_row)
       curr_row <- curr_row + nrow(l[[i]]@df) + 5
@@ -166,11 +181,29 @@ createExcelFile <- function(l) {
         curr_row <- curr_row + 20
         plot_files <- c(plot_files, fn)
       }
+      openxlsx::addStyle(
+        wb, sheet = "Results", style = line_style, rows = curr_row,
+        cols = 1:dim(l[[i]]@df)[2],
+        gridExpand = TRUE
+      )
+      curr_row <- curr_row + 5
     } else if (inherits(l[[i]], "data.frame")) {
       openxlsx::writeData(wb, "Results", l[[i]], startRow = curr_row)
-      curr_row <- curr_row + dim(l[[i]])[1] + 5
+      curr_row <- curr_row + dim(l[[i]])[1] + 1
+      openxlsx::addStyle(
+        wb, sheet = "Results", style = line_style, rows = curr_row,
+        cols = 1:dim(l[[i]])[2],
+        gridExpand = TRUE
+      )
+      curr_row <- curr_row + 5
     } else if (is.character(l[[i]])) {
       openxlsx::writeData(wb, "Results", l[[i]], startRow = curr_row)
+      curr_row <- curr_row + length(l[[i]])[1] + 1
+      openxlsx::addStyle(
+        wb, sheet = "Results", style = line_style, rows = curr_row,
+        cols = 1,
+        gridExpand = TRUE
+      )
       curr_row <- curr_row + length(l[[i]])[1] + 5
     }
   }
