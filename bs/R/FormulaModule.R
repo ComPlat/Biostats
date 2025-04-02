@@ -81,7 +81,7 @@ FormulaEditorUI <- function(id) {
   )
 }
 
-FormulaEditorServer <- function(id, data) {
+FormulaEditorServer <- function(id, data, listResults) {
   moduleServer(id, function(input, output, session) {
     # Reactive values
     r_vals <- reactiveValues(
@@ -200,6 +200,7 @@ FormulaEditorServer <- function(id, data) {
     # React to create formula
     observeEvent(input$create_formula, {
       print_req(is.data.frame(r_vals$df), "The dataset is missing")
+      success <- FALSE
       tryCatch({
         withCallingHandlers(
           expr = {
@@ -214,6 +215,7 @@ FormulaEditorServer <- function(id, data) {
             output$model <- renderUI({
               withMathJax(HTML(paste0("$$", model_latex, "$$")))
             })
+            success <- TRUE
           },
           warning = function(warn) {
             print_warn(warn$message)
@@ -225,6 +227,12 @@ FormulaEditorServer <- function(id, data) {
           print_err(err$message)
         }
       )
+      if (success) {
+        listResults$history[[length(listResults$history) + 1]] <- list(
+          type = "CreateFormula",
+          formula = deparse(data$formula)
+        )
+      }
     })
 
   })

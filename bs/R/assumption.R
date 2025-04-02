@@ -96,6 +96,11 @@ assServer <- function(id, data, listResults) {
             "ShapiroDataNr", listResults$counter
           )
           listResults$all_data[[new_name]] <- res
+          listResults$history[[length(listResults$history) + 1]] <- list(
+            type = "ShapiroOnData",
+            formula = deparse(data$formula),
+            "Result name" = new_name
+          )
         } else {
           err <- conditionMessage(attr(e, "condition"))
           print_req(FALSE, err)
@@ -140,6 +145,11 @@ assServer <- function(id, data, listResults) {
           "ShaprioResidualsNr", listResults$counter
         )
         listResults$all_data[[new_name]] <- res
+        listResults$history[[length(listResults$history) + 1]] <- list(
+          type = "shapiroOnResiduals",
+          formula = deparse(data$formula),
+          "Result name" = new_name
+        )
       } else {
         err <- conditionMessage(attr(e, "condition"))
         print_err(err)
@@ -184,6 +194,12 @@ assServer <- function(id, data, listResults) {
           "LeveneTestNr", listResults$counter
         )
         listResults$all_data[[new_name]] <- fit
+        listResults$history[[length(listResults$history) + 1]] <- list(
+          type = "LeveneTest",
+          formula = deparse(data$formula),
+          center = input$center,
+          "Result name" = new_name
+        )
       }
     }
     observeEvent(input$levene, {
@@ -224,6 +240,11 @@ assServer <- function(id, data, listResults) {
         listResults$all_data[[new_result_name]] <-
           new("plot", p = p, width = 15, height = 15, resolution = 600)
         output$DiagnosticPlotRes <- renderPlot(p)
+        listResults$history[[length(listResults$history) + 1]] <- list(
+          type = "DiagnosticPlots",
+          formula = deparse(data$formula),
+          "Result name" = new_result_name
+        )
       }
     }
     observeEvent(input$DiagnosticPlot, {

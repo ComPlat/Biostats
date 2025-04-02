@@ -19,7 +19,7 @@ SplitByGroupUI <- function(id) {
   )
 }
 
-SplitByGroupServer <- function(id, data) {
+SplitByGroupServer <- function(id, data, listResults) {
   moduleServer(id, function(input, output, session) {
     # Reactive values
     r_vals <- reactiveValues(
@@ -97,6 +97,12 @@ SplitByGroupServer <- function(id, data) {
       }, silent = TRUE)
       if (inherits(e, "try-error")) {
         print_err(e)
+      } else {
+        listResults$history[[length(listResults$history) + 1]] <- list(
+          type = "ApplyFilter",
+          filter_col = paste(dataSet$filter_col, collapse = ", "),
+          filter_group = paste(dataSet$filter_group, collapse = ", ")
+        )
       }
     })
   })

@@ -190,6 +190,13 @@ DoseResponseServer <- function(id, data, listResults) {
         exportTestValues(
           doseresponse_res = listResults$curr_data
         )
+        listResults$history[[length(listResults$history) + 1]] <- list(
+          type = "DoseResponse",
+          names = input$substanceNames,
+          "log transform x" = input$xTransform,
+          "log transform y" = input$yTransform,
+          "Result name" = new_result_name
+        )
       }
     }
 
@@ -303,6 +310,15 @@ DoseResponseServer <- function(id, data, listResults) {
         )
         exportTestValues(
           doseresponse_res = listResults$curr_data
+        )
+        outliers <- list(r_vals$outliers[[name]])
+        listResults$history[[length(listResults$history) + 1]] <- list(
+          type = "DoseResponse",
+          names = input$substanceNames,
+          "log transform x" = input$xTransform,
+          "log transform y" = input$yTransform,
+          outliers = create_outlier_info(r_vals$outliers),
+          "Result name" = new_result_name
         )
       }
     }

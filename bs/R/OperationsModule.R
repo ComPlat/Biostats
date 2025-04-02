@@ -268,7 +268,7 @@ OperationEditorServer <- function(id, data, listResults) {
       })
     })
 
-    # Observe intermeidate results
+    # Observe intermediate results
     output$intermediate_results <- renderUI({
       iv_list <- r_vals$intermediate_vars
       if (length(iv_list) == 1) return()
@@ -312,6 +312,10 @@ OperationEditorServer <- function(id, data, listResults) {
           if (!is.null(r_vals$intermediate_vars[[name]])) {
             r_vals$intermediate_vars[[name]] <- NULL
             print_success(paste("Removed intermediate result:", name))
+            listResults$history[[length(listResults$history) + 1]] <- list(
+              type = "RemoveIntermediateVariable",
+              "Intermediate variable" = name
+            )
           }
         }, ignoreInit = TRUE)
       }
@@ -386,6 +390,11 @@ OperationEditorServer <- function(id, data, listResults) {
         listResults$counter <- listResults$counter + 1
         new_name <- paste0(var_name, listResults$counter)
         listResults$all_data[[new_name]] <- new
+        listResults$history[[length(listResults$history) + 1]] <- list(
+          type = "CreateIntermediateVariable",
+          operation = code,
+          name = name
+        )
       }
     })
 
@@ -437,6 +446,7 @@ OperationEditorServer <- function(id, data, listResults) {
         err <- conditionMessage(attr(e, "condition"))
         print_err(err)
       }
+      # TODO: Why not in if block as in intermediate variables?
       data$df <- r_vals$df
       output$head <- renderTable(head(r_vals$df, 10))
       r_vals$counter_id <- r_vals$counter_id + 1
@@ -444,6 +454,11 @@ OperationEditorServer <- function(id, data, listResults) {
       listResults$counter <- listResults$counter + 1
       new_name <- paste0("Dataset", listResults$counter)
       listResults$all_data[[new_name]] <- data$df
+      listResults$history[[length(listResults$history) + 1]] <- list(
+        type = "CreateNewColumn",
+        operation = code,
+        "column name" = name
+      )
     })
 
     observeEvent(input$add, {

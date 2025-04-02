@@ -413,6 +413,17 @@ visServer <- function(id, data, listResults) {
       listResults$counter <- listResults$counter + 1
       new_result_name <- paste0("PlotNr", listResults$counter)
       listResults$all_data[[new_result_name]] <- new("plot", p = p, width = width, height = height, resolution = resolution)
+      listResults$history[[length(listResults$history) + 1]] <- list(
+        type = "Visualisation",
+        x = x, y = y, method = method,
+        xlabel = xlabel, ylabel = ylabel, xType = xtype,
+        colour = col, fill = fill, fillTitle = fillTitle, colourTitle = colTitle,
+        theme = theme, themeFill = themeFill,
+        facetMode = facetMode, facet = facet, facetScales = facetScales,
+        xrange = as.character(c(input$XRange)),
+        yrange = as.character(c(input$YRange)),
+        "Result name" = new_result_name
+      )
     }
 
     observeEvent(input$CreatePlotBox, {

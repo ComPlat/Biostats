@@ -4,7 +4,6 @@ Shiny.addCustomMessageHandler('downloadZip', function(message) {
   var ResultNames = message.ResultNames;
 
   if( (typeof FileContent) == "string") {
-    console.log(ResultNames)
     if (FileContent.startsWith("data:image")) {
       var fileName = ResultNames + '.png';
       var zip = new JSZip();
@@ -32,8 +31,8 @@ Shiny.addCustomMessageHandler('downloadZip', function(message) {
         var fileName = ResultNames[i] + '.png';
         var imageData = atob(FileContent[i].split(',')[1]);
         var byteArray = new Uint8Array(imageData.length);
-        for (var i = 0; i < imageData.length; i++) {
-          byteArray[i] = imageData.charCodeAt(i);
+        for (var j = 0; j < imageData.length; j++) {
+          byteArray[j] = imageData.charCodeAt(j);
         }
         zip.file(fileName, byteArray, {binary: true});
       } else {

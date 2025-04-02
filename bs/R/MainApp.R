@@ -216,9 +216,9 @@ app <- function() {
     listResults <- reactiveValues(
       curr_data = NULL, curr_name = NULL,
       all_data = list(), all_names = list(),
+      history = list(),
       counter = 0
     )
-
 
     # docu
     observeEvent(input[["docu"]], {
@@ -433,8 +433,8 @@ app <- function() {
     assServer("ASS", dataSet, listResults)
     testsServer("TESTS", dataSet, listResults)
     DoseResponseServer("DOSERESPONSE", dataSet, listResults)
-    FormulaEditorServer("FO", dataSet)
-    SplitByGroupServer("SG", dataSet)
+    FormulaEditorServer("FO", dataSet, listResults)
+    SplitByGroupServer("SG", dataSet, listResults)
 
     # Render results list
     output$Results <- renderUI({
@@ -546,6 +546,9 @@ app <- function() {
           {
             current_list <- listResults$all_data
             current_list[[name]] <- NULL
+            listResults$history[[length(listResults$history) + 1]] <- list(
+              type = "RemoveResult", entry_removed = name
+            )
             listResults$all_data <- current_list
           },
           ignoreInit = TRUE
@@ -642,6 +645,11 @@ app <- function() {
     # Remove filter
     observeEvent(input[["remove_filter"]], {
       dataSet$df <- dataSet$backup_df
+      listResults$history[[length(listResults$history) + 1]] <- list(
+        type = "RemoveFilter",
+        filter_col = paste(dataSet$filter_col, collapse = ", "),
+        filter_group = paste(dataSet$filter_group, collapse = ", ")
+      )
       dataSet$backup_df <- NULL
       dataSet$filter_col <- NULL
       dataSet$filter_group <- NULL
@@ -660,6 +668,7 @@ app <- function() {
       )
       print_req(length(listResults$all_data) > 0, "No results to save")
       l <- listResults$all_data
+      str(listResults$history)
       if (Sys.getenv("RUN_MODE") == "SERVER") {
         print_req(
           check_filename_for_server(input$user_filename),

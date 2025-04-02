@@ -68,6 +68,14 @@ corrServer <- function(id, data, listResults) {
             "Correlation", method, "NR", listResults$counter
           )
           listResults$all_data[[new_name]] <- fit
+          listResults$history[[length(listResults$history) + 1]] <- list(
+            type = "Correlation",
+            formula = deparse(data$formula),
+            method = method,
+            alternative = input$alt,
+            conf.level = input$conflevel,
+            "Result name" = new_name
+          )
         },
         error = function(err) {
           err <- err$message

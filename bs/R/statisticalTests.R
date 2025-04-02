@@ -139,6 +139,14 @@ testsServer <- function(id, data, listResults) {
           tests_res = fit
         )
       }
+      listResults$history[[length(listResults$history) + 1]] <- list(
+        type = "TTest",
+        formula = deparse(data$formula),
+        conf.level = input$confLevel,
+        alternative = input$altHyp,
+        var.equal = input$varEq,
+        "Result name" = new_name
+      )
     }
     observeEvent(input$tTest, {
       tTest()
@@ -153,6 +161,7 @@ testsServer <- function(id, data, listResults) {
       fit <- NULL
       indep <- NULL
       dep <- NULL
+      history_data <- NULL
       e <- try({
         indep <- as.character(formula)[3]
         dep <- as.character(formula)[2]
@@ -173,11 +182,13 @@ testsServer <- function(id, data, listResults) {
                       formula,
                       data = df
                     ))
+                    history_data <- list(type = "ANOVA", formula = deparse(formula))
                   },
                   kruskal = {
                     fit <- broom::tidy(
                       kruskal.test(formula, data = df)
                     ) # Keep here the restriction for respone ~ predictor
+                    history_data <- list(type = "Kruskal-Wallis Test", formula = deparse(formula))
                   },
                   HSD = {
                     check_formula(formula)
@@ -193,12 +204,19 @@ testsServer <- function(id, data, listResults) {
                       trt = indep,
                       alpha = input$pval, group = TRUE, unbalanced = bal
                     )$groups
+                    history_data <- list(type = "Tukey HSD",
+                      formula = deparse(formula), Balanced = bal,
+                      Pval = input$pval)
                   },
                   kruskalTest = {
                     check_formula(formula)
                     fit <- with(df, kruskal(df[, dep], df[, indep]),
                       alpha = input$pval, p.adj = input$padj, group = TRUE
                     )$groups
+                    history_data <- list(type = "Kruskal Wallis post hoc test",
+                      formula = deparse(formula),
+                      "Adjusted p value method" = input$padj,
+                      Pval = input$pval)
                   },
                   LSD = {
                     check_formula(formula)
@@ -207,6 +225,10 @@ testsServer <- function(id, data, listResults) {
                       trt = indep,
                       alpha = input$pval, p.adj = input$padj, group = TRUE
                     )$groups
+                    history_data <- list(type = "Least significant difference test",
+                      formula = deparse(formula),
+                      "Adjusted p value method" = input$padj,
+                      Pval = input$pval)
                   },
                   scheffe = {
                     check_formula(formula)
@@ -215,6 +237,9 @@ testsServer <- function(id, data, listResults) {
                       aov_res,
                       trt = indep, alpha = input$pval, group = TRUE
                     )$groups
+                    history_data <- list(type = "Scheffe post hoc test",
+                      formula = deparse(formula),
+                      Pval = input$pval)
                   },
                   REGW = {
                     check_formula(formula)
@@ -223,6 +248,9 @@ testsServer <- function(id, data, listResults) {
                       aov_res,
                       trt = indep, alpha = input$pval, group = TRUE
                     )$groups
+                    history_data <- list(type = "REGW post hoc test",
+                      formula = deparse(formula),
+                      Pval = input$pval)
                   }
                 )
                 check_rls(listResults$all_data, fit)
@@ -254,6 +282,10 @@ testsServer <- function(id, data, listResults) {
             "Test_", method, "Nr", listResults$counter
           )
           listResults$all_data[[new_name]] <- fit
+          listResults$history[[length(listResults$history) + 1]] <- c(
+            history_data,
+            "Result name" = new_name
+          )
         }
       }
     }
