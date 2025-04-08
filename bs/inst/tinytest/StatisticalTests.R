@@ -113,7 +113,7 @@ fit <- with(df, agricolae::kruskal(df[, dep], df[, "conc"]),
   alpha = 0.05, p.adj = "BH", group = TRUE
 )$groups
 expected <- cbind(fit, row.names(fit))
-names(expected)[ncol(expected)] <- paste0("conc", collapse = ".")
+names(expected) <- c("uptake", "groups", "conc")
 tinytest::expect_equal(res[[1]], expected)
 
 # LSD

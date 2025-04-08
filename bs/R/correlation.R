@@ -32,28 +32,21 @@ corrUI <- function(id) {
   fluidRow()
 }
 
-corrServer <- function(id, data, listResults) {
+corrServer <- function(id, DataModelState, ResultsState) {
   moduleServer(id, function(input, output, session) {
 
     corr_fct <- function(method) {
-      print_req(is.data.frame(data$df), "The dataset is missing")
-      print_form(data$formula)
-      corr <- correlation$new(data$df, data$formula,
+      print_req(is.data.frame(DataModelState$df), "The dataset is missing")
+      print_form( DataModelState$formula)
+      corr <- correlation$new(DataModelState$df, DataModelState$formula,
         method, input$alt, input$conflevel)
       tryCatch(
         {
           corr$validate()
-          fit <- corr$eval()
+          fit <- corr$eval(ResultsState)
           exportTestValues(
             correlation_res = fit
           )
-          check_rls(listResults$all_data, fit)
-          listResults$counter <- listResults$counter + 1
-          new_name <- paste0(
-            listResults$counter, " Correlation ", firstup(method)
-          )
-          listResults$all_data[[new_name]] <- fit
-          corr$create_history(new_name, listResults)
         },
         error = function(err) {
           err <- err$message
@@ -75,5 +68,5 @@ corrServer <- function(id, data, listResults) {
     })
   })
 
-  return(listResults)
+  return(ResultsState)
 }

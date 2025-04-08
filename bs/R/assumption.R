@@ -48,29 +48,21 @@ assUI <- function(id) {
   fluidRow()
 }
 
-assServer <- function(id, data, listResults) {
+assServer <- function(id, DataModelState, ResultsState) {
   moduleServer(id, function(input, output, session) {
 
     runShapiro <- function() {
-      df <- data$df
+      df <- DataModelState$df
       print_req(is.data.frame(df), "The dataset is missing")
-      print_form(data$formula)
-      sod <- shapiro_on_data$new(data$df, data$formula)
-      res <- try({sod$eval(listResults)})
-
+      print_form(DataModelState$formula)
+      res <- try({
+        sod <- shapiro_on_data$new(DataModelState$df,DataModelState$formula)
+        sod$validate()
+        sod$eval(ResultsState)
+      })
       if (!inherits(res, "try-error")) {
         exportTestValues(
           assumption_res = res
-        )
-        listResults$counter <- listResults$counter + 1
-        new_name <- paste0(
-          "ShapiroDataNr", listResults$counter
-        )
-        listResults$all_data[[new_name]] <-res
-        listResults$history[[length(listResults$history) + 1]] <- list(
-          type = "ShapiroOnData",
-          formula = deparse(data$formula),
-          "Result name" = new_name
         )
       } else {
         err <- conditionMessage(attr(res, "condition"))
@@ -83,24 +75,18 @@ assServer <- function(id, data, listResults) {
     })
 
     runShapiroResiduals <- function() {
-      df <- data$df
+      df <- DataModelState$df
       print_req(is.data.frame(df), "The dataset is missing")
-      print_form(data$formula)
-      sor <- shapiro_on_residuals$new(data$df, data$formula)
-      res <- try({ sor$eval(listResults) }, silent = TRUE)
+      print_form(DataModelState$formula)
+      res <- try({
+        sor <- shapiro_on_residuals$new(DataModelState$df,DataModelState$formula)
+        sor$validate()
+        sor$eval(ResultsState)
+      }, silent = TRUE)
+
       if (!inherits(res, "try-error")) {
         exportTestValues(
           assumption_res = res
-        )
-        listResults$counter <- listResults$counter + 1
-        new_name <- paste0(
-          "ShaprioResidualsNr", listResults$counter
-        )
-        listResults$all_data[[new_name]] <- res
-        listResults$history[[length(listResults$history) + 1]] <- list(
-          type = "shapiroOnResiduals",
-          formula = deparse(data$formula),
-          "Result name" = new_name
         )
       } else {
         err <- conditionMessage(attr(res, "condition"))
@@ -112,28 +98,20 @@ assServer <- function(id, data, listResults) {
     })
 
     runLevene <- function() {
-      df <- data$df
+      df <- DataModelState$df
       print_req(is.data.frame(df), "The dataset is missing")
-      print_form(data$formula)
-      l <- levene$new(data$df, data$formula, input$center)
-      res <- try( { l$eval(listResults) }, silent = TRUE)
+      print_form(DataModelState$formula)
+      res <- try({
+        l <- levene$new(DataModelState$df,DataModelState$formula, input$center)
+        l$validate()
+        l$eval(ResultsState)
+      }, silent = TRUE)
       if (inherits(res, "try-error")) {
         err <- conditionMessage(attr(res, "condition"))
         print_err(err)
       } else {
         exportTestValues(
           assumption_res = res
-        )
-        listResults$counter <- listResults$counter + 1
-        new_name <- paste0(
-          "LeveneTestNr", listResults$counter
-        )
-        listResults$all_data[[new_name]] <- res
-        listResults$history[[length(listResults$history) + 1]] <- list(
-          type = "LeveneTest",
-          formula = deparse(data$formula),
-          "Data center" = input$center,
-          "Result name" = new_name
         )
       }
     }
@@ -142,26 +120,20 @@ assServer <- function(id, data, listResults) {
     })
 
     runDiagnosticPlot <- function() {
-      df <- data$df
+      df <- DataModelState$df
       print_req(is.data.frame(df), "The dataset is missing")
-      print_form(data$formula)
-      dp <- diagnostic_plots$new(data$df, data$formula)
-      p <- try( { dp$eval(listResults) }, silent = TRUE)
+      print_form(DataModelState$formula)
+      p <- try({
+        dp <- diagnostic_plots$new(DataModelState$df,DataModelState$formula)
+        dp$validate()
+        dp$eval(ResultsState)
+      }, silent = TRUE)
       if (inherits(p, "try-error")) {
         err <- conditionMessage(attr(p, "condition"))
         print_err(err)
       } else {
-        exportTestValues( assumption_res = p)
-        listResults$counter <- listResults$counter + 1
-        new_result_name <- paste0("DiagnosticPlotNr", listResults$counter)
-        listResults$all_data[[new_result_name]] <-
-          new("plot", p = p, width = 15, height = 15, resolution = 600)
         output$DiagnosticPlotRes <- renderPlot(p)
-        listResults$history[[length(listResults$history) + 1]] <- list(
-          type = "DiagnosticPlots",
-          formula = deparse(data$formula),
-          "Result name" = new_result_name
-        )
+        exportTestValues(assumption_res = p)
       }
     }
     observeEvent(input$DiagnosticPlot, {

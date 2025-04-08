@@ -78,7 +78,7 @@ testsUI <- function(id) {
   )
 }
 
-testsServer <- function(id, data, listResults) {
+testsServer <- function(id, DataModelState, ResultsState) {
   moduleServer(id, function(input, output, session) {
     # Render p adjustment methods
     output[["padjUI"]] <- renderUI({
@@ -101,29 +101,20 @@ testsServer <- function(id, data, listResults) {
     })
 
     tTest <- function() {
-      print_req(is.data.frame(data$df), "The dataset is missing")
-      print_form(data$formula)
-      tt <- t_test$new(data$df, data$formula, input$varEq, input$confLevel, input$altHyp)
-      res <- try({ tt$eval(listResults) })
+      print_req(is.data.frame(DataModelState$df), "The dataset is missing")
+      print_form(DataModelState$formula)
+
+      res <- try({
+        tt <- t_test$new(DataModelState$df,DataModelState$formula, input$varEq, input$confLevel, input$altHyp)
+        tt$validate()
+        tt$eval(ResultsState)
+      })
       if (inherits(res, "try-error")) {
         err <- conditionMessage(attr(res, "condition"))
         print_err(err)
       } else {
-        listResults$counter <- listResults$counter + 1
-        new_name <- paste0(
-          "TTestNr", listResults$counter
-        )
-        listResults$all_data[[new_name]] <- res
         exportTestValues(
           tests_res = res
-        )
-        listResults$history[[length(listResults$history) + 1]] <- list(
-          type = "TTest",
-          formula = deparse(data$formula),
-          "Confidence level of the interval" = input$confLevel,
-          "alternative hypothesis" = input$altHyp,
-          "The two variances are" = input$varEq,
-          "Result name" = new_name
         )
       }
     }
@@ -132,12 +123,16 @@ testsServer <- function(id, data, listResults) {
     })
 
     conductTests <- function(method) {
-      print_req(is.data.frame(data$df), "The dataset is missing")
-      print_form(data$formula)
-      st <- statistical_tests$new(
-        data$df, data$formula, input$design, input$pval, input$padj
-      )
-      res <- try( { st$eval(listResults, method) }, silent = TRUE)
+      print_req(is.data.frame(DataModelState$df), "The dataset is missing")
+      print_form(DataModelState$formula)
+
+      res <- try( { 
+        st <- statistical_tests$new(
+          DataModelState$df,DataModelState$formula, input$design, input$pval, input$padj
+        )
+        st$validate()
+        st$eval(ResultsState, method) 
+      }, silent = TRUE)
       if (inherits(res, "try-error")) {
         err <- conditionMessage(attr(res, "condition"))
         err <- paste0(err, "\n", "Test did not run successfully")
@@ -146,19 +141,8 @@ testsServer <- function(id, data, listResults) {
         err <- "Test did not run successfully"
         print_err(err)
       } else {
-        fit <- res$fit
-        history_data <- res$history_data
         exportTestValues(
-          tests_res = fit
-        )
-        listResults$counter <- listResults$counter + 1
-        new_name <- paste0(
-          "Test_", method, "Nr", listResults$counter
-        )
-        listResults$all_data[[new_name]] <- fit
-        listResults$history[[length(listResults$history) + 1]] <- c(
-          history_data,
-          "Result name" = new_name
+          tests_res = res
         )
       }
     }
@@ -176,5 +160,4 @@ testsServer <- function(id, data, listResults) {
     })
   })
 
-  return(listResults)
 }

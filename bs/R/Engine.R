@@ -42,9 +42,10 @@ correlation <- R6::R6Class(
     conflevel = NULL,
     initialize = function(df, formula, method, alternative, conflevel, com = communicator) {
       self$df <- df
-      self$formula <- formula |> as.character()
-      self$dep <- self$formula[2]
-      self$indep <- self$formula[3]
+      self$formula <- formula
+      formula <- as.character(formula)
+      self$dep <- formula[2]
+      self$indep <- formula[3]
       self$method <- method
       self$alternative <- alternative
       self$conflevel <- conflevel
@@ -54,24 +55,34 @@ correlation <- R6::R6Class(
       check_ast(str2lang(self$indep), colnames(self$df))
       check_ast(str2lang(self$dep), colnames(self$df))
     },
-    eval = function() {
+    eval = function(ResultsState) {
+      fit <- NULL
       withCallingHandlers(
-        expr = broom::tidy(
-          cor.test(
-            self$df[, self$dep], self$df[, self$indep],
-            method = self$method,
-            alternative = self$alternative,
-            conf.level = self$conflevel
+        expr = {
+          fit <- broom::tidy(
+            cor.test(
+              self$df[, self$dep], self$df[, self$indep],
+              method = self$method,
+              alternative = self$alternative,
+              conf.level = self$conflevel
+            ))
+          ResultsState$counter <- ResultsState$counter + 1
+          new_name <- paste0(
+            ResultsState$counter, " Correlation ", firstup(self$method)
           )
-        ),
+          self$create_history(new_name, ResultsState)
+          ResultsState$all_data[[new_name]] <- fit
+          check_rls(ResultsState$all_data, fit)
+        },
         warning = function(warn) {
           self$com$print_warn(warn$message)
           invokeRestart("muffleWarning")
         }
       )
+      return(fit)
     },
-    create_history = function(new_name, listResults) {
-      listResults$history[[length(listResults$history) + 1]] <- list(
+    create_history = function(new_name, ResultsState) {
+      ResultsState$history[[length(ResultsState$history) + 1]] <- list(
         type = "Correlation",
         formula = deparse(self$formula),
         "Correlation method" = self$method,
@@ -140,7 +151,19 @@ visualisation <- R6::R6Class(
       self$width <- width
       self$height <- height
       self$resolution <- resolution
+      # Additional information based on user input
+      self$facet_mode <- "none"
+      if (self$facet_var != "") {
+        self$facet_mode <- "facet_wrap"
+      }
 
+      self$col_names <- names(self$df)
+
+      if (self$type_of_x == "numeric") {
+        self$df[, x] <- as.numeric(self$df[, x])
+      }
+    },
+    validate = function() {
       # Run first checks:
       if (self$width < 0) {
         self$com$print_warn("width has to be a positive number; It is set to 10 cm")
@@ -158,20 +181,8 @@ visualisation <- R6::R6Class(
         self$com$print_warn("height exceeds max value of 100 cm; It is changed to 100 cm")
         self$height <- 100
       }
-
-      # Additional information based on user input
-      self$facet_mode <- "none"
-      if (self$facet_var != "") {
-        self$facet_mode <- "facet_wrap"
-      }
-
-      self$col_names <- names(self$df)
-
-      if (self$type_of_x == "numeric") {
-        self$df[, x] <- as.numeric(self$df[, x])
-      }
     },
-    eval = function(listResults) {
+    eval = function(ResultsState) {
       p <- tryCatch(
         {
           withCallingHandlers(
@@ -207,9 +218,14 @@ visualisation <- R6::R6Class(
               invokeRestart("muffleWarning")
             }
           )
-          check_rls(listResults$all_data, p)
+          check_rls(ResultsState$all_data, p)
           ggplot_build(p) # NOTE: invokes errors and warnings by building but not rendering plot
-          p
+          ResultsState$counter <- ResultsState$counter + 1
+          new_result_name <- paste0(
+            ResultsState$counter, " Visualization ", c(box = "Boxplot", dot = "Scatterplot", line = "Lineplot")[self$method]
+          )
+          ResultsState$all_data[[new_result_name]] <- new("plot", p = p, width = self$width, height = self$height, resolution = self$resolution)
+          self$create_history(new_result_name, ResultsState)
         },
         warning = function(warn) {
           self$com$print_warn(warn$message)
@@ -220,9 +236,10 @@ visualisation <- R6::R6Class(
           stop(conditionMessage(err))
         }
       )
+      return(p)
     },
-    create_history = function(new_result_name, listResults) {
-      listResults$history[[length(listResults$history) + 1]] <- list(
+    create_history = function(new_result_name, ResultsState) {
+      ResultsState$history[[length(ResultsState$history) + 1]] <- list(
         type = "Visualisation",
         x = self$x, y = self$y, "Plot-type" = self$method,
         "X axis label" = self$xlabel, "Y axis label" = self$ylabel, "Type of x" = self$type_of_x,
@@ -240,24 +257,6 @@ visualisation <- R6::R6Class(
     }
   )
 )
-
-
-# vis <- visualisation$new(
-#   df = CO2, x = "conc", y = "uptake", method = "box",
-#   xlabel = "x label", type_of_x = "factor", ylabel = "y label",
-#   colour_var = "", colour_legend_title = "Title colour", colour_theme = "Accent",
-#   fill_var = "", fill_legend_title = "Title fill", fill_theme = "BuGn",
-#   facet_var = "", facet_y_scaling = "free",
-#   xrange = c(47.5, 1250.0), yrange = c(7.315, 47.775),
-#   width = 10, height = 10, resolution = 300,
-#   com = backend_communicator
-# )
-# listResults <- new.env()
-# listResults$all_data <- list()
-# p <- vis$eval(listResults)
-# p
-# .traceback()
-
 
 apply_filter <- R6::R6Class(
   "apply_filter",
@@ -281,14 +280,15 @@ apply_filter <- R6::R6Class(
         silent = TRUE
       )
     },
-    eval = function(data) {
-      data$backup_df <- data$df
-      data$df <- split(data$df, self$selected_cols, self$selected_groups)
-      data$filter_col <- self$selected_cols
-      data$filter_group <- self$selected_groups
+    eval = function(DataModelState, ResultsState) {
+      DataModelState$backup_df <- DataModelState$df
+      DataModelState$df <- split(DataModelState$df, self$selected_cols, self$selected_groups)
+      DataModelState$filter_col <- self$selected_cols
+      DataModelState$filter_group <- self$selected_groups
+      self$create_history(ResultsState)
     },
-    create_history = function(listResults) {
-      listResults$history[[length(listResults$history) + 1]] <- list(
+    create_history = function(ResultsState) {
+      ResultsState$history[[length(ResultsState$history) + 1]] <- list(
         type = "ApplyFilter",
         Variable = paste(self$selected_cols, collapse = ", "),
         "Variable levels" = paste(self$selected_groups, collapse = ", ")
@@ -300,17 +300,19 @@ remove_filter <- R6::R6Class(
   "remove_filter",
   public = list(
     initialize = function() {},
-    eval = function(dataSet) {
-      dataSet$df <- dataSet$backup_df
-      dataSet$backup_df <- NULL
-      dataSet$filter_col <- NULL
-      dataSet$filter_group <- NULL
+    validate = function() {},
+    eval = function(ResultsState, DataModelState) {
+      DataModelState$df <- DataModelState$backup_df
+      DataModelState$backup_df <- NULL
+      DataModelState$filter_col <- NULL
+      DataModelState$filter_group <- NULL
+      self$create_history(ResultsState, DataModelState)
     },
-    create_history = function(listResults, dataSet) {
-      listResults$history[[length(listResults$history) + 1]] <- list(
+    create_history = function(ResultsState, DataModelState) {
+      ResultsState$history[[length(ResultsState$history) + 1]] <- list(
         type = "RemoveFilter",
-        Variable = paste(dataSet$filter_col, collapse = ", "),
-        "Variable levels" = paste(dataSet$filter_group, collapse = ", ")
+        Variable = paste(DataModelState$filter_col, collapse = ", "),
+        "Variable levels" = paste(DataModelState$filter_group, collapse = ", ")
       )
     }
   )
@@ -379,27 +381,24 @@ create_intermediate_var <- R6::R6Class(
       }
     },
 
-    eval = function(listResults, r_vals) {
+    eval = function(ResultsState, DataWranglingState) {
       e <- try({
         eval_env <- new.env()
         list2env(self$intermediate_vars, envir = eval_env)
         list2env(self$df, envir = eval_env) # NOTE: this adds each column as own variable
         new <- eval(parse(text =self$operation), envir = eval_env)
         check_type_res(new)
-        check_rls(listResults$all_data, new)
+        check_rls(ResultsState$all_data, new)
       })
       if (inherits(e, "try-error")) {
         err <- conditionMessage(attr(e, "condition"))
         self$com$print_err(err)
         stop("Error in create intermediate variable")
       } else {
-        r_vals$intermediate_vars[[self$var_name]] <- new
-        exportTestValues(
-          iv_list = r_vals$intermediate_vars
-        )
-        listResults$counter <- listResults$counter + 1
-        listResults$all_data[[paste0(self$var_name, listResults$counter)]] <- new
-        listResults$history[[length(listResults$history) + 1]] <- list(
+        DataWranglingState$intermediate_vars[[self$var_name]] <- new
+        ResultsState$counter <- ResultsState$counter + 1
+        ResultsState$all_data[[paste0(self$var_name, ResultsState$counter)]] <- new
+        ResultsState$history[[length(ResultsState$history) + 1]] <- list(
           type = "CreateIntermediateVariable",
           operation = self$operation,
           name = self$var_name
@@ -419,11 +418,13 @@ remove_intermediate_var <- R6::R6Class(
       self$com <- com$new()
     },
 
-    eval = function(listResults, r_vals) {
-      if (!is.null(r_vals$intermediate_vars[[self$name]])) {
-        r_vals$intermediate_vars[[self$name]] <- NULL
+    validate = function() {},
+
+    eval = function(ResultsState, DataWranglingState) {
+      if (!is.null(DataWranglingState$intermediate_vars[[self$name]])) {
+        DataWranglingState$intermediate_vars[[self$name]] <- NULL
         self$com$print_success(paste("Removed intermediate result:", self$name))
-        listResults$history[[length(listResults$history) + 1]] <- list(
+        ResultsState$history[[length(ResultsState$history) + 1]] <- list(
           type = "RemoveIntermediateVariable",
           "Intermediate variable" = self$name
         )
@@ -493,23 +494,23 @@ create_new_col <- R6::R6Class(
 
     },
 
-    eval = function(listResults, r_vals, data) {
+    eval = function(ResultsState, DataWranglingState, DataModelState) {
       e <- try({
         eval_env <- new.env()
         list2env(self$intermediate_vars, envir = eval_env)
         list2env(self$df, envir = eval_env)  # NOTE: this adds each column as own variable
         new <- eval(parse(text = self$operation), envir = eval_env)
         check_type_res(new)
-        check_rls(listResults$all_data, new)
+        check_rls(ResultsState$all_data, new)
         self$df[, self$name] <- new
-        r_vals$df <- self$df
-        if (!is.null(data$backup_df)) {
+        DataWranglingState$df <- self$df
+        if (!is.null(DataModelState$backup_df)) {
           eval_env <- new.env()
           list2env(self$intermediate_vars, envir = eval_env)
-          list2env(data$backup_df, envir = eval_env)  # NOTE: this adds each column as own variable
+          list2env(DataModelState$backup_df, envir = eval_env)  # NOTE: this adds each column as own variable
           new <- eval(parse(text = self$operation), envir = eval_env)
           check_type_res(new)
-          data$backup_df[, self$name] <- new
+          DataModelState$backup_df[, self$name] <- new
           self$com$print_warn("Conducted operation also for entire dataset and not only for the subset")
         }
       })
@@ -518,12 +519,12 @@ create_new_col <- R6::R6Class(
         self$com$print_err(err)
         stop("Error in create new column")
       } else {
-        data$df <- r_vals$df
-        r_vals$counter_id <- r_vals$counter_id + 1
-        listResults$counter <- listResults$counter + 1
-        new_name <- paste0("Dataset", listResults$counter)
-        listResults$all_data[[new_name]] <- data$df
-        listResults$history[[length(listResults$history) + 1]] <- list(
+        DataModelState$df <- DataWranglingState$df
+        DataWranglingState$counter_id <- DataWranglingState$counter_id + 1
+        ResultsState$counter <- ResultsState$counter + 1
+        new_name <- paste0("Dataset", ResultsState$counter)
+        ResultsState$all_data[[new_name]] <- DataModelState$df
+        ResultsState$history[[length(ResultsState$history) + 1]] <- list(
           type = "CreateNewColumn",
           operation = self$operation,
           "column name" = new_name
@@ -548,11 +549,13 @@ create_formula <- R6::R6Class(
       self$com <- com$new()
     },
 
-    eval = function(data) {
+    validate = function() {},
+
+    eval = function(DataModelState) {
       formula <- paste(self$response_var, " ~ ", self$right_site)
       formula <- as.formula(formula)
       check_ast(formula, colnames(self$df))
-      data$formula <- formula
+      DataModelState$formula <- formula
       model <- lm(formula, data = self$df)
       extract_eq(model, wrap = TRUE)
     }
@@ -572,7 +575,9 @@ shapiro_on_data <- R6::R6Class(
       self$com = com$new()
     },
 
-    eval = function(listResults) {
+    validate = function() {},
+
+    eval = function(ResultsState) {
       res <- list()
       res <- withCallingHandlers(
         {
@@ -587,13 +592,23 @@ shapiro_on_data <- R6::R6Class(
             }
           }
           res <- do.call(rbind, res)
-          check_rls(listResults$all_data, res)
+          check_rls(ResultsState$all_data, res)
           res
         },
         warning = function(warn) {
           self$com$print_warn(warn$message)
           invokeRestart("muffleWarning")
         }
+      )
+      ResultsState$counter <- ResultsState$counter + 1
+      new_name <- paste0(
+        "ShapiroDataNr", ResultsState$counter
+      )
+      ResultsState$all_data[[new_name]] <-res
+      ResultsState$history[[length(ResultsState$history) + 1]] <- list(
+        type = "ShapiroOnData",
+        formula = deparse(self$formula),
+        "Result name" = new_name
       )
       return(res)
     }
@@ -612,7 +627,9 @@ shapiro_on_residuals <- R6::R6Class(
       self$com <- com$new()
     },
 
-    eval = function(listResults) {
+    validate = function() {},
+
+    eval = function(ResultsState) {
       res <- NULL
       withCallingHandlers(
         {
@@ -620,13 +637,23 @@ shapiro_on_residuals <- R6::R6Class(
           r <- resid(fit)
           res <- broom::tidy(shapiro.test(r))
           res$`Residuals normal distributed` <- res$p.value > 0.05
-          check_rls(listResults$all_data, res)
+          check_rls(ResultsState$all_data, res)
           res
         },
         warning = function(warn) {
           self$com$print_warn(warn$message)
           invokeRestart("muffleWarning")
         }
+      )
+      ResultsState$counter <- ResultsState$counter + 1
+      new_name <- paste0(
+        "ShaprioResidualsNr", ResultsState$counter
+      )
+      ResultsState$all_data[[new_name]] <- res
+      ResultsState$history[[length(ResultsState$history) + 1]] <- list(
+        type = "shapiroOnResiduals",
+        formula = deparse(self$formula),
+        "Result name" = new_name
       )
       return(res)
     }
@@ -647,7 +674,9 @@ levene <- R6::R6Class(
       self$com <- com$new()
     },
 
-    eval = function(listResults) {
+    validate = function() {},
+
+    eval = function(ResultsState) {
       res <- NULL
       withCallingHandlers(
         {
@@ -655,13 +684,24 @@ levene <- R6::R6Class(
             car::leveneTest(self$formula, data = self$df, center = self$center)
           )
           res$`Variance homogenity` <- res$p.value > 0.05
-          check_rls(listResults$all_data, res)
+          check_rls(ResultsState$all_data, res)
           res
         },
         warning = function(warn) {
           self$com$print_warn(warn$message)
           invokeRestart("muffleWarning")
         }
+      )
+      ResultsState$counter <- ResultsState$counter + 1
+      new_name <- paste0(
+        "LeveneTestNr", ResultsState$counter
+      )
+      ResultsState$all_data[[new_name]] <- res
+      ResultsState$history[[length(ResultsState$history) + 1]] <- list(
+        type = "LeveneTest",
+        formula = deparse(self$formula),
+        "Data center" = self$center,
+        "Result name" = new_name
       )
       return(res)
     }
@@ -680,18 +720,29 @@ diagnostic_plots <- R6::R6Class(
       self$com <- com$new()
     },
 
-    eval = function(listResults) {
+    validate = function() {},
+
+    eval = function(ResultsState) {
       p <- NULL
       withCallingHandlers(
         {
           p <- diagnosticPlots(self$df, self$formula)
-          check_rls(listResults$all_data, p)
+          check_rls(ResultsState$all_data, p)
           p
         },
         warning = function(warn) {
           self$com$print_warn(warn$message)
           invokeRestart("muffleWarning")
         }
+      )
+      ResultsState$counter <- ResultsState$counter + 1
+      new_result_name <- paste0("DiagnosticPlotNr", ResultsState$counter)
+      ResultsState$all_data[[new_result_name]] <-
+        new("plot", p = p, width = 15, height = 15, resolution = 600)
+      ResultsState$history[[length(ResultsState$history) + 1]] <- list(
+        type = "DiagnosticPlots",
+        formula = deparse(self$formula),
+        "Result name" = new_result_name
       )
       return(p)
     }
@@ -708,6 +759,8 @@ dose_response <- R6::R6Class(
     substance_names = NULL,
     formula = NULL,
     com = NULL,
+    res_df = NULL,
+    res_p = NULL,
 
     initialize = function(df, outliers,
                           is_xlog, is_ylog,
@@ -722,47 +775,98 @@ dose_response <- R6::R6Class(
       self$com <- com$new()
     },
 
-    eval = function() {
+    validate = function() {},
+
+    set_result = function(ResultsState, res_df, res_p) {
+      # NOTE: this is only the case if history is replayed
+      # To keep the structure of the complex dose response state
+        new_result_name <- ""
+        if (is.null(self$outliers)) { # Running the entire analysis
+          ResultsState$curr_data <- new("doseResponse", df = res_df, p = res_p, outlier_info = "")
+          ResultsState$curr_name <- paste(
+            "Test Nr", length(ResultsState$all_names) + 1,
+            "Conducted dose response analysis"
+          )
+          ResultsState$counter <- ResultsState$counter + 1
+          new_result_name <- paste0("DoseResponseNr", ResultsState$counter)
+          ResultsState$all_data[[new_result_name]] <- new(
+            "doseResponse",
+            df = res_df, p = res_p, outlier_info = ""
+          )
+        } else { # Rerun with outliers
+          ResultsState$curr_data <- new(
+            "doseResponse",
+            df = res_df, p = res_p, outlier_info = create_outlier_info(self$outliers)
+          )
+          ResultsState$curr_name <- paste(
+            "Test Nr", length(ResultsState$all_names) + 1,
+            "Conducted dose response analysis"
+          )
+          ResultsState$counter <- ResultsState$counter + 1
+          new_result_name <- paste0("DoseResponseNr", ResultsState$counter)
+          ResultsState$all_data[[new_result_name]] <- new(
+            "doseResponse",
+            df = res_df, p = res_p, outlier_info = create_outlier_info(self$outliers)
+          )
+        }
+        ResultsState$history[[length(ResultsState$history) + 1]] <- list(
+          type = "DoseResponse",
+          "Column containing the names" = self$substance_names,
+          "Log transform x-axis" = self$is_xlog,
+          "Log transform y-axis" = self$is_ylog,
+          "formula" = deparse(self$formula),
+          outliers = create_outlier_info(self$outliers),
+          "Result name" = new_result_name
+        )
+    },
+
+    eval = function(ResultsState) {
       f <- as.character(self$formula)
       dep <- f[2]
       indep <- f[3]
-      resDF <- NULL
-      resP <- NULL
+      res_p <- NULL
+      res_df <- NULL
       err <- try({
         check_formula(self$formula)
         check_ast(str2lang(indep), colnames(self$df))
         check_ast(str2lang(dep), colnames(self$df))
         res <- ic50(
           self$df, dep,
-          indep, self$names, self$outliers,
+          indep, self$substance_names, self$outliers,
           self$is_xlog, self$is_ylog
         )
         if (inherits(res, "errorClass")) {
           stop(res$error_message)
         }
-        resDF <- lapply(res, function(x) {
+        res_df <- lapply(res, function(x) {
           if (inherits(x, "errorClass")) {
             return(NULL)
           }
           return(x[[1]])
         })
-        resDF <- resDF[!is.null(resDF)]
-        resDF <- resDF[!sapply(resDF, is.null)]
-        resDF <- Reduce(rbind, resDF)
-        resP <- lapply(res, function(x) {
+        res_df <- res_df[!is.null(res_df)]
+        res_df <- res_df[!sapply(res_df, is.null)]
+        res_df <- Reduce(rbind, res_df)
+        res_p <- lapply(res, function(x) {
           if (inherits(x, "errorClass")) {
             return(NULL)
           }
           return(x[[2]])
         })
-        resP <- resP[!is.null(resP)]
-        resP <- resP[!sapply(resP, is.null)]
+        res_p <- res_p[!is.null(res_p)]
+        res_p <- res_p[!sapply(res_p, is.null)]
       })
       if (inherits(err, "try-error")) {
+        self$com$print(err$message)
         return(err)
       }
-      return(list(resDF, resP))
+      if (!is.null(ResultsState)) {
+        self$set_result(ResultsState, res_df, res_p)
+      }
+
+      return(list(res_df, res_p))
     }
+
   )
 )
 
@@ -787,7 +891,9 @@ t_test <- R6::R6Class(
       self$com = com$new()
     },
 
-    eval = function(listResults) {
+    validate = function() {},
+
+    eval = function(ResultsState) {
       fit <- NULL
       withCallingHandlers(
         {
@@ -799,13 +905,26 @@ t_test <- R6::R6Class(
             data = self$df, conf.level = self$conf_level,
             alternative = self$alternative_hyp, var.equal = eq
           ))
-          check_rls(listResults$all_data, fit)
+          check_rls(ResultsState$all_data, fit)
           fit
         },
         warning = function(warn) {
           self$com$print_warn(warn$message)
           invokeRestart("muffleWarning")
         }
+      )
+      ResultsState$counter <- ResultsState$counter + 1
+      new_name <- paste0(
+        "TTestNr", ResultsState$counter
+      )
+      ResultsState$all_data[[new_name]] <- fit
+      ResultsState$history[[length(ResultsState$history) + 1]] <- list(
+        type = "TTest",
+        formula = deparse(self$formula),
+        "Confidence level of the interval" = self$conf_level,
+        "alternative hypothesis" = self$alternative_hyp,
+        "The two variances are" = self$variances_equal,
+        "Result name" = new_name
       )
       return(fit)
     }
@@ -833,7 +952,9 @@ statistical_tests <- R6::R6Class(
       self$com <- com$new()
     },
 
-    eval = function(listResults, method) {
+    validate = function() {},
+
+    eval = function(ResultsState, method) {
       e <- try({
         self$indep <- as.character(self$formula)[3]
         self$dep <- as.character(self$formula)[2]
@@ -886,6 +1007,7 @@ statistical_tests <- R6::R6Class(
               fit <- with(self$df, kruskal(self$df[, self$dep], self$df[, self$indep]),
                 alpha = self$p_val, p.adj = self$p_val_adj_method, group = TRUE
               )$groups
+              names(fit)[1] <- self$dep
               history_data <- list(type = "Kruskal Wallis post hoc test",
                 formula = deparse(self$formula),
                 "Adjusted p value method" = self$p_val_adj_method,
@@ -926,7 +1048,7 @@ statistical_tests <- R6::R6Class(
                 "P-value" = self$p_val)
             }
           )
-          check_rls(listResults$all_data, fit)
+          check_rls(ResultsState$all_data, fit)
 
           fit <- cbind(fit, row.names(fit))
           names(fit)[ncol(fit)] <- paste0(self$indep, collapse = ".")
@@ -938,7 +1060,18 @@ statistical_tests <- R6::R6Class(
           invokeRestart("muffleWarning")
         }
       )
-      return(list(fit = fit, history_data = history_data))
+
+      ResultsState$counter <- ResultsState$counter + 1
+      new_name <- paste0(
+        "Test_", method, "Nr", ResultsState$counter
+      )
+      ResultsState$all_data[[new_name]] <- fit
+      ResultsState$history[[length(ResultsState$history) + 1]] <- c(
+        history_data,
+        "Result name" = new_name
+      )
+
+      return(fit)
     }
   )
 )
@@ -951,63 +1084,15 @@ remove_result <- R6::R6Class(
     initialize = function(name) {
       self$name <- name
     },
-    eval = function(listResults) {
-      current_list <- listResults$all_data
+    validate = function() {},
+    eval = function(ResultsState) {
+      current_list <- ResultsState$all_data
       current_list[[self$name]] <- NULL
-      listResults$history[[length(listResults$history) + 1]] <- list(
+      ResultsState$history[[length(ResultsState$history) + 1]] <- list(
         type = "RemoveResult", "Entry removed" = self$name
       )
-      listResults$all_data <- current_list
+      ResultsState$all_data <- current_list
     }
   )
 )
-
-parse_history_json <- function(path) {
-  jsonlite::fromJSON(path, simplifyVector = FALSE)
-}
-recreate_class <- function(entry, df, intermediate_vars, com = backend_communicator) {
-  switch(entry$type,
-    "CreateNewColumn" = create_new_col$new(
-      df = df,
-      df_name = "df",
-      intermediate_vars = intermediate_vars,
-      operation = entry$operation,
-      name = entry[["column name"]],
-      com = com
-    ),
-    "CreateFormula" = create_formula$new(
-      response_var = str2lang(entry$formula)[[2]] |> as.character(),
-      right_site = str2lang(entry$formula)[[3]] |> as.character(),
-      df = df,
-      com = com
-    ),
-    "shapiroOnResiduals" = shapiro_on_residuals$new(
-      df = df,
-      formula = as.formula(entry$formula),
-      com = com
-    ),
-    "DiagnosticPlots" = diagnostic_plots$new(
-      df = df,
-      formula = as.formula(entry$formula),
-      com = com
-    ),
-    "ANOVA" = statistical_tests$new(
-      df = df,
-      formula = as.formula(entry$formula),
-      balanced_design = "Balanced",
-      p_val = 0.05,
-      p_val_adj_method = "none",
-      com = com
-    ),
-    stop(paste("Unknown type:", entry$type))
-  )
-}
-replay_history <- function(path, df, listResults, r_vals) {
-  history <- parse_history_json(path)
-  for (entry in history) {
-    obj <- recreate_class(entry, df, r_vals$intermediate_vars)
-    obj$validate()
-    obj$eval(listResults, r_vals)
-  }
-}
 

@@ -19,23 +19,23 @@ SplitByGroupUI <- function(id) {
   )
 }
 
-SplitByGroupServer <- function(id, data, listResults) {
+SplitByGroupServer <- function(id, DataModelState, ResultsState) {
   moduleServer(id, function(input, output, session) {
     # Reactive values
-    r_vals <- reactiveValues(
+    SplitByGroupState <- reactiveValues(
       df = NULL,
       is_filtered = FALSE
     )
 
     observe({
-      r_vals$df <- data$df
+      SplitByGroupState$df <- DataModelState$df
     })
 
     # Create colnames dropdown
     output[["colnames_dropdown"]] <- renderUI({
-      req(!is.null(r_vals$df))
-      req(is.data.frame(r_vals$df))
-      colnames <- names(r_vals$df)
+      req(!is.null(SplitByGroupState$df))
+      req(is.data.frame(SplitByGroupState$df))
+      colnames <- names(SplitByGroupState$df)
       tooltip <- "Select the column by name which you want to split by"
       div(
         tags$label(
@@ -56,13 +56,13 @@ SplitByGroupServer <- function(id, data, listResults) {
 
     # Show levels based on column which is choosen
     output[["levels_dropdown"]] <- renderUI({
-      req(!is.null(r_vals$df))
-      req(is.data.frame(r_vals$df))
+      req(!is.null(SplitByGroupState$df))
+      req(is.data.frame(SplitByGroupState$df))
       selected_col <- input[[paste0("colnames-dropdown_")]]
       if (is.null(selected_col)) {
         return(NULL)
       }
-      vals <- unique(r_vals$df[, selected_col])
+      vals <- unique(SplitByGroupState$df[, selected_col])
       tooltip <- "Select the level (group) by name which you want to use"
       div(
         tags$label(
@@ -83,21 +83,19 @@ SplitByGroupServer <- function(id, data, listResults) {
 
     # React to split data
     observeEvent(input$split_data, {
-      print_req(is.data.frame(r_vals$df), "The dataset is missing")
+      print_req(is.data.frame(SplitByGroupState$df), "The dataset is missing")
       selected_cols <- input[[paste0("colnames-dropdown_")]]
       selected_groups <- input[[paste0("levels-dropdown_")]]
       af <- apply_filter$new(selected_cols, selected_groups)
       e <- try(
         {
           af$validate()
-          af$eval(data)
+          af$eval(DataModelState, ResultsState)
         },
         silent = TRUE
       )
       if (inherits(e, "try-error")) {
         print_err(e)
-      } else {
-        af$create_history(listResults)
       }
     })
   })

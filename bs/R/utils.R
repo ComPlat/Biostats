@@ -103,6 +103,7 @@ setClass("diagnosticPlot",
 )
 
 create_outlier_info <- function(l) {
+  if (is.null(l)) return("")
   res <- sapply(
     seq_len(length(l)), function(idx) {
       n <- names(l)[idx]
@@ -675,11 +676,11 @@ create_plot_pages <- function(plotList) {
 
 # check result list size (rls)
 # Here also the length is checked
-check_rls <- function(listResults, newObj) {
-  if (length(listResults) > 1000) {
+check_rls <- function(ResultsState, newObj) {
+  if (length(ResultsState) > 1000) {
     stop("You can only store 1000 results. Consider removing some results")
   }
-  current_size <- object.size(listResults)
+  current_size <- object.size(ResultsState)
   max_size <- 500 * 1024^2 # 500 MB per user
   if (current_size + object.size(newObj) > max_size) {
     stop("Memory limit exceeded for user results. Consider removing some results.")

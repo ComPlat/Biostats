@@ -713,7 +713,7 @@ test_split <- function() {
   )
  
   # Test case where splitting on one column works correctly
-  result <- split(df, cols = c("group"), levels = c("A", "B"))
+  result <- bs:::split(df, cols = c("group"), levels = c("A", "B"))
   expect_equal(
     result$group,
     c("A", "B", "A", "B"),
@@ -721,7 +721,7 @@ test_split <- function() {
   ) |> print()
 
   # Test case where splitting on two columns works correctly
-  result <- split(df, cols = c("group"), levels = c("A", "B"))
+  result <- bs:::split(df, cols = c("group"), levels = c("A", "B"))
   expect_equal(
     result$category,
     c("X", "Y", "X", "Y"),
@@ -730,7 +730,7 @@ test_split <- function() {
 
   # Test when the dataframe has no matching rows
   result <- tryCatch({
-    split(df, cols = c("group"), levels = c("D"))
+    bs:::split(df, cols = c("group"), levels = c("D"))
   }, error = function(e) e)
   expect_true(
     inherits(result, "error"),
@@ -738,7 +738,7 @@ test_split <- function() {
   ) |> print()
 
   # Test case where all rows are included (no subset)
-  result <- split(df, cols = c("group", "category"), levels = c("A", "B", "C", "X", "Y", "Z"))
+  result <- bs:::split(df, cols = c("group", "category"), levels = c("A", "B", "C", "X", "Y", "Z"))
   expect_equal(
     nrow(result),
     5,
@@ -748,7 +748,7 @@ test_split <- function() {
   # Edge case with empty dataframe
   df_empty <- data.frame(group = character(0), category = character(0), value = numeric(0))
   result <- tryCatch({
-    split(df_empty, cols = c("group"), levels = c("A"))
+    bs:::split(df_empty, cols = c("group"), levels = c("A"))
   }, error = function(e) e)
   expect_true(
     inherits(result, "error"),
@@ -757,7 +757,7 @@ test_split <- function() {
 
   # Edge case where no level is set
   result <- tryCatch({
-    split(df, cols = c("group", "category"), levels = c())
+    bs:::split(df, cols = c("group", "category"), levels = c())
   }, error = function(e) e)
   expect_true(
     inherits(result, "error"),

@@ -563,11 +563,11 @@ for (i in operations) {
 # Test casts
 app$set_inputs(`OP-editable_code` = 'C("10.5", "1.4", "1.3", 3.14)')
 app$wait_for_idle()
-app$set_inputs(`OP-iv` = "S1")
+app$set_inputs(`OP-iv` = "S3")
 app$wait_for_idle()
 app$click("OP-run_op_intermediate")
 app$wait_for_idle()
-S1 <- c("10.5", "1.4", "1.3", 3.14)
+S3 <- c("10.5", "1.4", "1.3", 3.14)
 operations <- c(
   "OP-as_int", "OP-as_real", "OP-as_fact", "OP-as_char"
 )
@@ -580,7 +580,7 @@ for (i in operations) {
   app$wait_for_idle()
   app$click(i)
   app$wait_for_idle()
-  app$click("OP-intermediate_vars_S1_0")
+  app$click("OP-intermediate_vars_S3_0")
   app$wait_for_idle()
   app$click("OP-bracket_close")
   app$wait_for_idle()

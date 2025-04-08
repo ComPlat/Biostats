@@ -208,12 +208,12 @@ app <- function() {
   )
 
   server <- function(input, output, session) {
-    dataSet <- reactiveValues(
+    DataModelState <- reactiveValues(
       df = NULL, formula = NULL,
       backup_df = NULL, filter_col = NULL, filter_group = NULL
     )
 
-    listResults <- reactiveValues(
+    ResultsState <- reactiveValues(
       curr_data = NULL, curr_name = NULL,
       all_data = list(), all_names = list(),
       history = list(),
@@ -401,9 +401,9 @@ app <- function() {
           stop(attributes(res)$condition)
         } else {
           res <- create_r_names(res)
-          dataSet$df <- res
+          DataModelState$df <- res
         }
-        datatable(dataSet$df, options = list(pageLength = 10))
+        datatable(DataModelState$df, options = list(pageLength = 10))
       } else {
         req(input$file)
         df <- try(readData(input$file$datapath))
@@ -413,28 +413,28 @@ app <- function() {
           return(NULL)
         }
         df <- create_r_names(df)
-        dataSet$df <- df
-        req(!is.na(dataSet$df))
-        datatable(dataSet$df, options = list(pageLength = 10))
+        DataModelState$df <- df
+        req(!is.na(DataModelState$df))
+        datatable(DataModelState$df, options = list(pageLength = 10))
       }
     })
 
     observe({
-      req(!is.null(dataSet$df))
-      req(is.data.frame(dataSet$df))
+      req(!is.null(DataModelState$df))
+      req(is.data.frame(DataModelState$df))
       output$df <- renderDT(
-        datatable(dataSet$df, options = list(pageLength = 10))
+        datatable(DataModelState$df, options = list(pageLength = 10))
       )
     })
 
-    OperationEditorServer("OP", dataSet, listResults)
-    corrServer("CORR", dataSet, listResults)
-    visServer("VIS", dataSet, listResults)
-    assServer("ASS", dataSet, listResults)
-    testsServer("TESTS", dataSet, listResults)
-    DoseResponseServer("DOSERESPONSE", dataSet, listResults)
-    FormulaEditorServer("FO", dataSet, listResults)
-    SplitByGroupServer("SG", dataSet, listResults)
+    OperationEditorServer("OP", DataModelState, ResultsState)
+    corrServer("CORR", DataModelState, ResultsState)
+    visServer("VIS", DataModelState, ResultsState)
+    assServer("ASS", DataModelState, ResultsState)
+    testsServer("TESTS", DataModelState, ResultsState)
+    DoseResponseServer("DOSERESPONSE", DataModelState, ResultsState)
+    FormulaEditorServer("FO", DataModelState, ResultsState)
+    SplitByGroupServer("SG", DataModelState, ResultsState)
 
     # Render results list
     output$Results <- renderUI({
@@ -446,7 +446,7 @@ app <- function() {
           )
         )
       }
-      res <- listResults$all_data |> rev()
+      res <- ResultsState$all_data |> rev()
       if (length(res) == 0) {
         return()
       }
@@ -506,10 +506,10 @@ app <- function() {
 
     # Show results
     observe({
-      if (length(listResults$all_data) == 0) {
+      if (length(ResultsState$all_data) == 0) {
         return()
       }
-      res <- listResults$all_data
+      res <- ResultsState$all_data
       res_ui_list <- lapply(names(res), function(name) {
         observeEvent(res[[name]], {
           temp <- res[[name]]
@@ -537,15 +537,21 @@ app <- function() {
 
     # Observe remove buttons
     observe({
-      if (length(listResults$all_data) == 0) {
+      if (length(ResultsState$all_data) == 0) {
         return()
       }
-      current_list <- listResults$all_data
+      current_list <- ResultsState$all_data
       lapply(names(current_list), function(name) {
         observeEvent(input[[paste0("remove_res_", name)]],
           {
-            rr <- remove_result$new(name)
-            rr$eval(listResults)
+            e <- try({
+              rr <- remove_result$new(name)
+              rr$eval(ResultsState)
+            })
+            if (inherits(e, "try-error")) {
+              err <- conditionMessage(attr(e, "condition"))
+              print_err(err)
+            }
           },
           ignoreInit = TRUE
         )
@@ -563,7 +569,7 @@ app <- function() {
         actionButton("open_formula_editor",
           "Open formula editor",
           title = "Open the formula editor to create or modify a formula",
-          disabled = is.null(dataSet$df) || !is.data.frame(dataSet$df)
+          disabled = is.null(DataModelState$df) || !is.data.frame(DataModelState$df)
         )
       )
     })
@@ -580,9 +586,9 @@ app <- function() {
     })
     # display current formula
     observe({
-      req(!is.null(dataSet$formula))
+      req(!is.null(DataModelState$formula))
       output$formula <- renderText({
-        deparse(dataSet$formula)
+        deparse(DataModelState$formula)
       })
     })
     output[["formulaUI"]] <- renderUI({
@@ -604,14 +610,14 @@ app <- function() {
         actionButton("open_split_by_group",
           "Open the split by group functionality",
           title = "Open the split by group helper window",
-          disabled = is.null(dataSet$df) ||
-            !is.data.frame(dataSet$df) ||
-            !is.null(dataSet$backup_df)
+          disabled = is.null(DataModelState$df) ||
+            !is.data.frame(DataModelState$df) ||
+            !is.null(DataModelState$backup_df)
         ),
         actionButton("remove_filter",
           "Remove the filter from the dataset",
           title = "remove the filter of the dataset",
-          disabled = is.null(dataSet$backup_df) || !is.data.frame(dataSet$backup_df)
+          disabled = is.null(DataModelState$backup_df) || !is.data.frame(DataModelState$backup_df)
         )
       )
     })
@@ -626,23 +632,29 @@ app <- function() {
     })
     observe({
       output$applied_filter <- renderText(NULL)
-      req(!is.null(dataSet$filter_col))
-      req(!is.null(dataSet$filter_group))
+      req(!is.null(DataModelState$filter_col))
+      req(!is.null(DataModelState$filter_group))
       output$applied_filter <- renderText({
         paste(
           "The dataset is splitted by the variable(s): [",
-          paste(dataSet$filter_col, collapse = ", "),
+          paste(DataModelState$filter_col, collapse = ", "),
           "] group(s) are set to: [",
-          paste(dataSet$filter_group, collapse = ", "),
+          paste(DataModelState$filter_group, collapse = ", "),
           "]"
         )
       })
     })
     # Remove filter
     observeEvent(input[["remove_filter"]], {
-      rf <- remove_filter$new()
-      rf$create_history(listResults, dataSet)
-      rf$eval(dataSet)
+      e <- try({
+        rf <- remove_filter$new()
+        rf$validate()
+        rf$eval(ResultsState, DataModelState)
+      })
+      if (inherits(e, "try-error")) {
+        err <- conditionMessage(attr(e, "condition"))
+        print_err(err)
+      }
     })
 
     observeEvent(input$download, {
@@ -656,10 +668,10 @@ app <- function() {
         is_valid_filename(input$user_filename),
         "Defined filename is not valid"
       )
-      print_req(length(listResults$all_data) > 0, "No results to save")
-      l <- listResults$all_data
-      history_json <- jsonlite::toJSON(listResults$history, pretty = TRUE, auto_unbox = TRUE)
-      history_table <- history_to_table(listResults$history)
+      print_req(length(ResultsState$all_data) > 0, "No results to save")
+      l <- ResultsState$all_data
+      history_json <- jsonlite::toJSON(ResultsState$history, pretty = TRUE, auto_unbox = TRUE)
+      history_table <- history_to_table(ResultsState$history)
       l_history <- c("HistoryTable" = history_table)
       l <- c(l_history, l)
       l <- c(l, "HistoryJSON" = history_json)

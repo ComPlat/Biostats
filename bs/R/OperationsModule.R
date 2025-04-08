@@ -173,11 +173,11 @@ OperatorEditorUI <- function(id) {
   )
 }
 
-OperationEditorServer <- function(id, data, listResults) {
+OperationEditorServer <- function(id, DataModelState, ResultsState) {
 
   moduleServer(id, function(input, output, session) {
     # Reactive values
-    r_vals <- reactiveValues(
+    DataWranglingState <- reactiveValues(
       df = NULL, df_name = "df",
       current_page = 1, total_pages = 1,
       counter_id = 0,
@@ -186,19 +186,19 @@ OperationEditorServer <- function(id, data, listResults) {
 
     # Data
     observe({
-      req(is.data.frame(data$df))
-      r_vals$df <- data$df
-      r_vals$df_name <- create_df_name(r_vals$df_name, names(data$df))
-      r_vals$intermediate_vars[[r_vals$df_name]] <- data$df
+      req(is.data.frame(DataModelState$df))
+      DataWranglingState$df <- DataModelState$df
+      DataWranglingState$df_name <- create_df_name(DataWranglingState$df_name, names(DataModelState$df))
+      DataWranglingState$intermediate_vars[[DataWranglingState$df_name]] <- DataModelState$df
       output$head <- renderUI({
-        col_info <- sapply(data$df, function(col) class(col)[1]) |>
+        col_info <- sapply(DataModelState$df, function(col) class(col)[1]) |>
           t() |>
           as.data.frame()
-        names(col_info) <- names(r_vals$df)
+        names(col_info) <- names(DataWranglingState$df)
         div(
           class = "var-box-output",
           actionButton(
-            paste0("OP-dataset_", r_vals$df_name, "_", r_vals$counter_id),
+            paste0("OP-dataset_", DataWranglingState$df_name, "_", DataWranglingState$counter_id),
             label = "Dataset",
             title =
             "This is the dataset. Using the text df you can access the entire dataset. If you only want to work with one of the column you can use the respective column title. As a side note only the first 6 rows of the data table are shown.",
@@ -211,7 +211,7 @@ OperationEditorServer <- function(id, data, listResults) {
             })
           ),
           renderTable({
-            head(r_vals$df)
+            head(DataWranglingState$df)
           })
         )
       })
@@ -219,9 +219,9 @@ OperationEditorServer <- function(id, data, listResults) {
 
     # React to df button
     observe({
-      req(r_vals$df)
-      var <- r_vals$df_name
-      observeEvent(input[[paste0("dataset_", var, "_", r_vals$counter_id)]], {
+      req(DataWranglingState$df)
+      var <- DataWranglingState$df_name
+      observeEvent(input[[paste0("dataset_", var, "_", DataWranglingState$counter_id)]], {
         current_text <- input[["editable_code"]]
         updated_text <- paste(current_text, var, sep = " ")
         updateTextAreaInput(session, "editable_code", value = updated_text)
@@ -230,21 +230,21 @@ OperationEditorServer <- function(id, data, listResults) {
 
     # Create colnames button
     output[["colnames_list"]] <- renderUI({
-      req(!is.null(r_vals$df))
-      req(is.data.frame(r_vals$df))
-      r_vals$df_name <- create_df_name(r_vals$df_name, names(data$df))
-      colnames <- c(r_vals$df_name, names(r_vals$df))
+      req(!is.null(DataWranglingState$df))
+      req(is.data.frame(DataWranglingState$df))
+      DataWranglingState$df_name <- create_df_name(DataWranglingState$df_name, names(DataModelState$df))
+      colnames <- c(DataWranglingState$df_name, names(DataWranglingState$df))
       button_list <- lapply(colnames[1:length(colnames)], function(i) {
-        if (i == r_vals$df_name) {
+        if (i == DataWranglingState$df_name) {
           return(actionButton(
-            inputId = paste0("OP-colnames_", i, "_", r_vals$counter_id),
+            inputId = paste0("OP-colnames_", i, "_", DataWranglingState$counter_id),
             label = paste(i),
             title = paste0("Click button if you want to use the entire dataset"),
             class = "add-button"
           ))
         } else {
           return(actionButton(
-            inputId = paste0("OP-colnames_", i, "_", r_vals$counter_id),
+            inputId = paste0("OP-colnames_", i, "_", DataWranglingState$counter_id),
             label = paste(i),
             title = paste0("Click button if you want to use the column: ", i),
             class = "add-button"
@@ -256,11 +256,11 @@ OperationEditorServer <- function(id, data, listResults) {
 
     # React to colnames buttons
     observe({
-      req(r_vals$df)
-      r_vals$df_name <- create_df_name(r_vals$df_name, names(data$df))
-      colnames <- c(r_vals$df_name, names(r_vals$df))
+      req(DataWranglingState$df)
+      DataWranglingState$df_name <- create_df_name(DataWranglingState$df_name, names(DataModelState$df))
+      colnames <- c(DataWranglingState$df_name, names(DataWranglingState$df))
       lapply(colnames, function(col) {
-        observeEvent(input[[paste0("colnames_", col, "_", r_vals$counter_id)]], {
+        observeEvent(input[[paste0("colnames_", col, "_", DataWranglingState$counter_id)]], {
           current_text <- input[["editable_code"]]
           updated_text <- paste(current_text, col, sep = " ")
           updateTextAreaInput(session, "editable_code", value = updated_text)
@@ -270,14 +270,14 @@ OperationEditorServer <- function(id, data, listResults) {
 
     # Observe intermediate results
     output$intermediate_results <- renderUI({
-      iv_list <- r_vals$intermediate_vars
+      iv_list <- DataWranglingState$intermediate_vars
       if (length(iv_list) == 1) return()
-      iv_list <- iv_list[names(iv_list) != r_vals$df_name]
+      iv_list <- iv_list[names(iv_list) != DataWranglingState$df_name]
       iv_ui <- lapply(names(iv_list), function(name) {
         div(
           class = "var-box-output",
           actionButton(
-            inputId = paste0("OP-intermediate_vars_", name, "_", r_vals$counter_id),
+            inputId = paste0("OP-intermediate_vars_", name, "_", DataWranglingState$counter_id),
             label = name,
             title = paste0("This is the variable ", name,
             ". You can use it by entering: ", name, " within the Operation text field."),
@@ -291,11 +291,11 @@ OperationEditorServer <- function(id, data, listResults) {
 
     # Show intermediate variables
     observe({
-      iv_list <- r_vals$intermediate_vars
+      iv_list <- DataWranglingState$intermediate_vars
       lapply(names(iv_list), function(name) {
-        observeEvent(r_vals$intermediate_vars[[name]], {
+        observeEvent(DataWranglingState$intermediate_vars[[name]], {
           output[[paste0("iv_", name)]] <- renderPrint({
-            r_vals$intermediate_vars[[name]]
+            DataWranglingState$intermediate_vars[[name]]
           })
         }, ignoreInit = TRUE)
       })
@@ -303,26 +303,32 @@ OperationEditorServer <- function(id, data, listResults) {
 
     # Observe remove of intermediate variables
     observe({
-      iv_list <- r_vals$intermediate_vars
+      iv_list <- DataWranglingState$intermediate_vars
       for (name in names(iv_list)) {
         output[[paste0("iv_", name)]] <- renderPrint({
           iv_list[[name]]
         })
         observeEvent(input[[paste0("remove_iv_", name)]], {
-          riv = remove_intermediate_var$new(name)
-          riv$eval(listResults, r_vals)
+          e <- try({
+            riv = remove_intermediate_var$new(name)
+            riv$validate()
+            riv$eval(ResultsState, DataWranglingState)
+          }, silent = TRUE)
+          if (inherits(e, "try-error")) {
+            return()
+          }
         }, ignoreInit = TRUE)
       }
     })
 
     # React to intermediate variables buttons
     observe({
-      req(r_vals$df)
-      req(length(r_vals$intermediate_vars) >= 1)
-      iv_list <- r_vals$intermediate_vars
-      iv_list <- iv_list[names(iv_list) != r_vals$df_name]
+      req(DataWranglingState$df)
+      req(length(DataWranglingState$intermediate_vars) >= 1)
+      iv_list <- DataWranglingState$intermediate_vars
+      iv_list <- iv_list[names(iv_list) != DataWranglingState$df_name]
       lapply(names(iv_list), function(var) {
-        observeEvent(input[[paste0("intermediate_vars_", var, "_", r_vals$counter_id)]], {
+        observeEvent(input[[paste0("intermediate_vars_", var, "_", DataWranglingState$counter_id)]], {
           current_text <- input[["editable_code"]]
           updated_text <- paste(current_text, var, sep = " ")
           updateTextAreaInput(session, "editable_code", value = updated_text)
@@ -332,47 +338,48 @@ OperationEditorServer <- function(id, data, listResults) {
 
     # Run operation and store in intermediate result
     observeEvent(input$run_op_intermediate, {
-      print_req(is.data.frame(r_vals$df), "The dataset is missing")
+      print_req(is.data.frame(DataWranglingState$df), "The dataset is missing")
       if (input$iv == "") {
         runjs("document.getElementById('OP-iv').focus();")
       }
       civ <- create_intermediate_var$new(
-        df = r_vals$df, df_name = r_vals$df_name,
-        intermediate_vars = r_vals$intermediate_vars,
+        df = DataWranglingState$df, df_name = DataWranglingState$df_name,
+        intermediate_vars = DataWranglingState$intermediate_vars,
         operation = input$editable_code,
         name = input$iv
       )
-      e <- try({civ$validate()}, silent = TRUE)
+      e <- try({
+        civ$validate()
+        civ$eval(ResultsState, DataWranglingState)
+      }, silent = TRUE)
       if (inherits(e, "try-error")) {
         return()
       }
-      e <- try({civ$eval(listResults, r_vals)}, silent = TRUE)
-      if (inherits(e, "try-error")) {
-        return()
-      }
+      exportTestValues(
+        iv_list = DataWranglingState$intermediate_vars
+      )
     })
 
     # Run operation and append to df
     observeEvent(input$run_op, {
-      print_req(is.data.frame(r_vals$df), "The dataset is missing")
+      print_req(is.data.frame(DataWranglingState$df), "The dataset is missing")
       if (input$nc== "") {
         runjs("document.getElementById('OP-nc').focus();")
       }
       cnc <- create_new_col$new(
-        df = r_vals$df, df_name = r_vals$df_name,
-        intermediate_vars = r_vals$intermediate_vars,
+        df = DataWranglingState$df, df_name = DataWranglingState$df_name,
+        intermediate_vars = DataWranglingState$intermediate_vars,
         operation = input$editable_code,
         name = input$nc
       )
-      e <- try({cnc$validate()}, silent = TRUE)
+      e <- try({
+        cnc$validate()
+        cnc$eval(ResultsState, DataWranglingState, DataModelState)
+      }, silent = TRUE)
       if (inherits(e, "try-error")) {
         return()
       }
-      e <- try({cnc$eval(listResults, r_vals, data)}, silent = TRUE)
-      if (inherits(e, "try-error")) {
-        return()
-      }
-      output$head <- renderTable(head(r_vals$df, 10))
+      output$head <- renderTable(head(DataWranglingState$df, 10))
     })
 
     observeEvent(input$add, {

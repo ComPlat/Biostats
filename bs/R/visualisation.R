@@ -106,15 +106,15 @@ visUI <- function(id) {
   )
 }
 
-visServer <- function(id, data, listResults) {
+visServer <- function(id, DataModelState, ResultsState) {
   moduleServer(id, function(input, output, session) {
     # Render axis limits
     output[["XRangeUI"]] <- renderUI({
-      req(!is.null(data$df))
-      req(is.data.frame(data$df))
+      req(!is.null(DataModelState$df))
+      req(is.data.frame(DataModelState$df))
       req(input$xVar)
       x <- input$xVar
-      df <- data$df
+      df <- DataModelState$df
       if (is.numeric(df[, x])) {
         x_min <- min(df[[x]], na.rm = TRUE)
         padded_min <- x_min * 0.5 # Needed for boxplots
@@ -143,11 +143,11 @@ visServer <- function(id, data, listResults) {
     })
 
     output[["YRangeUI"]] <- renderUI({
-      req(!is.null(data$df))
-      req(is.data.frame(data$df))
+      req(!is.null(DataModelState$df))
+      req(is.data.frame(DataModelState$df))
       req(input$yVar)
       y <- input$yVar
-      df <- data$df
+      df <- DataModelState$df
       if (is.numeric(df[, y])) {
         y_min <- min(df[[y]], na.rm = TRUE)
         padded_min <- y_min * 0.95
@@ -177,9 +177,9 @@ visServer <- function(id, data, listResults) {
 
     # Render x and y selectInput
     output[["yVarUI"]] <- renderUI({
-      req(!is.null(data$df))
-      req(is.data.frame(data$df))
-      colnames <- names(data$df)
+      req(!is.null(DataModelState$df))
+      req(is.data.frame(DataModelState$df))
+      colnames <- names(DataModelState$df)
       tooltip <- "Select the value of the Y variable"
       div(
         tags$label(
@@ -198,9 +198,9 @@ visServer <- function(id, data, listResults) {
     })
 
     output[["xVarUI"]] <- renderUI({
-      req(!is.null(data$df))
-      req(is.data.frame(data$df))
-      colnames <- names(data$df)
+      req(!is.null(DataModelState$df))
+      req(is.data.frame(DataModelState$df))
+      colnames <- names(DataModelState$df)
       tooltip <- "Select the value of the X variable"
       div(
         tags$label(
@@ -219,9 +219,9 @@ visServer <- function(id, data, listResults) {
     })
 
     output[["colUI"]] <- renderUI({
-      req(!is.null(data$df))
-      req(is.data.frame(data$df))
-      colnames <- c("", names(data$df))
+      req(!is.null(DataModelState$df))
+      req(is.data.frame(DataModelState$df))
+      colnames <- c("", names(DataModelState$df))
       tooltip <- "Select a variable  for the colour variable. By chosing this groups are formed based on the unique entries in this column. Thereby, each entry gets its own colour to distinguish the groups. Dependent on the plot type either the lines, dots or the frame of the boxes are labelled"
       div(
         tags$label(
@@ -240,9 +240,9 @@ visServer <- function(id, data, listResults) {
     })
 
     output[["fillUI"]] <- renderUI({
-      req(!is.null(data$df))
-      req(is.data.frame(data$df))
-      colnames <- c("", names(data$df))
+      req(!is.null(DataModelState$df))
+      req(is.data.frame(DataModelState$df))
+      colnames <- c("", names(DataModelState$df))
       tooltip <- "Select a variable  for the fill variable. By chosing this groups are formed based on the unique entries in this column. Thereby, each entry gets its own colour to distinguish the groups."
       div(
         tags$label(
@@ -261,9 +261,9 @@ visServer <- function(id, data, listResults) {
     })
 
     output[["facetByUI"]] <- renderUI({
-      req(!is.null(data$df))
-      req(is.data.frame(data$df))
-      colnames <- c("", names(data$df))
+      req(!is.null(DataModelState$df))
+      req(is.data.frame(DataModelState$df))
+      colnames <- c("", names(DataModelState$df))
       tooltip <- "Split plot in panels based on which variable"
       div(
         tags$label(
@@ -283,9 +283,9 @@ visServer <- function(id, data, listResults) {
 
     # TODO: Why is this defined as renderUI?
     output[["facetScalesUI"]] <- renderUI({
-      req(!is.null(data$df))
-      req(is.data.frame(data$df))
-      colnames <- c("", names(data$df))
+      req(!is.null(DataModelState$df))
+      req(is.data.frame(DataModelState$df))
+      colnames <- c("", names(DataModelState$df))
       tooltip <- "Do you want to scale the Y axis"
       div(
         tags$label(
@@ -308,9 +308,9 @@ visServer <- function(id, data, listResults) {
 
     # Plot stuff
     plotFct <- function(method) {
-      print_req(is.data.frame(data$df), "The dataset is missing")
+      print_req(is.data.frame(DataModelState$df), "The dataset is missing")
       vis <- visualisation$new(
-        df = data$df, x = input$xVar, y = input$yVar,
+        df = DataModelState$df, x = input$xVar, y = input$yVar,
         method = method,
         xlabel = input$xaxisText, type_of_x = input$xType,
         ylabel = input$yaxisText,
@@ -322,37 +322,31 @@ visServer <- function(id, data, listResults) {
         xrange = input$XRange, yrange = input$YRange,
         width = input$widthPlot, height = input$heightPlot, resolution = input$resPlot
       )
-      width <- input$widthPlot
-      height <- input$heightPlot
-      resolution <- input$resPlot
 
-      p <- try({vis$eval(listResults)})
+      p <- try({
+        vis$validate()
+        pl <- vis$eval(ResultsState)
+        exportTestValues(
+          plot = pl
+        )
+      })
       if (inherits(p, "try-error")) {
         return()
       }
-      exportTestValues(
-        plot = p
-      )
-      listResults$counter <- listResults$counter + 1
-      new_result_name <- paste0(
-        listResults$counter, " Visualization ", c(box = "Boxplot", dot = "Scatterplot", line = "Lineplot")[method]
-      )
-      listResults$all_data[[new_result_name]] <- new("plot", p = p, width = width, height = height, resolution = resolution)
-      vis$create_history(new_result_name, listResults)
     }
 
     observeEvent(input$CreatePlotBox, {
-      print_req(is.data.frame(data$df), "The dataset is missing")
+      print_req(is.data.frame(DataModelState$df), "The dataset is missing")
       plotFct("box")
     })
 
     observeEvent(input$CreatePlotScatter, {
-      print_req(is.data.frame(data$df), "The dataset is missing")
+      print_req(is.data.frame(DataModelState$df), "The dataset is missing")
       plotFct("dot")
     })
 
     observeEvent(input$CreatePlotLine, {
-      print_req(is.data.frame(data$df), "The dataset is missing")
+      print_req(is.data.frame(DataModelState$df), "The dataset is missing")
       plotFct("line")
     })
   })

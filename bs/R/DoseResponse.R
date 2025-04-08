@@ -49,9 +49,9 @@ DoseResponseUI <- function(id) {
   )
 }
 
-DoseResponseServer <- function(id, data, listResults) {
+DoseResponseServer <- function(id, DataModelState, ResultsState) {
   moduleServer(id, function(input, output, session) {
-    r_vals <- reactiveValues(
+    DoseResponseState <- reactiveValues(
       plots = NULL,
       names = NULL, # For dropdown_plots
       overview_plots = NULL,
@@ -63,9 +63,9 @@ DoseResponseServer <- function(id, data, listResults) {
 
     # Render names of substances
     output[["substanceNamesUI"]] <- renderUI({
-      req(!is.null(data$df))
-      req(is.data.frame(data$df))
-      colnames <- names(data$df)
+      req(!is.null(DataModelState$df))
+      req(is.data.frame(DataModelState$df))
+      colnames <- names(DataModelState$df)
       tooltip <- "Select the column which contains the names of the different substances"
       div(
         tags$label(
@@ -84,33 +84,33 @@ DoseResponseServer <- function(id, data, listResults) {
     })
 
     reset_dr <- function() {
-      r_vals$plots <- NULL
-      r_vals$names <- NULL
-      r_vals$currentPage <- 1
-      r_vals$overview_plots <- NULL
-      r_vals$currentPageOverview <- 1
-      r_vals$outliers <- NULL
-      r_vals$df_dr <- NULL
+      DoseResponseState$plots <- NULL
+      DoseResponseState$names <- NULL
+      DoseResponseState$currentPage <- 1
+      DoseResponseState$overview_plots <- NULL
+      DoseResponseState$currentPageOverview <- 1
+      DoseResponseState$outliers <- NULL
+      DoseResponseState$df_dr <- NULL
     }
 
     check_dr <- function() {
-      print_req(is.data.frame(data$df), "The dataset is missing")
+      print_req(is.data.frame(DataModelState$df), "The dataset is missing")
       req(input$substanceNames)
-      print_form(data$formula)
-      req(!is.null(data$formula))
+      print_form(DataModelState$formula)
+      req(!is.null(DataModelState$formula))
     }
 
     run_dr <- function(df, outliers) {
       dr <- dose_response$new(
         df, outliers, input$xTransform, input$yTransform,
-        input$substanceNames, data$formula
+        input$substanceNames, DataModelState$formula
       )
       dr$eval()
     }
 
     dr_complete <- function() {
       check_dr()
-      df <- data$df
+      df <- DataModelState$df
       reset_dr()
       resDF <- NULL
       resP <- NULL
@@ -123,11 +123,11 @@ DoseResponseServer <- function(id, data, listResults) {
           }
           resDF <- res[[1]]
           resP <- res[[2]]
-          r_vals$plots <- resP
-          r_vals$names <- resDF$name
-          r_vals$df_dr <- resDF
+          DoseResponseState$plots <- resP
+          DoseResponseState$names <- resDF$name
+          DoseResponseState$df_dr <- resDF
           overviewPlots <- create_plot_pages(resP)
-          r_vals$overview_plots <- overviewPlots
+          DoseResponseState$overview_plots <- overviewPlots
         },
         silent = TRUE
       )
@@ -138,26 +138,26 @@ DoseResponseServer <- function(id, data, listResults) {
         print_err(err)
       } else {
         output$dr_result <- renderTable(resDF, digits = 6)
-        listResults$curr_data <- new("doseResponse", df = resDF, p = resP, outlier_info = "")
-        listResults$curr_name <- paste(
-          "Test Nr", length(listResults$all_names) + 1,
+        ResultsState$curr_data <- new("doseResponse", df = resDF, p = resP, outlier_info = "")
+        ResultsState$curr_name <- paste(
+          "Test Nr", length(ResultsState$all_names) + 1,
           "Conducted dose response analysis"
         )
-        listResults$counter <- listResults$counter + 1
-        new_result_name <- paste0("DoseResponseNr", listResults$counter)
-        listResults$all_data[[new_result_name]] <- new(
+        ResultsState$counter <- ResultsState$counter + 1
+        new_result_name <- paste0("DoseResponseNr", ResultsState$counter)
+        ResultsState$all_data[[new_result_name]] <- new(
           "doseResponse",
           df = resDF, p = resP, outlier_info = ""
         )
         exportTestValues(
-          doseresponse_res = listResults$curr_data
+          doseresponse_res = ResultsState$curr_data
         )
-        listResults$history[[length(listResults$history) + 1]] <- list(
+        ResultsState$history[[length(ResultsState$history) + 1]] <- list(
           type = "DoseResponse",
           "Column containing the names" = input$substanceNames,
           "Log transform x-axis" = input$xTransform,
           "Log transform y-axis" = input$yTransform,
-          "formula" = deparse(data$formula),
+          "formula" = deparse(DataModelState$formula),
           "Result name" = new_result_name
         )
       }
@@ -169,49 +169,49 @@ DoseResponseServer <- function(id, data, listResults) {
 
     # Display plots
     observe({
-      req(!is.null(r_vals$plots))
-      req(is.list(r_vals$plots))
-      output$dr_result_plot <- renderPlot(r_vals$plots[[r_vals$currentPage]])
+      req(!is.null(DoseResponseState$plots))
+      req(is.list(DoseResponseState$plots))
+      output$dr_result_plot <- renderPlot(DoseResponseState$plots[[DoseResponseState$currentPage]])
     })
 
     output[["dropdown_plots"]] <- renderUI({
-      req(!is.null(r_vals$plots))
-      req(is.list(r_vals$plots))
-      req(length(r_vals$plots) > 1)
-      req(!is.null(r_vals$names))
-      req(length(r_vals$names) > 1)
+      req(!is.null(DoseResponseState$plots))
+      req(is.list(DoseResponseState$plots))
+      req(length(DoseResponseState$plots) > 1)
+      req(!is.null(DoseResponseState$names))
+      req(length(DoseResponseState$names) > 1)
       selectInput(
         inputId = "DOSERESPONSE-dropdown_plots",
         label = "Select plot",
-        choices = r_vals$names,
-        selected = r_vals$names[1]
+        choices = DoseResponseState$names,
+        selected = DoseResponseState$names[1]
       )
     })
 
     observeEvent(input$dropdown_plots, {
-      req(!is.null(r_vals$plots))
-      req(is.list(r_vals$plots))
-      req(length(r_vals$plots) > 1)
-      req(!is.null(r_vals$names))
-      req(length(r_vals$names) > 1)
-      r_vals$currentPage <- which(input$dropdown_plots == r_vals$names)
+      req(!is.null(DoseResponseState$plots))
+      req(is.list(DoseResponseState$plots))
+      req(length(DoseResponseState$plots) > 1)
+      req(!is.null(DoseResponseState$names))
+      req(length(DoseResponseState$names) > 1)
+      DoseResponseState$currentPage <- which(input$dropdown_plots == DoseResponseState$names)
     })
 
     observeEvent(input$nextPage, {
-      req(!is.null(r_vals$plots))
-      req(is.list(r_vals$plots))
-      req(length(r_vals$plots) > 1)
-      if (r_vals$currentPage < length(r_vals$plots)) {
-        r_vals$currentPage <- r_vals$currentPage + 1
+      req(!is.null(DoseResponseState$plots))
+      req(is.list(DoseResponseState$plots))
+      req(length(DoseResponseState$plots) > 1)
+      if (DoseResponseState$currentPage < length(DoseResponseState$plots)) {
+        DoseResponseState$currentPage <- DoseResponseState$currentPage + 1
       }
     })
 
     observeEvent(input$previousPage, {
-      req(!is.null(r_vals$plots))
-      req(is.list(r_vals$plots))
-      req(length(r_vals$plots) > 1)
-      if (r_vals$currentPage > 1) {
-        r_vals$currentPage <- r_vals$currentPage - 1
+      req(!is.null(DoseResponseState$plots))
+      req(is.list(DoseResponseState$plots))
+      req(length(DoseResponseState$plots) > 1)
+      if (DoseResponseState$currentPage > 1) {
+        DoseResponseState$currentPage <- DoseResponseState$currentPage - 1
       }
     })
 
@@ -222,7 +222,7 @@ DoseResponseServer <- function(id, data, listResults) {
       outliers <- NULL
       e <- try(
         {
-          outliers <- list(r_vals$outliers[[name]])
+          outliers <- list(DoseResponseState$outliers[[name]])
           names(outliers) <- name
           if (length(outliers[[name]]) == 0) {
             outliers <- list(NULL)
@@ -233,21 +233,21 @@ DoseResponseServer <- function(id, data, listResults) {
             m <- conditionMessage(attr(res, "condition"))
             stop(m)
           }
-          names <- r_vals$names
+          names <- DoseResponseState$names
           idx <- which(name == names)
           resDF <- res[[1]]
           resP <- res[[2]][[1]]
-          old_plots <- r_vals$plots
-          old_df_dr <- r_vals$df_dr
+          old_plots <- DoseResponseState$plots
+          old_df_dr <- DoseResponseState$df_dr
           old_plots[[idx]] <- resP
           old_df_dr[idx, ] <- resDF
-          r_vals$plots <- old_plots
-          r_vals$df_dr <- old_df_dr
-          resP <- r_vals$plots
-          resDF <- r_vals$df_dr
+          DoseResponseState$plots <- old_plots
+          DoseResponseState$df_dr <- old_df_dr
+          resP <- DoseResponseState$plots
+          resDF <- DoseResponseState$df_dr
           overviewPlots <- create_plot_pages(resP)
-          r_vals$overview_plots <- overviewPlots
-          check_rls(listResults$all_data, res)
+          DoseResponseState$overview_plots <- overviewPlots
+          check_rls(ResultsState$all_data, res)
         },
         silent = TRUE
       )
@@ -257,31 +257,31 @@ DoseResponseServer <- function(id, data, listResults) {
         print_err(err)
       } else {
         output$dr_result <- renderTable(resDF, digits = 6)
-        listResults$curr_data <- new(
+        ResultsState$curr_data <- new(
           "doseResponse",
-          df = resDF, p = resP, outlier_info = create_outlier_info(r_vals$outliers)
+          df = resDF, p = resP, outlier_info = create_outlier_info(DoseResponseState$outliers)
         )
-        listResults$curr_name <- paste(
-          "Test Nr", length(listResults$all_names) + 1,
+        ResultsState$curr_name <- paste(
+          "Test Nr", length(ResultsState$all_names) + 1,
           "Conducted dose response analysis"
         )
-        listResults$counter <- listResults$counter + 1
-        new_result_name <- paste0("DoseResponseNr", listResults$counter)
-        listResults$all_data[[new_result_name]] <- new(
+        ResultsState$counter <- ResultsState$counter + 1
+        new_result_name <- paste0("DoseResponseNr", ResultsState$counter)
+        ResultsState$all_data[[new_result_name]] <- new(
           "doseResponse",
-          df = resDF, p = resP, outlier_info = create_outlier_info(r_vals$outliers)
+          df = resDF, p = resP, outlier_info = create_outlier_info(DoseResponseState$outliers)
         )
         exportTestValues(
-          doseresponse_res = listResults$curr_data
+          doseresponse_res = ResultsState$curr_data
         )
-        outliers <- list(r_vals$outliers[[name]])
-        listResults$history[[length(listResults$history) + 1]] <- list(
+        outliers <- list(DoseResponseState$outliers[[name]])
+        ResultsState$history[[length(ResultsState$history) + 1]] <- list(
           type = "DoseResponse",
           "Column containing the names" = input$substanceNames,
           "Log transform x-axis" = input$xTransform,
           "Log transform y-axis" = input$yTransform,
-          "formula" = deparse(data$formula),
-          outliers = create_outlier_info(r_vals$outliers),
+          "formula" = deparse(DataModelState$formula),
+          outliers = create_outlier_info(DoseResponseState$outliers),
           "Result name" = new_result_name
         )
       }
@@ -289,15 +289,15 @@ DoseResponseServer <- function(id, data, listResults) {
 
     observeEvent(input$plot_click, {
       req(!is.null(input$plot_click))
-      req(is.data.frame(data$df))
-      print_req(!is.null(data$formula), "You have to set a formula")
+      req(is.data.frame(DataModelState$df))
+      print_req(!is.null(DataModelState$formula), "You have to set a formula")
       try({
         click <- input$plot_click
         name_col <- input$substanceNames
-        df <- data$df
-        sub_df <- df[df[, name_col] == r_vals$names[r_vals$currentPage], ]
-        f <- as.character(data$formula)
-        formula <- data$formula
+        df <- DataModelState$df
+        sub_df <- df[df[, name_col] == DoseResponseState$names[DoseResponseState$currentPage], ]
+        f <- as.character(DataModelState$formula)
+        formula <- DataModelState$formula
         check_formula(formula)
         dep <- f[2]
         indep <- f[3]
@@ -314,52 +314,52 @@ DoseResponseServer <- function(id, data, listResults) {
         distances <- sqrt((x_normalized - click_x_normalized)^2 + (y_normalized - click_y_normalized)^2)
         nearest <- which.min(distances)
         if (distances[nearest] < 0.1) {
-          name <- r_vals$names[r_vals$currentPage]
-          old_outliers <- r_vals$outliers[[name]]
+          name <- DoseResponseState$names[DoseResponseState$currentPage]
+          old_outliers <- DoseResponseState$outliers[[name]]
           if (is.null(old_outliers)) {
-            r_vals$outliers[[name]] <- nearest
+            DoseResponseState$outliers[[name]] <- nearest
           } else {
             if (nearest %in% old_outliers) {
               old_outliers <- old_outliers[old_outliers != nearest]
             } else {
               old_outliers <- c(old_outliers, nearest)
             }
-            r_vals$outliers[[name]] <- old_outliers
+            DoseResponseState$outliers[[name]] <- old_outliers
           }
-          old_current_page <- r_vals$currentPage
+          old_current_page <- DoseResponseState$currentPage
           dr_partial(sub_df, name)
-          r_vals$currentPage <- old_current_page
+          DoseResponseState$currentPage <- old_current_page
         }
       })
     })
 
     # Display overview plots
     observe({
-      req(!is.null(r_vals$overview_plots))
-      req(is.list(r_vals$overview_plots))
+      req(!is.null(DoseResponseState$overview_plots))
+      req(is.list(DoseResponseState$overview_plots))
       output$dr_overview_plot <- renderPlot(
-        r_vals$overview_plots[[r_vals$currentPageOverview]]
+        DoseResponseState$overview_plots[[DoseResponseState$currentPageOverview]]
       )
     })
 
     observeEvent(input$nextPageOverview, {
-      req(!is.null(r_vals$overview_plots))
-      req(is.list(r_vals$overview_plots))
-      req(length(r_vals$overview_plots) > 1)
-      if (r_vals$currentPageOverview < length(r_vals$overview_plots)) {
-        r_vals$currentPageOverview <- r_vals$currentPageOverview + 1
+      req(!is.null(DoseResponseState$overview_plots))
+      req(is.list(DoseResponseState$overview_plots))
+      req(length(DoseResponseState$overview_plots) > 1)
+      if (DoseResponseState$currentPageOverview < length(DoseResponseState$overview_plots)) {
+        DoseResponseState$currentPageOverview <- DoseResponseState$currentPageOverview + 1
       }
     })
 
     observeEvent(input$previousPageOverview, {
-      req(!is.null(r_vals$overview_plots))
-      req(is.list(r_vals$overview_plots))
-      req(length(r_vals$overview_plots) > 1)
-      if (r_vals$currentPageOverview > 1) {
-        r_vals$currentPageOverview <- r_vals$currentPageOverview - 1
+      req(!is.null(DoseResponseState$overview_plots))
+      req(is.list(DoseResponseState$overview_plots))
+      req(length(DoseResponseState$overview_plots) > 1)
+      if (DoseResponseState$currentPageOverview > 1) {
+        DoseResponseState$currentPageOverview <- DoseResponseState$currentPageOverview - 1
       }
     })
   })
 
-  return(listResults)
+  return(ResultsState)
 }

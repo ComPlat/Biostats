@@ -81,30 +81,30 @@ FormulaEditorUI <- function(id) {
   )
 }
 
-FormulaEditorServer <- function(id, data, listResults) {
+FormulaEditorServer <- function(id, DataModelState, ResultsState) {
   moduleServer(id, function(input, output, session) {
     # Reactive values
-    r_vals <- reactiveValues(
+    FormulaState <- reactiveValues(
       df = NULL,
       counter_id = 0
     )
 
     observe({
-      req(is.data.frame(data$df))
-      r_vals$df <- data$df
+      req(is.data.frame(DataModelState$df))
+      FormulaState$df <- DataModelState$df
       output$head <- renderTable({
-        head(r_vals$df)
+        head(FormulaState$df)
       })
     })
 
     # Create colnames button
     output[["colnames_list"]] <- renderUI({
-      req(!is.null(r_vals$df))
-      req(is.data.frame(r_vals$df))
-      colnames <- names(r_vals$df)
+      req(!is.null(FormulaState$df))
+      req(is.data.frame(FormulaState$df))
+      colnames <- names(FormulaState$df)
       button_list <- lapply(colnames[1:length(colnames)], function(i) {
         actionButton(
-          inputId = paste0("FO-colnames_", i, "_", r_vals$counter_id),
+          inputId = paste0("FO-colnames_", i, "_", FormulaState$counter_id),
           label = paste(i),
           class = "add-button",
           title = paste("Select variable", i, "as a predictor for the model")
@@ -115,9 +115,9 @@ FormulaEditorServer <- function(id, data, listResults) {
 
     # Create colnames dropdown
     output[["colnames_dropdown"]] <- renderUI({
-      req(!is.null(r_vals$df))
-      req(is.data.frame(r_vals$df))
-      colnames <- names(r_vals$df)
+      req(!is.null(FormulaState$df))
+      req(is.data.frame(FormulaState$df))
+      colnames <- names(FormulaState$df)
       tooltip <- "Select the dependent variable for your statistical model. This is the outcome you want to predict based on the independent variables."
 
       div(
@@ -128,7 +128,7 @@ FormulaEditorServer <- function(id, data, listResults) {
           `data-toggle` = "tooltip"
         ),
         selectInput(
-          inputId = paste0("FO-colnames-dropdown_", r_vals$counter_id),
+          inputId = paste0("FO-colnames-dropdown_", FormulaState$counter_id),
           label = "Dependent Variable",
           choices = colnames[1:length(colnames)],
           selected = NULL
@@ -138,10 +138,10 @@ FormulaEditorServer <- function(id, data, listResults) {
 
     # React to colnames buttons
     observe({
-      req(r_vals$df)
-      colnames <- names(r_vals$df)
+      req(FormulaState$df)
+      colnames <- names(FormulaState$df)
       lapply(colnames, function(col) {
-        observeEvent(input[[paste0("colnames_", col, "_", r_vals$counter_id)]], {
+        observeEvent(input[[paste0("colnames_", col, "_", FormulaState$counter_id)]], {
           current_text <- input[["editable_code"]]
           updated_text <- paste(current_text, col, sep = " ")
           updateTextAreaInput(session, "editable_code", value = updated_text)
@@ -199,15 +199,16 @@ FormulaEditorServer <- function(id, data, listResults) {
 
     # React to create formula
     observeEvent(input$create_formula, {
-      print_req(is.data.frame(r_vals$df), "The dataset is missing")
+      print_req(is.data.frame(FormulaState$df), "The dataset is missing")
       success <- FALSE
       tryCatch({
         withCallingHandlers(
           expr = {
-            response_var <- input[[paste0("colnames-dropdown_", r_vals$counter_id)]]
+            response_var <- input[[paste0("colnames-dropdown_", FormulaState$counter_id)]]
             right_site <- input[["editable_code"]]
-            cf <- create_formula$new(response_var, right_site, data$df)
-            model_latex <- cf$eval(data)
+            cf <- create_formula$new(response_var, right_site, DataModelState$df)
+            cf$validate()
+            model_latex <- cf$eval(DataModelState)
             output$model <- renderUI({
               withMathJax(HTML(paste0("$$", model_latex, "$$")))
             })
@@ -224,9 +225,9 @@ FormulaEditorServer <- function(id, data, listResults) {
         }
       )
       if (success) {
-        listResults$history[[length(listResults$history) + 1]] <- list(
+        ResultsState$history[[length(ResultsState$history) + 1]] <- list(
           type = "CreateFormula",
-          formula = deparse(data$formula)
+          formula = deparse(DataModelState$formula)
         )
       }
     })
