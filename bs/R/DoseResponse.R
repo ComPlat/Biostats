@@ -101,49 +101,11 @@ DoseResponseServer <- function(id, data, listResults) {
     }
 
     run_dr <- function(df, outliers) {
-      is_xlog <- input$xTransform
-      is_ylog <- input$yTransform
-      names <- input$substanceNames
-      f <- as.character(data$formula)
-      formula <- data$formula
-      dep <- f[2]
-      indep <- f[3]
-      resDF <- NULL
-      resP <- NULL
-      err <- try({
-        check_formula(formula)
-        check_ast(str2lang(indep), colnames(df))
-        check_ast(str2lang(dep), colnames(df))
-        res <- ic50(
-          df, dep,
-          indep, names, outliers,
-          is_xlog, is_ylog
-        )
-        if (inherits(res, "errorClass")) {
-          stop(res$error_message)
-        }
-        resDF <- lapply(res, function(x) {
-          if (inherits(x, "errorClass")) {
-            return(NULL)
-          }
-          return(x[[1]])
-        })
-        resDF <- resDF[!is.null(resDF)]
-        resDF <- resDF[!sapply(resDF, is.null)]
-        resDF <- Reduce(rbind, resDF)
-        resP <- lapply(res, function(x) {
-          if (inherits(x, "errorClass")) {
-            return(NULL)
-          }
-          return(x[[2]])
-        })
-        resP <- resP[!is.null(resP)]
-        resP <- resP[!sapply(resP, is.null)]
-      })
-      if (inherits(err, "try-error")) {
-        return(err)
-      }
-      return(list(resDF, resP))
+      dr <- dose_response$new(
+        df, outliers, input$xTransform, input$yTransform,
+        input$substanceNames, data$formula
+      )
+      dr$eval()
     }
 
     dr_complete <- function() {
@@ -192,9 +154,10 @@ DoseResponseServer <- function(id, data, listResults) {
         )
         listResults$history[[length(listResults$history) + 1]] <- list(
           type = "DoseResponse",
-          names = input$substanceNames,
-          "log transform x" = input$xTransform,
-          "log transform y" = input$yTransform,
+          "Column containing the names" = input$substanceNames,
+          "Log transform x-axis" = input$xTransform,
+          "Log transform y-axis" = input$yTransform,
+          "formula" = deparse(data$formula),
           "Result name" = new_result_name
         )
       }
@@ -314,9 +277,10 @@ DoseResponseServer <- function(id, data, listResults) {
         outliers <- list(r_vals$outliers[[name]])
         listResults$history[[length(listResults$history) + 1]] <- list(
           type = "DoseResponse",
-          names = input$substanceNames,
-          "log transform x" = input$xTransform,
-          "log transform y" = input$yTransform,
+          "Column containing the names" = input$substanceNames,
+          "Log transform x-axis" = input$xTransform,
+          "Log transform y-axis" = input$yTransform,
+          "formula" = deparse(data$formula),
           outliers = create_outlier_info(r_vals$outliers),
           "Result name" = new_result_name
         )

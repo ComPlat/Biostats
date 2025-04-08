@@ -84,25 +84,20 @@ SplitByGroupServer <- function(id, data, listResults) {
     # React to split data
     observeEvent(input$split_data, {
       print_req(is.data.frame(r_vals$df), "The dataset is missing")
-      e <- try({
-        selected_cols <- input[[paste0("colnames-dropdown_")]]
-        selected_groups <- input[[paste0("levels-dropdown_")]]
-        if (length(selected_groups) == 0 || length(selected_cols) == 0) {
-          stop("Invalid subset either no columns or now levels of the columns were selected")
-        }
-        data$backup_df <- r_vals$df
-        data$df <- split(r_vals$df, selected_cols, selected_groups)
-        data$filter_col <- selected_cols
-        data$filter_group <- selected_groups
-      }, silent = TRUE)
+      selected_cols <- input[[paste0("colnames-dropdown_")]]
+      selected_groups <- input[[paste0("levels-dropdown_")]]
+      af <- apply_filter$new(selected_cols, selected_groups)
+      e <- try(
+        {
+          af$validate()
+          af$eval(data)
+        },
+        silent = TRUE
+      )
       if (inherits(e, "try-error")) {
         print_err(e)
       } else {
-        listResults$history[[length(listResults$history) + 1]] <- list(
-          type = "ApplyFilter",
-          filter_col = paste(dataSet$filter_col, collapse = ", "),
-          filter_group = paste(dataSet$filter_group, collapse = ", ")
-        )
+        af$create_history(listResults)
       }
     })
   })

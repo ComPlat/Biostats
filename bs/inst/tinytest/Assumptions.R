@@ -32,7 +32,6 @@ expected <- rbind(
 )
 expected$variable <- c("nonchilled", "chilled")
 expected$`Normal distributed` <- expected$p.value > 0.05
-res
 tinytest::expect_equal(res[[1]], expected)
 
 # Update output value

@@ -204,14 +204,10 @@ FormulaEditorServer <- function(id, data, listResults) {
       tryCatch({
         withCallingHandlers(
           expr = {
-            selected_col <- input[[paste0("colnames-dropdown_", r_vals$counter_id)]]
-            current_text <- input[["editable_code"]]
-            formula <- paste(selected_col, " ~ ", current_text)
-            formula <- as.formula(formula)
-            check_ast(formula, colnames(r_vals$df))
-            data$formula <- formula
-            model <- lm(formula, data = r_vals$df)
-            model_latex <- extract_eq(model, wrap = TRUE)
+            response_var <- input[[paste0("colnames-dropdown_", r_vals$counter_id)]]
+            right_site <- input[["editable_code"]]
+            cf <- create_formula$new(response_var, right_site, data$df)
+            model_latex <- cf$eval(data)
             output$model <- renderUI({
               withMathJax(HTML(paste0("$$", model_latex, "$$")))
             })

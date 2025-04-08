@@ -2,7 +2,7 @@ library(shinytest2)
 library(tinytest)
 library(bs)
 
-Sys.setenv(RUN_MODE = "BROWSER") # SERVER
+# Sys.setenv(RUN_MODE = "BROWSER") # SERVER
 app <- bs::app()
 # Create app
 app <- shiny::shinyApp(app$ui, app$server)

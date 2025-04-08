@@ -544,12 +544,8 @@ app <- function() {
       lapply(names(current_list), function(name) {
         observeEvent(input[[paste0("remove_res_", name)]],
           {
-            current_list <- listResults$all_data
-            current_list[[name]] <- NULL
-            listResults$history[[length(listResults$history) + 1]] <- list(
-              type = "RemoveResult", entry_removed = name
-            )
-            listResults$all_data <- current_list
+            rr <- remove_result$new(name)
+            rr$eval(listResults)
           },
           ignoreInit = TRUE
         )
@@ -644,15 +640,9 @@ app <- function() {
     })
     # Remove filter
     observeEvent(input[["remove_filter"]], {
-      dataSet$df <- dataSet$backup_df
-      listResults$history[[length(listResults$history) + 1]] <- list(
-        type = "RemoveFilter",
-        filter_col = paste(dataSet$filter_col, collapse = ", "),
-        filter_group = paste(dataSet$filter_group, collapse = ", ")
-      )
-      dataSet$backup_df <- NULL
-      dataSet$filter_col <- NULL
-      dataSet$filter_group <- NULL
+      rf <- remove_filter$new()
+      rf$create_history(listResults, dataSet)
+      rf$eval(dataSet)
     })
 
     observeEvent(input$download, {
@@ -668,7 +658,11 @@ app <- function() {
       )
       print_req(length(listResults$all_data) > 0, "No results to save")
       l <- listResults$all_data
-      str(listResults$history)
+      history_json <- jsonlite::toJSON(listResults$history, pretty = TRUE, auto_unbox = TRUE)
+      history_table <- history_to_table(listResults$history)
+      l_history <- c("HistoryTable" = history_table)
+      l <- c(l_history, l)
+      l <- c(l, "HistoryJSON" = history_json)
       if (Sys.getenv("RUN_MODE") == "SERVER") {
         print_req(
           check_filename_for_server(input$user_filename),

@@ -42,7 +42,8 @@ RUN install2.r --error --skipinstalled \
   cowplot \
   car \
   equatiomatic \
-  quarto
+  quarto \
+  jsonlite
 
 USER shiny
 COPY ./bs/R ./myapp

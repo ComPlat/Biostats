@@ -309,121 +309,36 @@ visServer <- function(id, data, listResults) {
     # Plot stuff
     plotFct <- function(method) {
       print_req(is.data.frame(data$df), "The dataset is missing")
-      df <- data$df
-      x <- input$xVar
-      y <- input$yVar
-      colNames <- names(df)
+      vis <- visualisation$new(
+        df = data$df, x = input$xVar, y = input$yVar,
+        method = method,
+        xlabel = input$xaxisText, type_of_x = input$xType,
+        ylabel = input$yaxisText,
+        colour_var = input$col, colour_legend_title = input$legendTitleCol,
+        colour_theme = input$theme,
+        fill_var = input$fill, fill_legend_title = input$legendTitleFill,
+        fill_theme = input$themeFill,
+        facet_var = input$facetBy, facet_y_scaling = input$facetScales,
+        xrange = input$XRange, yrange = input$YRange,
+        width = input$widthPlot, height = input$heightPlot, resolution = input$resPlot
+      )
       width <- input$widthPlot
       height <- input$heightPlot
       resolution <- input$resPlot
-      print_req(width > 0, "width has to be a positive number; It is changed to 10 cm")
-      if (width <= 0) width <- 10
-      print_req(height > 0, "height has to be a positive number; It is changed to 10 cm")
-      if (height <= 0) height <- 10
-      print_req(width < 100, "width exceeds max value of 100; It is changed to 100 cm")
-      if (width > 100) width <- 100
-      print_req(height < 100, "height exceeds max value of 100; It is changed to 100 cm")
-      if (height > 100) height <- 100
-      col <- input$col
-      fill <- input$fill
-      fillTitle <- input$legendTitleFill
-      colTitle <- input$legendTitleCol
-      xlabel <- input$xaxisText
-      ylabel <- input$yaxisText
-      xtype <- input$xType
-      theme <- input$theme
-      themeFill <- input$themeFill
-      facetMode <- "none"
-      facet <- ""
-      facetScales <- input$facetScales
-      if (input$facetBy != "") {
-        facet <- input$facetBy
-        facetMode <- "facet_wrap"
+
+      p <- try({vis$eval(listResults)})
+      if (inherits(p, "try-error")) {
+        return()
       }
-      fitMethod <- "none"
-      xd <- NULL
-      if (xtype == "numeric") {
-        xd <- as.numeric(df[, x])
-      } else {
-        xd <- as.factor(df[, x])
-      }
-      yd <- as.numeric(df[, y])
-      if (fitMethod != "none" && !is.null(fitMethod) && xtype != "numeric") {
-        print_warn("Fit method will be ignored as X variable is not numerical")
-        fitMethod <- "none"
-      }
-      p <- tryCatch(
-        {
-          withCallingHandlers(
-            {
-              if (method == "box") {
-                p <- BoxplotFct(
-                  df, x, y, xlabel, ylabel,
-                  fill, fillTitle, themeFill,
-                  col, colTitle, theme,
-                  facetMode, facet, facetScales,
-                  input$XRange[1], input$XRange[2], input$YRange[1], input$YRange[2]
-                )
-              } else if (method == "dot") {
-                k <- NULL
-                if (fitMethod == "gam") {
-                  req(input$k)
-                  k <- input$k
-                  if (k <= 0) {
-                    print_warn("k has to be at least 1 and is set to this value")
-                    k <- 1
-                  }
-                }
-                p <- DotplotFct(
-                  df, x, y, xlabel, ylabel,
-                  fitMethod,
-                  col, colTitle, theme,
-                  facetMode, facet, facetScales, k,
-                  input$XRange[1], input$XRange[2], input$YRange[1], input$YRange[2]
-                )
-              } else if (method == "line") {
-                p <- LineplotFct(
-                  df, x, y, xlabel, ylabel,
-                  col, colTitle, theme,
-                  facetMode, facet, facetScales,
-                  input$XRange[1], input$XRange[2], input$YRange[1], input$YRange[2]
-                )
-              }
-            },
-            warning = function(warn) {
-              print_warn(warn$message)
-              invokeRestart("muffleWarning")
-            }
-          )
-          check_rls(listResults$all_data, p)
-          ggplot_build(p) # NOTE: invokes errors and warnings by building but not rendering plot
-          p
-        },
-        warning = function(warn) {
-          print_warn(warn$message)
-          return(p)
-        },
-        error = function(err) {
-          print_err(paste("An error occurred: ", conditionMessage(err)))
-        }
-      )
       exportTestValues(
         plot = p
       )
       listResults$counter <- listResults$counter + 1
-      new_result_name <- paste0("PlotNr", listResults$counter)
-      listResults$all_data[[new_result_name]] <- new("plot", p = p, width = width, height = height, resolution = resolution)
-      listResults$history[[length(listResults$history) + 1]] <- list(
-        type = "Visualisation",
-        x = x, y = y, method = method,
-        xlabel = xlabel, ylabel = ylabel, xType = xtype,
-        colour = col, fill = fill, fillTitle = fillTitle, colourTitle = colTitle,
-        theme = theme, themeFill = themeFill,
-        facetMode = facetMode, facet = facet, facetScales = facetScales,
-        xrange = as.character(c(input$XRange)),
-        yrange = as.character(c(input$YRange)),
-        "Result name" = new_result_name
+      new_result_name <- paste0(
+        listResults$counter, " Visualization ", c(box = "Boxplot", dot = "Scatterplot", line = "Lineplot")[method]
       )
+      listResults$all_data[[new_result_name]] <- new("plot", p = p, width = width, height = height, resolution = resolution)
+      vis$create_history(new_result_name, listResults)
     }
 
     observeEvent(input$CreatePlotBox, {

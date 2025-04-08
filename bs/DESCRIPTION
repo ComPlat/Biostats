@@ -32,6 +32,7 @@ Imports:
   COMELN,
   httr,
   jose,
-  openssl
+  openssl,
+  jsonlite
 Encoding: UTF-8
 

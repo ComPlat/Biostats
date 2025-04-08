@@ -1,0 +1,217 @@
+[
+  {
+    "type": "CreateIntermediateVariable",
+    "operation": " Max( conc )",
+    "name": "iv1"
+  },
+  {
+    "type": "CreateNewColumn",
+    "operation": "conc / iv",
+    "column name": "Dataset2"
+  },
+  {
+    "type": "Visualisation",
+    "x": "conc_norm",
+    "y": "uptake",
+    "method": "box",
+    "xlabel": "x label",
+    "ylabel": "y label",
+    "xType": "factor",
+    "colour": "",
+    "fill": "",
+    "fillTitle": "Title fill",
+    "colourTitle": "Title colour",
+    "theme": "Accent",
+    "themeFill": "BuGn",
+    "facetMode": "none",
+    "facet": "",
+    "facetScales": "free",
+    "xrange": ["0.0475", "1.25"],
+    "yrange": ["7.315", "47.775"],
+    "Result name": "PlotNr3"
+  },
+  {
+    "type": "Visualisation",
+    "x": "conc_norm",
+    "y": "uptake",
+    "method": "box",
+    "xlabel": "x label",
+    "ylabel": "y label",
+    "xType": "factor",
+    "colour": "",
+    "fill": "Type",
+    "fillTitle": "Title fill",
+    "colourTitle": "Title colour",
+    "theme": "Accent",
+    "themeFill": "BuGn",
+    "facetMode": "none",
+    "facet": "",
+    "facetScales": "free",
+    "xrange": ["0.0475", "1.25"],
+    "yrange": ["7.315", "47.775"],
+    "Result name": "PlotNr4"
+  },
+  {
+    "type": "Visualisation",
+    "x": "conc_norm",
+    "y": "uptake",
+    "method": "box",
+    "xlabel": "x label",
+    "ylabel": "y label",
+    "xType": "factor",
+    "colour": "Treatment",
+    "fill": "Type",
+    "fillTitle": "Title fill",
+    "colourTitle": "Title colour",
+    "theme": "Accent",
+    "themeFill": "BuGn",
+    "facetMode": "none",
+    "facet": "",
+    "facetScales": "free",
+    "xrange": ["0.0475", "1.25"],
+    "yrange": ["7.315", "47.775"],
+    "Result name": "PlotNr5"
+  },
+  {
+    "type": "Visualisation",
+    "x": "conc_norm",
+    "y": "uptake",
+    "method": "box",
+    "xlabel": "x label",
+    "ylabel": "y label",
+    "xType": "factor",
+    "colour": "Treatment",
+    "fill": "Type",
+    "fillTitle": "Title fill",
+    "colourTitle": "Title colour",
+    "theme": "Accent",
+    "themeFill": "BuGn",
+    "facetMode": "facet_wrap",
+    "facet": "Treatment",
+    "facetScales": "free",
+    "xrange": ["0.0475", "1.25"],
+    "yrange": ["7.315", "47.775"],
+    "Result name": "PlotNr6"
+  },
+  {
+    "type": "CreateFormula",
+    "formula": "uptake ~ conc_norm"
+  },
+  {
+    "type": "ShapiroOnData",
+    "formula": "uptake ~ conc_norm",
+    "Result name": "ShapiroDataNr7"
+  },
+  {
+    "type": "shapiroOnResiduals",
+    "formula": "uptake ~ conc_norm",
+    "Result name": "ShaprioResidualsNr8"
+  },
+  {
+    "type": "DiagnosticPlots",
+    "formula": "uptake ~ conc_norm",
+    "Result name": "DiagnosticPlotNr9"
+  },
+  {
+    "type": "CreateFormula",
+    "formula": "uptake ~ Treatment"
+  },
+  {
+    "type": "LeveneTest",
+    "formula": "uptake ~ Treatment",
+    "center": "mean",
+    "Result name": "LeveneTestNr10"
+  },
+  {
+    "type": "DiagnosticPlots",
+    "formula": "uptake ~ Treatment",
+    "Result name": "DiagnosticPlotNr11"
+  },
+  {
+    "type": "CreateFormula",
+    "formula": "uptake ~ conc_norm"
+  },
+  {
+    "type": "Correlation",
+    "formula": "uptake ~ conc_norm",
+    "method": "pearson",
+    "alternative": "two.sided",
+    "conf.level": 0.95,
+    "Result name": "CorrelationpearsonNR12"
+  },
+  {
+    "type": "Correlation",
+    "formula": "uptake ~ conc_norm",
+    "method": "spearman",
+    "alternative": "two.sided",
+    "conf.level": 0.95,
+    "Result name": "CorrelationspearmanNR13"
+  },
+  {
+    "type": "Correlation",
+    "formula": "uptake ~ conc_norm",
+    "method": "kendall",
+    "alternative": "two.sided",
+    "conf.level": 0.95,
+    "Result name": "CorrelationkendallNR14"
+  },
+  {
+    "type": "CreateFormula",
+    "formula": "uptake ~ Type"
+  },
+  {
+    "type": "TTest",
+    "formula": "uptake ~ Type",
+    "conf.level": 0.95,
+    "alternative": "two.sided",
+    "var.equal": "eq",
+    "Result name": "TTestNr15"
+  },
+  {
+    "type": "ANOVA",
+    "formula": "uptake ~ Type",
+    "Result name": "Test_aovNr16"
+  },
+  {
+    "type": "Kruskal-Wallis Test",
+    "formula": "uptake ~ Type",
+    "Result name": "Test_kruskalNr17"
+  },
+  {
+    "type": "Tukey HSD",
+    "formula": "uptake ~ Type",
+    "Balanced": false,
+    "Pval": 0.05,
+    "Result name": "Test_HSDNr18"
+  },
+  {
+    "type": "Kruskal Wallis post hoc test",
+    "formula": "uptake ~ Type",
+    "Adjusted p value method": "holm",
+    "Pval": 0.05,
+    "Result name": "Test_kruskalTestNr19"
+  },
+  {
+    "type": "Least significant difference test",
+    "formula": "uptake ~ Type",
+    "Adjusted p value method": "holm",
+    "Pval": 0.05,
+    "Result name": "Test_LSDNr20"
+  },
+  {
+    "type": "Scheffe post hoc test",
+    "formula": "uptake ~ Type",
+    "Pval": 0.05,
+    "Result name": "Test_scheffeNr21"
+  },
+  {
+    "type": "CreateFormula",
+    "formula": "uptake ~ conc"
+  },
+  {
+    "type": "REGW post hoc test",
+    "formula": "uptake ~ conc",
+    "Pval": 0.05,
+    "Result name": "Test_REGWNr22"
+  }
+]

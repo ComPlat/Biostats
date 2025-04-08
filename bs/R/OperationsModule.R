@@ -309,14 +309,8 @@ OperationEditorServer <- function(id, data, listResults) {
           iv_list[[name]]
         })
         observeEvent(input[[paste0("remove_iv_", name)]], {
-          if (!is.null(r_vals$intermediate_vars[[name]])) {
-            r_vals$intermediate_vars[[name]] <- NULL
-            print_success(paste("Removed intermediate result:", name))
-            listResults$history[[length(listResults$history) + 1]] <- list(
-              type = "RemoveIntermediateVariable",
-              "Intermediate variable" = name
-            )
-          }
+          riv = remove_intermediate_var$new(name)
+          riv$eval(listResults, r_vals)
         }, ignoreInit = TRUE)
       }
     })
@@ -342,59 +336,19 @@ OperationEditorServer <- function(id, data, listResults) {
       if (input$iv == "") {
         runjs("document.getElementById('OP-iv').focus();")
       }
-      print_req(input$iv != "", "Please set a name for the intermediate variable")
-      var_name <- input$iv |> make.names()
-      if (var_name %in% names(r_vals$df)) {
-        print_err("Found invalid variable name")
-        return()
-      }
-      if (var_name == r_vals$df_name) {
-        print_err("Found invalid variable name df. This name is reserved for the dataset")
-        return()
-      }
-      code <- input$editable_code
-      op <- try(str2lang(code), silent = TRUE)
-      if (inherits(op, "try-error")) {
-        print_err("Could not convert operation to R code")
-        print_err(op)
-        return()
-      }
-      e <- try({
-        vars <- c(r_vals$df_name, names(r_vals$df))
-        if (length(r_vals$intermediate_vars) >= 1) {
-          vars <- c(vars, names(r_vals$intermediate_vars))
-        }
-        check_ast(op, vars)
-      })
+      civ <- create_intermediate_var$new(
+        df = r_vals$df, df_name = r_vals$df_name,
+        intermediate_vars = r_vals$intermediate_vars,
+        operation = input$editable_code,
+        name = input$iv
+      )
+      e <- try({civ$validate()}, silent = TRUE)
       if (inherits(e, "try-error")) {
-        print_err(e)
         return()
       }
-      e <- try({
-        eval_env <- new.env()
-        list2env(r_vals$intermediate_vars, envir = eval_env)
-        list2env(r_vals$df, envir = eval_env) # NOTE: this adds each column as own variable
-        check_length_code(code)
-        new <- eval(parse(text = code), envir = eval_env)
-        check_type_res(new)
-        check_rls(listResults$all_data, new)
-      })
+      e <- try({civ$eval(listResults, r_vals)}, silent = TRUE)
       if (inherits(e, "try-error")) {
-        err <- conditionMessage(attr(e, "condition"))
-        print_err(err)
-      } else {
-        r_vals$intermediate_vars[[var_name]] <- new
-        exportTestValues(
-          iv_list = r_vals$intermediate_vars
-        )
-        listResults$counter <- listResults$counter + 1
-        new_name <- paste0(var_name, listResults$counter)
-        listResults$all_data[[new_name]] <- new
-        listResults$history[[length(listResults$history) + 1]] <- list(
-          type = "CreateIntermediateVariable",
-          operation = code,
-          name = name
-        )
+        return()
       }
     })
 
@@ -404,61 +358,21 @@ OperationEditorServer <- function(id, data, listResults) {
       if (input$nc== "") {
         runjs("document.getElementById('OP-nc').focus();")
       }
-      print_req(input$nc != "", "Please set a name for the new column")
-      new_col <- input$nc
-      code <- input$editable_code
-      op <- try(str2lang(code))
-      if (inherits(op, "try-error")) {
-        print_err("Could not convert operation to R code")
-        return()
-      }
-      e <- try({
-        vars <- c(r_vals$df_name, names(r_vals$df))
-        if (length(r_vals$intermediate_vars) >= 1) {
-          vars <- c(vars,names(r_vals$intermediate_vars))
-        }
-        check_ast(op, vars)
-      })
-      if (inherits(e, "try-error")) {
-        print_err(e)
-        return()
-      }
-      e <- try({
-        eval_env <- new.env()
-        list2env(r_vals$intermediate_vars, envir = eval_env)
-        list2env(r_vals$df, envir = eval_env)  # NOTE: this adds each column as own variable
-        check_length_code(code)
-        new <- eval(parse(text = code), envir = eval_env)
-        check_type_res(new)
-        check_rls(listResults$all_data, new)
-        r_vals$df[, new_col] <- new
-        if (!is.null(data$backup_df)) {
-          eval_env <- new.env()
-          list2env(r_vals$intermediate_vars, envir = eval_env)
-          list2env(data$backup_df, envir = eval_env)  # NOTE: this adds each column as own variable
-          new <- eval(parse(text = code), envir = eval_env)
-          check_type_res(new)
-          data$backup_df[, new_col] <- new
-          print_warn("Conducted operation also for entire dataset and not only the subset")
-        }
-      })
-      if (inherits(e, "try-error")) {
-        err <- conditionMessage(attr(e, "condition"))
-        print_err(err)
-      }
-      # TODO: Why not in if block as in intermediate variables?
-      data$df <- r_vals$df
-      output$head <- renderTable(head(r_vals$df, 10))
-      r_vals$counter_id <- r_vals$counter_id + 1
-
-      listResults$counter <- listResults$counter + 1
-      new_name <- paste0("Dataset", listResults$counter)
-      listResults$all_data[[new_name]] <- data$df
-      listResults$history[[length(listResults$history) + 1]] <- list(
-        type = "CreateNewColumn",
-        operation = code,
-        "column name" = name
+      cnc <- create_new_col$new(
+        df = r_vals$df, df_name = r_vals$df_name,
+        intermediate_vars = r_vals$intermediate_vars,
+        operation = input$editable_code,
+        name = input$nc
       )
+      e <- try({cnc$validate()}, silent = TRUE)
+      if (inherits(e, "try-error")) {
+        return()
+      }
+      e <- try({cnc$eval(listResults, r_vals, data)}, silent = TRUE)
+      if (inherits(e, "try-error")) {
+        return()
+      }
+      output$head <- renderTable(head(r_vals$df, 10))
     })
 
     observeEvent(input$add, {

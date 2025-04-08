@@ -103,50 +103,29 @@ testsServer <- function(id, data, listResults) {
     tTest <- function() {
       print_req(is.data.frame(data$df), "The dataset is missing")
       print_form(data$formula)
-      df <- data$df
-      formula <- data$formula
-      fit <- NULL
-      e <- try({
-        withCallingHandlers(
-          {
-            eq <- TRUE
-            if (input$varEq == "noeq") {
-              eq <- FALSE
-            }
-            fit <- broom::tidy(t.test(formula,
-              data = df, conf.level = input$confLevel,
-              alternative = input$altHyp, var.equal = eq
-            ))
-            check_rls(listResults$all_data, fit)
-            fit
-          },
-          warning = function(warn) {
-            print_warn(warn$message)
-            invokeRestart("muffleWarning")
-          }
-        )
-      })
-      if (inherits(e, "try-error")) {
-        err <- conditionMessage(attr(e, "condition"))
+      tt <- t_test$new(data$df, data$formula, input$varEq, input$confLevel, input$altHyp)
+      res <- try({ tt$eval(listResults) })
+      if (inherits(res, "try-error")) {
+        err <- conditionMessage(attr(res, "condition"))
         print_err(err)
       } else {
         listResults$counter <- listResults$counter + 1
         new_name <- paste0(
           "TTestNr", listResults$counter
         )
-        listResults$all_data[[new_name]] <- fit
+        listResults$all_data[[new_name]] <- res
         exportTestValues(
-          tests_res = fit
+          tests_res = res
+        )
+        listResults$history[[length(listResults$history) + 1]] <- list(
+          type = "TTest",
+          formula = deparse(data$formula),
+          "Confidence level of the interval" = input$confLevel,
+          "alternative hypothesis" = input$altHyp,
+          "The two variances are" = input$varEq,
+          "Result name" = new_name
         )
       }
-      listResults$history[[length(listResults$history) + 1]] <- list(
-        type = "TTest",
-        formula = deparse(data$formula),
-        conf.level = input$confLevel,
-        alternative = input$altHyp,
-        var.equal = input$varEq,
-        "Result name" = new_name
-      )
     }
     observeEvent(input$tTest, {
       tTest()
@@ -155,138 +134,32 @@ testsServer <- function(id, data, listResults) {
     conductTests <- function(method) {
       print_req(is.data.frame(data$df), "The dataset is missing")
       print_form(data$formula)
-      df <- data$df
-      formula <- data$formula
-      err <- NULL
-      fit <- NULL
-      indep <- NULL
-      dep <- NULL
-      history_data <- NULL
-      e <- try({
-        indep <- as.character(formula)[3]
-        dep <- as.character(formula)[2]
-      })
-      if (inherits(e, "try-error")) {
-        err <- conditionMessage(attr(e, "condition"))
-        err <- paste0(err, "\n", "Could not use Formula")
+      st <- statistical_tests$new(
+        data$df, data$formula, input$design, input$pval, input$padj
+      )
+      res <- try( { st$eval(listResults, method) }, silent = TRUE)
+      if (inherits(res, "try-error")) {
+        err <- conditionMessage(attr(res, "condition"))
+        err <- paste0(err, "\n", "Test did not run successfully")
         print_err(err)
-      }
-      if (is.null(err)) {
-        e <- try(
-          {
-            withCallingHandlers(
-              {
-                switch(method,
-                  aov = {
-                    fit <- broom::tidy(aov(
-                      formula,
-                      data = df
-                    ))
-                    history_data <- list(type = "ANOVA", formula = deparse(formula))
-                  },
-                  kruskal = {
-                    fit <- broom::tidy(
-                      kruskal.test(formula, data = df)
-                    ) # Keep here the restriction for respone ~ predictor
-                    history_data <- list(type = "Kruskal-Wallis Test", formula = deparse(formula))
-                  },
-                  HSD = {
-                    check_formula(formula)
-                    aov_res <- aov(formula, data = df)
-                    bal <- input$design
-                    req(bal)
-                    if (bal == "Balanced") {
-                      bal <- TRUE
-                    } else {
-                      bal <- FALSE
-                    }
-                    fit <- agricolae::HSD.test(aov_res,
-                      trt = indep,
-                      alpha = input$pval, group = TRUE, unbalanced = bal
-                    )$groups
-                    history_data <- list(type = "Tukey HSD",
-                      formula = deparse(formula), Balanced = bal,
-                      Pval = input$pval)
-                  },
-                  kruskalTest = {
-                    check_formula(formula)
-                    fit <- with(df, kruskal(df[, dep], df[, indep]),
-                      alpha = input$pval, p.adj = input$padj, group = TRUE
-                    )$groups
-                    history_data <- list(type = "Kruskal Wallis post hoc test",
-                      formula = deparse(formula),
-                      "Adjusted p value method" = input$padj,
-                      Pval = input$pval)
-                  },
-                  LSD = {
-                    check_formula(formula)
-                    aov_res <- aov(formula, data = df)
-                    fit <- agricolae::LSD.test(aov_res,
-                      trt = indep,
-                      alpha = input$pval, p.adj = input$padj, group = TRUE
-                    )$groups
-                    history_data <- list(type = "Least significant difference test",
-                      formula = deparse(formula),
-                      "Adjusted p value method" = input$padj,
-                      Pval = input$pval)
-                  },
-                  scheffe = {
-                    check_formula(formula)
-                    aov_res <- aov(formula, data = df)
-                    fit <- agricolae::scheffe.test(
-                      aov_res,
-                      trt = indep, alpha = input$pval, group = TRUE
-                    )$groups
-                    history_data <- list(type = "Scheffe post hoc test",
-                      formula = deparse(formula),
-                      Pval = input$pval)
-                  },
-                  REGW = {
-                    check_formula(formula)
-                    aov_res <- aov(formula, data = df)
-                    fit <- agricolae::REGW.test(
-                      aov_res,
-                      trt = indep, alpha = input$pval, group = TRUE
-                    )$groups
-                    history_data <- list(type = "REGW post hoc test",
-                      formula = deparse(formula),
-                      Pval = input$pval)
-                  }
-                )
-                check_rls(listResults$all_data, fit)
-                fit
-              },
-              warning = function(warn) {
-                print_warn(warn$message)
-                invokeRestart("muffleWarning")
-              }
-            )
-          },
-          silent = TRUE
+      } else if (is.null(res)) {
+        err <- "Test did not run successfully"
+        print_err(err)
+      } else {
+        fit <- res$fit
+        history_data <- res$history_data
+        exportTestValues(
+          tests_res = fit
         )
-        if (inherits(e, "try-error")) {
-          err <- conditionMessage(attr(e, "condition"))
-          err <- paste0(err, "\n", "Test did not run successfully")
-          print_err(err)
-        } else if (is.null(fit)) {
-          err <- paste0(err, "\n", "Test did not run successfully")
-          print_err(err)
-        } else {
-          fit <- cbind(fit, row.names(fit))
-          names(fit)[ncol(fit)] <- paste0(indep, collapse = ".")
-          exportTestValues(
-            tests_res = fit
-          )
-          listResults$counter <- listResults$counter + 1
-          new_name <- paste0(
-            "Test_", method, "Nr", listResults$counter
-          )
-          listResults$all_data[[new_name]] <- fit
-          listResults$history[[length(listResults$history) + 1]] <- c(
-            history_data,
-            "Result name" = new_name
-          )
-        }
+        listResults$counter <- listResults$counter + 1
+        new_name <- paste0(
+          "Test_", method, "Nr", listResults$counter
+        )
+        listResults$all_data[[new_name]] <- fit
+        listResults$history[[length(listResults$history) + 1]] <- c(
+          history_data,
+          "Result name" = new_name
+        )
       }
     }
 

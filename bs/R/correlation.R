@@ -38,44 +38,22 @@ corrServer <- function(id, data, listResults) {
     corr_fct <- function(method) {
       print_req(is.data.frame(data$df), "The dataset is missing")
       print_form(data$formula)
-      f <- as.character(data$formula)
-      dep <- f[2]
-      indep <- f[3]
-      d <- data$df
+      corr <- correlation$new(data$df, data$formula,
+        method, input$alt, input$conflevel)
       tryCatch(
         {
-          check_ast(str2lang(indep), colnames(df)) # NOTE: check_ast throws error
-          check_ast(str2lang(dep), colnames(df))
-          fit <- withCallingHandlers(
-            expr = broom::tidy(
-              cor.test(d[, dep], d[, indep],
-                method = method,
-                alternative = input$alt,
-                conf.level = input$conflevel
-              )
-            ),
-            warning = function(warn) {
-              print_warn(warn$message)
-              invokeRestart("muffleWarning")
-            }
-          )
+          corr$validate()
+          fit <- corr$eval()
           exportTestValues(
             correlation_res = fit
           )
           check_rls(listResults$all_data, fit)
           listResults$counter <- listResults$counter + 1
           new_name <- paste0(
-            "Correlation", method, "NR", listResults$counter
+            listResults$counter, " Correlation ", firstup(method)
           )
           listResults$all_data[[new_name]] <- fit
-          listResults$history[[length(listResults$history) + 1]] <- list(
-            type = "Correlation",
-            formula = deparse(data$formula),
-            method = method,
-            alternative = input$alt,
-            conf.level = input$conflevel,
-            "Result name" = new_name
-          )
+          corr$create_history(new_name, listResults)
         },
         error = function(err) {
           err <- err$message
