@@ -1,55 +1,79 @@
-name: Publish Serverless Shiny App
+name: Publish Shiny App
 
 on:
   push:
-    branches: [master]
+    branches: [main, master]
+  workflow_dispatch:
 
 permissions:
   contents: read
   pages: write
   id-token: write
 
-concurrency:
-  group: "pages"
-  cancel-in-progress: true
-
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+    # Step 1: Check out the repository
+    - name: Check out repository
+      uses: actions/checkout@v4
 
-      - name: Setup R
-        uses: r-lib/actions/setup-r@v2
+    # Step 2: Install system dependencies
+    - name: Install system dependencies (libarchive-dev and libcurl4-openssl-dev)
+      run: sudo apt-get update && sudo apt-get install -y libarchive-dev libcurl4-openssl-dev
 
-      - name: Install required packages
-        run: |
-          Rscript -e 'install.packages(c("pak"))'
-          Rscript -e 'pak::pak(
-                    "shiny", "shinylive", "DT", "bslib", "broom", "ggplot2",
-                    "base64enc", "shinyjs", "shinyWidgets", "mgcv", "RColorBrewer",
-                    "tidyr", "purrr", "agricolae", "drc", "cowplot", "MASS",
-                    "Matrix", "equatiomatic", "openxlsx", "car", "httr", "jose",
-                    "openssl"
-                    )'
-      - name: Export serverless app
-        run: Rscript deploy_serverless_app.R
+    # Step 3: Set up R
+    - name: Set up R
+      uses: r-lib/actions/setup-r@v2
 
-      - name: Upload to GitHub Pages artifact
-        uses: actions/upload-pages-artifact@v2
-        with:
-          path: ./_site
+    # Step 4: Install Shinylive
+    # - name: Install Shinylive
+    #   run: |
+    #     Rscript -e 'install.packages("shinylive", repos = "https://cloud.r-project.org")'
 
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+    - name: "Setup R dependencies"
+      uses: r-lib/actions/setup-r-dependencies@v2
+      with:
+        packages:
+          cran::shinylive@0.2.0
+          any::shiny
+          any::DT
+          any::bslib
+          any::broom
+          any::ggplot2
+          any::base64enc
+          any::shinyjs
+          any::shinyWidgets
+          any::mgcv
+          any::RColorBrewer
+          any::tidyr
+          any::purrr
+          any::agricolae
+          any::drc
+          any::cowplot
+          any::MASS
+          any::Matrix
+          any::equatiomatic
+          any::openxlsx
+          any::car
+          any::httr
+          any::jose
+          any::openssl
 
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v2
+    # Step 5: Export Shiny app as a static website
+    - name: Export Shiny app
+      run: |
+        Rscript deploy_serverless_app.R
+
+    # Step 6: Upload artifact for deployment
+    - name: Upload Pages artifact
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: _site
+        retention-days: 1
+
+    # Step 7: Deploy to GitHub Pages
+    - name: Deploy to GitHub Pages
+      uses: actions/deploy-pages@v4
+
