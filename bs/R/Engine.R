@@ -1,3 +1,44 @@
+# TODO:
+# Write parser json --> list --> engine classes
+
+backend_result_state <- R6::R6Class(
+  "backend_result_state",
+  public = list(
+    curr_data = NULL, curr_name = NULL,
+    all_data = list(), all_names = list(),
+    history = list(),
+    counter = 0,
+    initialize = function() {}
+  )
+)
+
+backend_data_model_state <- R6::R6Class(
+  "backend_data_model_state",
+  public = list(
+    df = NULL,
+    formula = NULL,
+    backup_df = NULL,
+    filter_col = NULL,
+    filter_group = NULL,
+    initialize = function() {}
+  )
+)
+
+backend_data_wrangling_state <- R6::R6Class(
+  "backend_data_wrangling_state",
+  public = list(
+    df = NULL,
+    df_name = "df",
+    current_page = 1,
+    total_pages = 1,
+    counter_id = 0,
+    intermediate_vars = list(),
+    initialize = function(backend_data_model_state) {
+      self$df_name <- create_df_name(self$df_name, names(backend_data_model_state$df))
+    }
+  )
+)
+
 communicator <- R6::R6Class(
   "communicator",
   public = list(
