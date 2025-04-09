@@ -67,7 +67,7 @@ close(con)
 #   destdir = "./app/serverless/",
 #   quiet = FALSE
 # )
-shinylive::export("./app", "_site", precompile = TRUE)
+shinylive::export("./app", "_site")
 
 # Start app
 # ========================================

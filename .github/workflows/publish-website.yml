@@ -60,6 +60,7 @@ jobs:
           any::httr
           any::jose
           any::openssl
+          any::readxl
 
     # Step 5: Export Shiny app as a static website
     - name: Export Shiny app
