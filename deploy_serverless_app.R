@@ -47,6 +47,7 @@ code <- function() {
   library(shinyjs)
   library(equatiomatic)
   library(car)
+  library(readxl)
   files <- list.files(".", full.names = TRUE)
   files <- files[!(basename(files) %in% c("app.R", "www"))]
   lapply(files, source)
@@ -66,7 +67,7 @@ close(con)
 #   destdir = "./app/serverless/",
 #   quiet = FALSE
 # )
-shinylive::export("./app", "_site")
+shinylive::export("./app", "_site", precompile = TRUE)
 
 # Start app
 # ========================================

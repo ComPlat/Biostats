@@ -413,7 +413,7 @@ test_shapiro_on_residuals <- function() {
   expect_true(is.data.frame(result))
   expect_true("Residuals normal distributed" %in% colnames(result))
   expect_equal(ResultsState$counter, 1)
-  expect_equal(ResultsState$history[[1]]$type, "shapiroOnResiduals")
+  expect_equal(ResultsState$history[[1]]$type, "ShapiroOnResiduals")
 }
 test_shapiro_on_residuals()
 test_levene <- function() {
