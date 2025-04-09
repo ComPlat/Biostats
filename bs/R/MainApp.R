@@ -167,6 +167,10 @@ app <- function() {
           conditionalPanel(
             condition = "input.conditionedPanels == 'Dose Response analysis'",
             DoseResponseSidebarUI("DOSERESPONSE")
+          ),
+          conditionalPanel(
+            condition = "input.conditionedPanels == 'History'",
+            HistorySidebarUI("HISTORY")
           )
         )
       ),
@@ -200,6 +204,10 @@ app <- function() {
             "Dose Response analysis",
             DoseResponseUI("DOSERESPONSE")
           ),
+          tabPanel(
+            "History",
+            HistoryEditorUI("HISTORY")
+          ),
           id = "conditionedPanels"
         ),
         uiOutput("Results")
@@ -220,6 +228,15 @@ app <- function() {
       counter = 0
     )
 
+    # Reactive values
+    DataWranglingState <- reactiveValues(
+      df = NULL, df_name = "df",
+      current_page = 1, total_pages = 1,
+      counter_id = 0,
+      intermediate_vars = list()
+    )
+
+    # TODO: add docu for history
     # docu
     observeEvent(input[["docu"]], {
       path <- ""
@@ -427,7 +444,7 @@ app <- function() {
       )
     })
 
-    OperationEditorServer("OP", DataModelState, ResultsState)
+    OperationEditorServer("OP", DataModelState, ResultsState, DataWranglingState)
     corrServer("CORR", DataModelState, ResultsState)
     visServer("VIS", DataModelState, ResultsState)
     assServer("ASS", DataModelState, ResultsState)
@@ -435,6 +452,7 @@ app <- function() {
     DoseResponseServer("DOSERESPONSE", DataModelState, ResultsState)
     FormulaEditorServer("FO", DataModelState, ResultsState)
     SplitByGroupServer("SG", DataModelState, ResultsState)
+    HistoryEditorServer("HISTORY", DataModelState, ResultsState, DataWranglingState)
 
     # Render results list
     output$Results <- renderUI({

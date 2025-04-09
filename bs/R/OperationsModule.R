@@ -173,17 +173,9 @@ OperatorEditorUI <- function(id) {
   )
 }
 
-OperationEditorServer <- function(id, DataModelState, ResultsState) {
+OperationEditorServer <- function(id, DataModelState, ResultsState, DataWranglingState) {
 
   moduleServer(id, function(input, output, session) {
-    # Reactive values
-    DataWranglingState <- reactiveValues(
-      df = NULL, df_name = "df",
-      current_page = 1, total_pages = 1,
-      counter_id = 0,
-      intermediate_vars = list()
-    )
-
     # Data
     observe({
       req(is.data.frame(DataModelState$df))
