@@ -230,9 +230,16 @@ eval_history <- function(json_string, df) {
     data_model_state <- backend_data_model_state$new(df)
     data_wrangling_state <- backend_data_wrangling_state$new(data_model_state)
     for (i in seq_along(l)) {
-      eval_entry(l[[i]], data_model_state, data_wrangling_state, result_state)
+      inner_e <- try({
+        eval_entry(l[[i]], data_model_state, data_wrangling_state, result_state)
+      })
+      if (inherits(inner_e, "try-error")) {
+        err <- conditionMessage(attr(inner_e, "condition"))
+        print_err(sprintf("Error in step: %s", i))
+        stop(err)
+      }
     }
-  })
+  }, silent = TRUE)
   if (inherits(e, "try-error")) {
     err <- conditionMessage(attr(e, "condition"))
     print_err(err)

@@ -351,6 +351,20 @@ app <- function() {
           easyClose = TRUE,
           footer = NULL
         ))
+      } else if (input$conditionedPanels == "History") {
+        if (Sys.getenv("RUN_MODE") == "LOCAL") {
+          path <- system.file("www/history.html", package = "bs")
+        } else if (Sys.getenv("RUN_MODE") != "SERVER") {
+          path <- "./www/history.html"
+        } else {
+          path <- system.file("www/history.html", package = "bs")
+        }
+        showModal(modalDialog(
+          title = "History",
+          includeHTML(path),
+          easyClose = TRUE,
+          footer = NULL
+        ))
       }
     })
     # docu formula editor

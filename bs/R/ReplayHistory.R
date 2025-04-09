@@ -12,11 +12,13 @@ HistorySidebarUI <- function(id) {
 HistoryEditorUI <- function(id) {
   ui <- fluidPage(
     div(
-      textAreaInput(NS(id, "history_string"), "Operation:", value = "", rows = 12),
+      textAreaInput(NS(id, "history_string"), "History-JSON:", value = "", rows = 12),
       class = "boxed-output"
     )
   )
 }
+
+
 
 HistoryEditorServer <- function(id, DataModelState, ResultsState, DataWranglingState) {
   moduleServer(id, function(input, output, session) {
@@ -24,11 +26,28 @@ HistoryEditorServer <- function(id, DataModelState, ResultsState, DataWranglingS
     observeEvent(input$replay_history, {
       print_req(is.data.frame(DataWranglingState$df), "The dataset is missing")
       print_req(is.data.frame(DataModelState$df), "The dataset is missing")
+      print_req(nchar(input$history_string) > 2, "The input history is too short")
+
+      showModal(modalDialog(
+        title = "Confirm History Replay",
+        "This will overwrite all current results and data. Do you want to continue?",
+        easyClose = FALSE,
+        footer = tagList(
+          modalButton("Cancel"),
+          actionButton(NS(id, "confirm_replay"), "Yes, overwrite everything", class = "btn-danger")
+        )
+      ))
+    })
+
+    observeEvent(input$confirm_replay, {
+      removeModal()
+
       result <- eval_history(input$history_string, DataModelState$df)
       if (is.null(result)) {
         return()
       }
 
+      # Overwrite reactive values
       DataModelState$df <- result$DataModelState$df
       DataModelState$formula <- result$DataModelState$formula
       DataModelState$backup_df <- result$DataModelState$backup_df
@@ -47,6 +66,8 @@ HistoryEditorServer <- function(id, DataModelState, ResultsState, DataWranglingS
       DataWranglingState$total_pages <- result$DataWranglingState$total_pages
       DataWranglingState$counter_id <- result$DataWranglingState$counter_id
       DataWranglingState$intermediate_vars <- result$DataWranglingState$intermediate_vars
+
+      print_success("Successfully applied the analysis to the dataset")
     })
 
   })
