@@ -232,14 +232,14 @@ OperationEditorServer <- function(id, DataModelState, ResultsState, DataWranglin
             inputId = paste0("OP-colnames_", i, "_", DataWranglingState$counter_id),
             label = paste(i),
             title = paste0("Click button if you want to use the entire dataset"),
-            class = "add-button"
+            class = "add-button df-button"
           ))
         } else {
           return(actionButton(
             inputId = paste0("OP-colnames_", i, "_", DataWranglingState$counter_id),
             label = paste(i),
             title = paste0("Click button if you want to use the column: ", i),
-            class = "add-button"
+            class = "add-button colnames-button"
           ))
         }
       })

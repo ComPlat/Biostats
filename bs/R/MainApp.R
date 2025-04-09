@@ -58,7 +58,6 @@ app <- function() {
         padding-right: 20px;
         }
         .add-button::after {
-        content: '\\2295';
         position: absolute;
         top: 1.1px;
         right: 5px;
@@ -70,6 +69,18 @@ app <- function() {
         display: flex;
         justify-content: center;
         align-items: center;
+        }
+        .df-button {
+        background-color: #d5f5e3;  /* light green */
+        border: 1px solid #a2d9b1;
+        color: #000;
+        margin: 3px;
+        }
+        .colnames-button {
+        background-color: #d0eaff;  /* light blue */
+        border: 1px solid #90c5f0;
+        color: #000;
+        margin: 3px;
         }
         .model {
         background-color: #f8f9fa;
@@ -530,7 +541,7 @@ app <- function() {
         class = "var-box-output",
         h3(strong("Results")),
         p("The following list contains the results"),
-        actionButton("download", "Save and exit"),
+        actionButton("download", "Save"),
         textInput("user_filename", "Set filename", value = "")
       )
       do.call(tagList, list(download_stuff, res_ui_list))
