@@ -103,7 +103,7 @@
     "Result name": "ShapiroDataNr7"
   },
   {
-    "type": "shapiroOnResiduals",
+    "type": "ShapiroOnResiduals",
     "formula": "uptake ~ conc_norm",
     "Result name": "ShaprioResidualsNr8"
   },

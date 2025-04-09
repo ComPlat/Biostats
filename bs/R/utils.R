@@ -1,3 +1,10 @@
+char_to_orig_type <- function(vec) {
+  if (any(is.na(as.numeric(vec)))) {
+    return(vec)
+  }
+  as.numeric(vec)
+}
+
 firstup <- function(x) {
   substr(x, 1, 1) <- toupper(substr(x, 1, 1))
   x

@@ -1,6 +1,3 @@
-# TODO:
-# Write parser json --> list --> engine classes
-
 backend_result_state <- R6::R6Class(
   "backend_result_state",
   public = list(
@@ -20,7 +17,9 @@ backend_data_model_state <- R6::R6Class(
     backup_df = NULL,
     filter_col = NULL,
     filter_group = NULL,
-    initialize = function() {}
+    initialize = function(df) {
+      self$df <- df
+    }
   )
 )
 
@@ -35,6 +34,7 @@ backend_data_wrangling_state <- R6::R6Class(
     intermediate_vars = list(),
     initialize = function(backend_data_model_state) {
       self$df_name <- create_df_name(self$df_name, names(backend_data_model_state$df))
+      self$df <- backend_data_model_state$df
     }
   )
 )
@@ -290,8 +290,8 @@ visualisation <- R6::R6Class(
         "Fill theme" = self$fill_theme,
         "Split in subplots" = self$facet_mode, "Split by" = self$facet_var,
         "How to scale y in subplots" = self$facet_y_scaling,
-        "X-Range" = as.character(c(self$xrange)),
-        "Y-Range" = as.character(c(self$yrange)),
+        "X-Range" = as.character(self$xrange),
+        "Y-Range" = as.character(self$yrange),
         Width = self$width, Height = self$height, Resolution = self$resolution,
         "Result name" = new_result_name
       )
@@ -438,11 +438,14 @@ create_intermediate_var <- R6::R6Class(
       } else {
         DataWranglingState$intermediate_vars[[self$var_name]] <- new
         ResultsState$counter <- ResultsState$counter + 1
-        ResultsState$all_data[[paste0(self$var_name, ResultsState$counter)]] <- new
+
+        # NOTE: for better saving the results
+        new_df <- setNames(data.frame(new), self$name)
+        ResultsState$all_data[[paste0(self$var_name, ResultsState$counter)]] <- new_df
         ResultsState$history[[length(ResultsState$history) + 1]] <- list(
           type = "CreateIntermediateVariable",
           operation = self$operation,
-          name = self$var_name
+          name = self$name
         )
       }
     }
@@ -568,7 +571,7 @@ create_new_col <- R6::R6Class(
         ResultsState$history[[length(ResultsState$history) + 1]] <- list(
           type = "CreateNewColumn",
           operation = self$operation,
-          "column name" = new_name
+          "column name" = self$name
         )
       }
     }
@@ -692,7 +695,7 @@ shapiro_on_residuals <- R6::R6Class(
       )
       ResultsState$all_data[[new_name]] <- res
       ResultsState$history[[length(ResultsState$history) + 1]] <- list(
-        type = "shapiroOnResiduals",
+        type = "ShapiroOnResiduals",
         formula = deparse(self$formula),
         "Result name" = new_name
       )
