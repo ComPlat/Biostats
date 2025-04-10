@@ -212,6 +212,9 @@ FormulaEditorServer <- function(id, DataModelState, ResultsState) {
             output$model <- renderUI({
               withMathJax(HTML(paste0("$$", model_latex, "$$")))
             })
+            pm <- summarise_model$new(DataModelState$df, DataModelState$formula)
+            pm$validate()
+            pm$eval(ResultsState)
             success <- TRUE
           },
           warning = function(warn) {
