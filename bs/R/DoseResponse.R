@@ -105,7 +105,7 @@ DoseResponseServer <- function(id, DataModelState, ResultsState) {
         df, outliers, input$xTransform, input$yTransform,
         input$substanceNames, DataModelState$formula
       )
-      dr$eval()
+      dr$eval(NULL)
     }
 
     dr_complete <- function() {
