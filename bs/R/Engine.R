@@ -323,7 +323,7 @@ apply_filter <- R6::R6Class(
     },
     eval = function(DataModelState, ResultsState) {
       DataModelState$backup_df <- DataModelState$df
-      DataModelState$df <- split(DataModelState$df, self$selected_cols, self$selected_groups)
+      DataModelState$df <- split_groups(DataModelState$df, self$selected_cols, self$selected_groups)
       DataModelState$filter_col <- self$selected_cols
       DataModelState$filter_group <- self$selected_groups
       self$create_history(ResultsState)
@@ -1125,6 +1125,8 @@ statistical_tests <- R6::R6Class(
                 "P-value" = self$p_val)
             },
             kruskalTest = {
+              # FIX: I think kruskal does not have a p adjustment method
+              # It is silently ignored
               check_formula(self$formula)
               fit <- with(self$df, kruskal(self$df[, self$dep], self$df[, self$indep]),
                 alpha = self$p_val, p.adj = self$p_val_adj_method, group = TRUE

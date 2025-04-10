@@ -44,6 +44,7 @@ HistoryEditorServer <- function(id, DataModelState, ResultsState, DataWranglingS
 
       result <- eval_history(input$history_string, DataModelState$df)
       if (is.null(result)) {
+        print_err("History did not run Successfully.")
         return()
       }
 

@@ -1,5 +1,21 @@
-
-
+parse_outlier_info <- function(outliers) {
+  if (is.null(outliers)) return(outliers)
+  outliers <- strsplit(outliers, split = ";")[[1]]
+  outlier_values <- lapply(outliers, function(obj) {
+    gsub("^.*?:\\s*", "", obj)
+  })
+  outlier_values <- lapply(outlier_values, function(obj) {
+    obj <- strsplit(obj, split = ",")[[1]]
+    as.numeric(obj)
+  })
+  names <- lapply(outliers, function(obj) {
+    name <- gsub(":.*$", "", obj)
+    gsub(" ", "", name)
+  })
+  if (length(names) == 1 && names == "") return(NULL)
+  names(outlier_values) <- names
+  outlier_values
+}
 
 char_to_orig_type <- function(vec) {
   if (any(is.na(as.numeric(vec)))) {
@@ -437,7 +453,7 @@ as.fact <- function(v) {
 }
 
 # Split groups
-split <- function(df, cols, levels) {
+split_groups <- function(df, cols, levels) {
   df_res <- df
   for (i in seq_along(cols)) {
     levels_temp <- levels[levels %in% unique(df_res[, cols[i]])]

@@ -43,7 +43,7 @@ eval_entry <- function(entry, DataModelState, DataWranglingState, ResultsState) 
     },
     ApplyFilter = {
       res <- apply_filter$new(
-        entry[["variable"]], entry[["variable levels"]],
+        entry[["Variable"]], entry[["Variable levels"]],
         backend_communicator
       )
       res$validate()
@@ -52,7 +52,7 @@ eval_entry <- function(entry, DataModelState, DataWranglingState, ResultsState) 
     RemoveFilter = {
       res <- remove_filter$new()
       res$validate()
-      res$eval(DataModelState, ResultsState)
+      res$eval(ResultsState, DataModelState)
     },
     CreateIntermediateVariable = {
       res <- create_intermediate_var$new(
@@ -134,7 +134,7 @@ eval_entry <- function(entry, DataModelState, DataWranglingState, ResultsState) 
     DoseResponse = {
       res <- dose_response$new(
         DataModelState$df,
-        entry[["outliers"]],
+        parse_outlier_info(entry[["outliers"]]),
         entry[["Log transform x-axis"]],
         entry[["Log transform y-axis"]],
         entry[["Column containing the names"]],
@@ -226,7 +226,11 @@ eval_entry <- function(entry, DataModelState, DataWranglingState, ResultsState) 
   return(res)
 }
 
-eval_history <- function(json_string, df) {
+eval_history <- function(json_string, df, backend = FALSE) {
+  print_err_in_eval_history <- print_err
+  if (backend) { # Make it testable
+    print_err_in_eval_history <- print
+  }
   e <- try({
     l <- jsonlite::fromJSON(json_string, simplifyVector = FALSE)
     result_state <- backend_result_state$new()
@@ -238,14 +242,14 @@ eval_history <- function(json_string, df) {
       })
       if (inherits(inner_e, "try-error")) {
         err <- conditionMessage(attr(inner_e, "condition"))
-        print_err(sprintf("Error in step: %s", i))
+        print_err_in_eval_history(sprintf("Error in step: %s", i))
         stop(err)
       }
     }
   }, silent = TRUE)
   if (inherits(e, "try-error")) {
     err <- conditionMessage(attr(e, "condition"))
-    print_err(err)
+    print_err_in_eval_history(err)
     return()
   }
 
