@@ -126,7 +126,7 @@ testsServer <- function(id, DataModelState, ResultsState) {
       print_req(is.data.frame(DataModelState$df), "The dataset is missing")
       print_form(DataModelState$formula)
 
-      res <- try( { 
+      res <- try( {
         st <- statistical_tests$new(
           DataModelState$df,DataModelState$formula, input$design, input$pval, input$padj
         )
