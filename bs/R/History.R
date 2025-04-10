@@ -91,6 +91,13 @@ eval_entry <- function(entry, DataModelState, DataWranglingState, ResultsState) 
       res$validate()
       res$eval(DataModelState)
     },
+    ModelSummary = {
+      res <- summarise_model$new(
+        DataModelState$df, as.formula(entry[["formula"]]),
+        backend_communicator)
+      res$validate()
+      res$eval(ResultsState)
+    },
     ShapiroOnData = {
       res <- shapiro_on_data$new(
         DataModelState$df, as.formula(entry[["formula"]]),
@@ -219,10 +226,6 @@ eval_entry <- function(entry, DataModelState, DataWranglingState, ResultsState) 
   return(res)
 }
 
-# source("~/Documents/Biostats/test_data/json_history.R")
-# source("~/Documents/Biostats/test_data/json_visualisation_history.R")
-# cat(json_string)
-# source("~/Documents/Biostats/bs/R/Engine.R")
 eval_history <- function(json_string, df) {
   e <- try({
     l <- jsonlite::fromJSON(json_string, simplifyVector = FALSE)
@@ -254,7 +257,3 @@ eval_history <- function(json_string, df) {
     )
   )
 }
-# res <- eval_history(json_string, CO2)
-# res$ResultState$all_data
-# res$ResultState$all_data[[1]]
-# res$ResultState$all_data[[2]]
