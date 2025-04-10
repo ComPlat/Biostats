@@ -1,3 +1,6 @@
+
+
+
 char_to_orig_type <- function(vec) {
   if (any(is.na(as.numeric(vec)))) {
     return(vec)
@@ -251,7 +254,9 @@ createExcelFile <- function(l) {
 }
 
 createJSString <- function(l) {
+  names_l <- names(l)
   jsString <- c()
+  js_names <- c()
   for (i in seq_along(l)) {
     if (inherits(l[[i]], "plot")) {
       p <- l[[i]]@p
@@ -265,9 +270,11 @@ createJSString <- function(l) {
       )
       jsString <- c(jsString, paste0("data:image/png;base64,", base64enc::base64encode(fn)))
       unlink(fn)
+      js_names <- c(js_names, names_l[i])
     } else if (inherits(l[[i]], "diagnosticPlot")) {
       jsString <- c(jsString, paste0("data:image/png;base64,", base64enc::base64encode(l[[i]]@p)))
       unlink(l[[i]]@p)
+      js_names <- c(js_names, names_l[i])
     } else if (inherits(l[[i]], "doseResponse")) {
       p <- l[[i]]@p
       fn <- tempfile(fileext = ".png")
@@ -276,16 +283,20 @@ createJSString <- function(l) {
         ggsave(plot = p[[idx]], filename = fn)
         jsString <- c(jsString, paste0("data:image/png;base64,", base64enc::base64encode(fn)))
         unlink(fn)
+        js_names <- c(js_names, paste0(names_l[i], "_PlotNr", idx))
       }
       unlink(fn)
       jsString <- c(jsString, DF2String(l[[i]]@df))
+      js_names <- c(js_names, names_l[i])
     } else if (inherits(l[[i]], "data.frame")) {
       jsString <- c(jsString, DF2String(l[[i]]))
+      js_names <- c(js_names, names_l[i])
     } else if (is.character(l[[i]])) {
       jsString <- c(jsString, l[[i]])
+      js_names <- c(js_names, names_l[i])
     }
   }
-  return(jsString)
+  return(list(jsString, js_names))
 }
 
 stackDF <- function(df, keepCol) {

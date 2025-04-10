@@ -247,7 +247,6 @@ app <- function() {
       intermediate_vars = list()
     )
 
-    # TODO: add docu for history
     # docu
     observeEvent(input[["docu"]], {
       path <- ""
@@ -363,6 +362,8 @@ app <- function() {
           footer = NULL
         ))
       } else if (input$conditionedPanels == "History") {
+        # TODO: deploy serverless app
+        # If this works with adding LOCAL than add it everywhere
         if (Sys.getenv("RUN_MODE") == "LOCAL") {
           path <- system.file("www/history.html", package = "bs")
         } else if (Sys.getenv("RUN_MODE") != "SERVER") {
@@ -730,14 +731,14 @@ app <- function() {
           check_filename_for_serverless(input$user_filename),
           "Defined filename does not have zip as extension"
         )
-        jsString <- createJSString(l)
+        string_and_names <- createJSString(l)
         session$sendCustomMessage(
           type = "downloadZip",
           list(
-            numberOfResults = length(jsString),
-            FileContent = jsString,
+            numberOfResults = length(string_and_names[[1]]),
+            FileContent = string_and_names[[1]],
             Filename = input$user_filename,
-            ResultNames = names(l)
+            ResultNames = string_and_names[[2]]
           )
         )
       }
