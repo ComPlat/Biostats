@@ -620,7 +620,11 @@ app <- function() {
       }
     })
 
-    # TODO: update download for summaryModel
+    # Download handler for local
+    observe({
+
+    })
+
     observeEvent(input$download, {
       if (!is_valid_filename(input$user_filename)) {
         runjs("document.getElementById('user_filename').focus();")
@@ -646,6 +650,36 @@ app <- function() {
         )
         excelFile <- createExcelFile(l)
         upload(session, excelFile, new_name = input$user_filename)
+      } else if (Sys.getenv("RUN_MODE") == "LOCAL") {
+        print_req(
+          check_filename_for_server(input$user_filename) || check_filename_for_serverless(input$user_filename),
+          "Defined filename does not have xlsx or zip as extension"
+        )
+        ex <- extract_extension(input$user_filename)
+        if (ex == "xlsx") {
+          excelFile <- createExcelFile(l)
+          file_content <- readBin(excelFile, "raw", file.info(excelFile)$size)
+          file_content_base64 <- jsonlite::base64_enc(file_content)
+          session$sendCustomMessage(
+            type = "downloadExcel",
+            list(
+              fileContent = file_content_base64,
+              filename = input$user_filename
+            )
+          )
+          unlink(excelFile)
+        } else {
+          string_and_names <- createJSString(l)
+          session$sendCustomMessage(
+            type = "downloadZip",
+            list(
+              numberOfResults = length(string_and_names[[1]]),
+              FileContent = string_and_names[[1]],
+              Filename = input$user_filename,
+              ResultNames = string_and_names[[2]]
+            )
+          )
+        }
       } else {
         print_req(
           check_filename_for_serverless(input$user_filename),

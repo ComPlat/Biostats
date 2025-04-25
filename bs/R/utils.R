@@ -125,7 +125,6 @@ create_outlier_info <- function(l) {
   res
 }
 
-# TODO: update download for summaryModel
 createExcelFile <- function(l) {
   if (length(l) == 0) {
     print_warn("Nothing to upload")
@@ -173,7 +172,7 @@ createExcelFile <- function(l) {
       )
       openxlsx::insertImage(wb, "Results", fn, startRow = curr_row)
       curr_row <- curr_row + 20
-      plot_files <- c(plot_files, l[[i]]@p)
+      plot_files <- c(plot_files, l[[i]]@p) # TODO: why????
       plot_files <- c(plot_files, fn)
       openxlsx::addStyle(
         wb, sheet = "Results", style = line_style, rows = curr_row,
@@ -198,6 +197,24 @@ createExcelFile <- function(l) {
         gridExpand = TRUE
       )
       curr_row <- curr_row + 5
+    } else if (inherits(l[[i]], "summaryModel")) {
+      p <- l[[i]]@p@p
+      s <- l[[i]]@summary
+      ic <- l[[i]]@information_criterions
+      fn <- tempfile(fileext = ".png")
+      ggsave(plot = p, filename = fn)
+      openxlsx::insertImage(wb, "Results", fn, startRow = curr_row)
+      curr_row <- curr_row + 20
+      plot_files <- c(plot_files, fn)
+      openxlsx::writeData(wb, "Results", s, startRow = curr_row)
+      curr_row <- curr_row + dim(s)[1] + 2
+      openxlsx::writeData(wb, "Results", ic, startRow = curr_row)
+      curr_row <- curr_row + dim(ic)[1] + 2
+      openxlsx::addStyle(
+        wb, sheet = "Results", style = line_style, rows = curr_row,
+        cols = 1:dim(l[[i]]@summary)[2],
+        gridExpand = TRUE
+      )
     } else if (inherits(l[[i]], "data.frame")) {
       openxlsx::writeData(wb, "Results", l[[i]], startRow = curr_row)
       curr_row <- curr_row + dim(l[[i]])[1] + 1
@@ -248,7 +265,6 @@ createExcelFile <- function(l) {
   return(fn)
 }
 
-# TODO: update download for summaryModel
 createJSString <- function(l) {
   names_l <- names(l)
   jsString <- c()
@@ -273,7 +289,7 @@ createJSString <- function(l) {
       js_names <- c(js_names, names_l[i])
     } else if (inherits(l[[i]], "doseResponse")) {
       p <- l[[i]]@p
-      fn <- tempfile(fileext = ".png")
+      fn <- tempfile(fileext = ".png") # TODO: check is this used?
       for (idx in seq_len(length(p))) {
         fn <- tempfile(fileext = ".png")
         ggsave(plot = p[[idx]], filename = fn)
@@ -284,6 +300,19 @@ createJSString <- function(l) {
       unlink(fn)
       jsString <- c(jsString, DF2String(l[[i]]@df))
       js_names <- c(js_names, names_l[i])
+    } else if (inherits(l[[i]], "summaryModel")) {
+      p <- l[[i]]@p@p
+      fn <- tempfile(fileext = ".png")
+      ggsave(plot = p, filename = fn)
+      jsString <- c(jsString, paste0("data:image/png;base64,", base64enc::base64encode(fn)))
+      unlink(fn)
+      js_names <- c(js_names, paste0(names_l[i], " plot"))
+
+      jsString <- c(jsString, DF2String(l[[i]]@summary))
+      js_names <- c(js_names, names_l[i])
+
+      jsString <- c(jsString, DF2String(l[[i]]@information_criterions))
+      js_names <- c(js_names, paste0(names_l[i], " Information criterions"))
     } else if (inherits(l[[i]], "data.frame")) {
       jsString <- c(jsString, DF2String(l[[i]]))
       js_names <- c(js_names, names_l[i])
