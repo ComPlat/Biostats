@@ -227,6 +227,7 @@ app <- function() {
   )
 
   server <- function(input, output, session) {
+    # States
     DataModelState <- reactiveValues(
       df = NULL, formula = NULL,
       backup_df = NULL, filter_col = NULL, filter_group = NULL
@@ -239,7 +240,6 @@ app <- function() {
       counter = 0
     )
 
-    # Reactive values
     DataWranglingState <- reactiveValues(
       df = NULL, df_name = "df",
       current_page = 1, total_pages = 1,
@@ -249,46 +249,14 @@ app <- function() {
 
     # docu
     observeEvent(input[["docu"]], {
-      path <- ""
-      if (input$conditionedPanels == "Data") {
-        if (Sys.getenv("RUN_MODE") != "SERVER") {
-          path <- "./www/data.html"
-        } else {
-          path <- system.file("www/data.html", package = "bs")
-        }
+      path_list <- get_docu(input$conditionedPanels)
+      if (length(path_list) == 4) {
+        path1 <- path_list[[1]]
+        path2 <- path_list[[2]]
+        plot_path <- path_list[[3]]
+        title <- path_list[[4]]
         showModal(modalDialog(
-          title = "Example Dataframe",
-          includeHTML(path),
-          easyClose = TRUE,
-          footer = NULL
-        ))
-      } else if (input$conditionedPanels == "DataWrangling") {
-        if (Sys.getenv("RUN_MODE") != "SERVER") {
-          path <- "./www/operations.html"
-        } else {
-          path <- system.file("www/operations.html", package = "bs")
-        }
-        showModal(modalDialog(
-          title = "Data wrangling",
-          includeHTML(path),
-          easyClose = TRUE,
-          footer = NULL
-        ))
-      } else if (input$conditionedPanels == "Visualisation") {
-        path1 <- ""
-        path2 <- ""
-        plot_path <- ""
-        if (Sys.getenv("RUN_MODE") != "SERVER") {
-          path1 <- "./www/visualization1.html"
-          path2 <- "./www/visualization2.html"
-          plot_path <- "www/DocuPlot.jpg"
-        } else {
-          path1 <- system.file("www/visualization1.html", package = "bs")
-          path2 <- system.file("www/visualization2.html", package = "bs")
-          plot_path <- system.file("www/DocuPlot.jpg", package = "bs")
-        }
-        showModal(modalDialog(
-          title = "Visualization",
+          title = title,
           includeHTML(path1),
           br(),
           renderImage(
@@ -313,66 +281,11 @@ app <- function() {
           footer = NULL,
           size = "l"
         ))
-      } else if (input$conditionedPanels == "Assumption") {
-        if (Sys.getenv("RUN_MODE") != "SERVER") {
-          path <- "./www/assumptions.html"
-        } else {
-          path <- system.file("www/assumptions.html", package = "bs")
-        }
+      } else {
+        path <- path_list[[1]]
+        title <- path_list[[2]]
         showModal(modalDialog(
-          title = "Testing assumptions",
-          includeHTML(path),
-          easyClose = TRUE,
-          footer = NULL
-        ))
-      } else if (input$conditionedPanels == "Correlation") {
-        if (Sys.getenv("RUN_MODE") != "SERVER") {
-          path <- "./www/correlation.html"
-        } else {
-          path <- system.file("www/correlation.html", package = "bs")
-        }
-        showModal(modalDialog(
-          title = "Correlation",
-          includeHTML(path),
-          easyClose = TRUE,
-          footer = NULL
-        ))
-      } else if (input$conditionedPanels == "Tests") {
-        if (Sys.getenv("RUN_MODE") != "SERVER") {
-          path <- "./www/tests.html"
-        } else {
-          path <- system.file("www/tests.html", package = "bs")
-        }
-        showModal(modalDialog(
-          title = "Statistical tests",
-          includeHTML(path),
-          easyClose = TRUE,
-          footer = NULL
-        ))
-      } else if (input$conditionedPanels == "Dose Response analysis") {
-        if (Sys.getenv("RUN_MODE") != "SERVER") {
-          path <- "./www/doseresponse.html"
-        } else {
-          path <- system.file("www/doseresponse.html", package = "bs")
-        }
-        showModal(modalDialog(
-          title = "Doseresponse analysis",
-          includeHTML(path),
-          easyClose = TRUE,
-          footer = NULL
-        ))
-      } else if (input$conditionedPanels == "History") {
-        # TODO: deploy serverless app
-        # If this works with adding LOCAL than add it everywhere
-        if (Sys.getenv("RUN_MODE") == "LOCAL") {
-          path <- system.file("www/history.html", package = "bs")
-        } else if (Sys.getenv("RUN_MODE") != "SERVER") {
-          path <- "./www/history.html"
-        } else {
-          path <- system.file("www/history.html", package = "bs")
-        }
-        showModal(modalDialog(
-          title = "History",
+          title = title,
           includeHTML(path),
           easyClose = TRUE,
           footer = NULL
@@ -381,15 +294,10 @@ app <- function() {
     })
     # docu formula editor
     observeEvent(input[["FO-formula_docu"]], {
-      path <- ""
-      if (Sys.getenv("RUN_MODE") != "SERVER") {
-        path <- "./www/formula.html"
-      } else {
-        path <- system.file("www/formula.html", package = "bs")
-      }
+      path_list <- get_docu("Formula")
       showModal(modalDialog(
-        title = "Defining the formula",
-        includeHTML(path),
+        title = path_list[[2]],
+        includeHTML(path_list[[1]]),
         easyClose = TRUE,
         footer = NULL,
         size = "l"
@@ -397,15 +305,10 @@ app <- function() {
     })
     # docu split by group
     observeEvent(input[["SG-split_docu"]], {
-      path <- ""
-      if (Sys.getenv("RUN_MODE") != "SERVER") {
-        path <- "./www/SplitData.html"
-      } else {
-        path <- system.file("www/SplitData.html", package = "bs")
-      }
+      path_list <- get_docu("Split")
       showModal(modalDialog(
-        title = "Subsetting the dataset",
-        includeHTML(path),
+        title = path_list[[2]],
+        includeHTML(path_list[[1]]),
         easyClose = TRUE,
         footer = NULL,
         size = "l"
@@ -526,6 +429,18 @@ app <- function() {
             plotOutput(paste0("res_", name), width = "100%", height = "800px"),
             actionButton(paste0("remove_res_", name), "Remove", class = "btn-danger")
           )
+        } else if (inherits(temp, "summaryModel")) {
+          div(
+            class = "var-box-output",
+            div(
+              class = "var-box-name",
+              name
+            ),
+            plotOutput(paste0("res_plot_", name)),
+            DTOutput(paste0("res_summary_", name)),
+            DTOutput(paste0("res_information_criterion_", name)),
+            actionButton(paste0("remove_res_", name), "Remove", class = "btn-danger")
+          )
         } else {
           div(
             class = "var-box-output",
@@ -571,6 +486,10 @@ app <- function() {
               collapse = " "
             )
             output[[paste0("res_", name)]] <- renderPrint(message)
+          } else if (inherits(temp, "summaryModel")) {
+            output[[paste0("res_plot_", name)]] <- renderPlot(temp@p)
+            output[[paste0("res_summary_", name)]] <- renderDT(temp@summary)
+            output[[paste0("res_information_criterion_", name)]] <- renderDT(temp@information_criterions)
           } else {
             output[[paste0("res_", name)]] <- renderPrint(temp)
           }
@@ -701,6 +620,7 @@ app <- function() {
       }
     })
 
+    # TODO: update download for summaryModel
     observeEvent(input$download, {
       if (!is_valid_filename(input$user_filename)) {
         runjs("document.getElementById('user_filename').focus();")

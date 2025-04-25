@@ -620,69 +620,40 @@ summarise_model <- R6::R6Class(
     validate = function() {},
 
     eval = function(ResultsState) {
-      model <- lm(self$formula, data = self$df)
-      f_split <- split_formula(self$formula)
-      predictors <- vars_rhs(f_split[[2]])
-      response <- all.vars(f_split$response)
-      n <- 100
-      new_data <- create_new_data(self$formula, self$df, predictors, n)
-      new_data$fit <- predict(model, newdata = new_data)
-      names(new_data)[ncol(new_data)] <- response
-
-      # R²
-      r2 <- summary(model)$r.squared
-      r2_label <- sprintf("R² = %.3f", r2)
-
-      # aes
-      show_prediction <- TRUE
-      aes <- NULL
-      if (length(predictors) == 1) {
-        aes <- aes(x = .data[[predictors]], y = .data[[response]])
-      } else if (length(predictors) == 2) {
-        aes <- aes(x = .data[[predictors[1]]],
-          y = .data[[response]],
-          colour = .data[[predictors[2]]])
-      } else {
-        self$com$print_warn("Cannot visualize more than two predictors. Therefore the newly predicted response data is not plotted")
-        aes <- aes(x = .data[[predictors[1]]],
-          y = .data[[response]], colour = .data[[predictors[2]]])
-        show_prediction <- FALSE
-      }
-      y_max <- max(self$df[[response]], na.rm = TRUE)
-
-      p <- ggplot(self$df, aes(!!!aes)) +
-        geom_point() +
-        labs(caption = r2_label)
-
-      if (show_prediction) {
-        p <- p + geom_line(data = new_data, aes(!!!aes))
-      }
+      p <- withCallingHandlers(
+        {
+          p <- plot_pred(self$df, self$formula)
+        },
+        warning = function(warn) {
+          self$com$print_warn(warn$message)
+          invokeRestart("muffleWarning")
+        }
+      )
       ggplot_build(p) # NOTE: invokes errors and warnings by building but not rendering plot
+      p <- new("plot", p = p, width = 15, height = 15, resolution = 600)
+      model <- lm(self$formula, data = self$df)
+      summary <- broom::tidy(model)
+      ic <- create_information_criterions(model)
 
       ResultsState$counter <- ResultsState$counter + 1
       new_result_name <- paste0(
-        ResultsState$counter, " Model plot"
+        ResultsState$counter, " Model summary"
       )
       ResultsState$all_data[[new_result_name]] <-
-        new("plot", p = p, width = 15, height = 15, resolution = 600)
+        new("summaryModel", p = p, summary = summary, information_criterions = ic)
 
+      r2 <- summary(model)$r.squared
+      r2_label <- sprintf("R² = %.3f", r2)
       ResultsState$history[[length(ResultsState$history) + 1]] <- list(
         type = "ModelSummary",
         formula = deparse(self$formula),
         R2 = r2_label,
         "Result name" = new_result_name
       )
-
-      ResultsState$counter <- ResultsState$counter + 1
-      new_result_name <- paste0(
-        ResultsState$counter, " Model Summary"
-      )
-      ResultsState$all_data[[new_result_name]] <- broom::tidy(model)
     }
 
   )
 )
-
 
 shapiro_on_data <- R6::R6Class(
   "shapiro_on_data",

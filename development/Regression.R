@@ -59,14 +59,13 @@ optimize <- function(formula, df, lower_boundary, upper_boundary) {
   x_pos <- min(df[[x_var]], na.rm = TRUE)
   y_max <- max(df[[lhs]], na.rm = TRUE)
 
-  p <- ggplot(df, aes_string(x = x_var)) +
-    geom_point(aes_string(y = lhs)) +
+  p <- ggplot(df, aes(x = .data[[x_var]])) +
+    geom_point(aes(y = .data[[lhs]])) +
     geom_line(aes(y = Predicted), color = "blue") +
     annotate("text", x = x_pos, y = y_max, label = formula_label,
       hjust = 0, vjust = 2, size = 4) +
     annotate("text", x = x_pos, y = y_max, label = r2_label,
       hjust = 0, vjust = 4, size = 4)
-
 
   p
 }

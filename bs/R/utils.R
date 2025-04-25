@@ -113,21 +113,6 @@ DF2String <- function(df) {
   return(res)
 }
 
-setClass("plot",
-  slots = c(
-    p = "ANY",
-    width = "numeric",
-    height = "numeric",
-    resolution = "numeric"
-  )
-)
-
-setClass("diagnosticPlot",
-  slots = c(
-    p = "character"
-  )
-)
-
 create_outlier_info <- function(l) {
   if (is.null(l)) return("")
   res <- sapply(
@@ -139,14 +124,8 @@ create_outlier_info <- function(l) {
   )
   res
 }
-setClass("doseResponse",
-  slots = c(
-    df = "data.frame",
-    p = "ANY",
-    outlier_info = "character"
-  )
-)
 
+# TODO: update download for summaryModel
 createExcelFile <- function(l) {
   if (length(l) == 0) {
     print_warn("Nothing to upload")
@@ -269,6 +248,7 @@ createExcelFile <- function(l) {
   return(fn)
 }
 
+# TODO: update download for summaryModel
 createJSString <- function(l) {
   names_l <- names(l)
   jsString <- c()

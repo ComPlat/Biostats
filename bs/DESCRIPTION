@@ -25,7 +25,6 @@ Imports:
   cowplot,
   MASS,
   Matrix,
-  shinyjs,
   equatiomatic,
   openxlsx,
   car,
