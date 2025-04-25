@@ -441,7 +441,7 @@ create_intermediate_var <- R6::R6Class(
 
         # NOTE: for better saving the results
         new_df <- setNames(data.frame(new), self$name)
-        ResultsState$all_data[[paste0(self$var_name, ResultsState$counter)]] <- new_df
+        ResultsState$all_data[[paste0(ResultsState$counter, " ", self$var_name)]] <- new_df
         ResultsState$history[[length(ResultsState$history) + 1]] <- list(
           type = "CreateIntermediateVariable",
           operation = self$operation,
@@ -566,7 +566,7 @@ create_new_col <- R6::R6Class(
         DataModelState$df <- DataWranglingState$df
         DataWranglingState$counter_id <- DataWranglingState$counter_id + 1
         ResultsState$counter <- ResultsState$counter + 1
-        new_name <- paste0("Dataset", ResultsState$counter)
+        new_name <- paste0(ResultsState$counter, " Dataset")
         ResultsState$all_data[[new_name]] <- DataModelState$df
         ResultsState$history[[length(ResultsState$history) + 1]] <- list(
           type = "CreateNewColumn",
@@ -695,7 +695,7 @@ shapiro_on_data <- R6::R6Class(
       )
       ResultsState$counter <- ResultsState$counter + 1
       new_name <- paste0(
-        "ShapiroDataNr", ResultsState$counter
+        ResultsState$counter, " Shapiro on data"
       )
       ResultsState$all_data[[new_name]] <-res
       ResultsState$history[[length(ResultsState$history) + 1]] <- list(
@@ -740,7 +740,7 @@ shapiro_on_residuals <- R6::R6Class(
       )
       ResultsState$counter <- ResultsState$counter + 1
       new_name <- paste0(
-        "ShaprioResidualsNr", ResultsState$counter
+        ResultsState$counter, " Shapiro on residuals"
       )
       ResultsState$all_data[[new_name]] <- res
       ResultsState$history[[length(ResultsState$history) + 1]] <- list(
@@ -787,7 +787,7 @@ levene <- R6::R6Class(
       )
       ResultsState$counter <- ResultsState$counter + 1
       new_name <- paste0(
-        "LeveneTestNr", ResultsState$counter
+        ResultsState$counter, " Levene test"
       )
       ResultsState$all_data[[new_name]] <- res
       ResultsState$history[[length(ResultsState$history) + 1]] <- list(
@@ -829,7 +829,9 @@ diagnostic_plots <- R6::R6Class(
         }
       )
       ResultsState$counter <- ResultsState$counter + 1
-      new_result_name <- paste0("DiagnosticPlotNr", ResultsState$counter)
+      new_result_name <- paste0(
+        ResultsState$counter, " Diagnostic plot"
+      )
       ResultsState$all_data[[new_result_name]] <-
         new("plot", p = p, width = 15, height = 15, resolution = 600)
       ResultsState$history[[length(ResultsState$history) + 1]] <- list(
@@ -881,7 +883,9 @@ dose_response <- R6::R6Class(
             "Conducted dose response analysis"
           )
           ResultsState$counter <- ResultsState$counter + 1
-          new_result_name <- paste0("DoseResponseNr", ResultsState$counter)
+          new_result_name <- paste0(
+            ResultsState$counter, " Dose response analysis"
+          )
           ResultsState$all_data[[new_result_name]] <- new(
             "doseResponse",
             df = res_df, p = res_p, outlier_info = ""
@@ -896,7 +900,9 @@ dose_response <- R6::R6Class(
             "Conducted dose response analysis"
           )
           ResultsState$counter <- ResultsState$counter + 1
-          new_result_name <- paste0("DoseResponseNr", ResultsState$counter)
+          new_result_name <- paste0(
+            ResultsState$counter, " Dose response analysis"
+          )
           ResultsState$all_data[[new_result_name]] <- new(
             "doseResponse",
             df = res_df, p = res_p, outlier_info = create_outlier_info(self$outliers)
@@ -1008,7 +1014,7 @@ t_test <- R6::R6Class(
       )
       ResultsState$counter <- ResultsState$counter + 1
       new_name <- paste0(
-        "TTestNr", ResultsState$counter
+        ResultsState$counter, " T-Test"
       )
       ResultsState$all_data[[new_name]] <- fit
       ResultsState$history[[length(ResultsState$history) + 1]] <- list(
@@ -1158,7 +1164,7 @@ statistical_tests <- R6::R6Class(
 
       ResultsState$counter <- ResultsState$counter + 1
       new_name <- paste0(
-        "Test_", method, "Nr", ResultsState$counter
+        ResultsState$counter, " Test ", method
       )
       ResultsState$all_data[[new_name]] <- fit
       ResultsState$history[[length(ResultsState$history) + 1]] <- c(
