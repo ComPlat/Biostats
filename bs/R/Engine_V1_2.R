@@ -1,5 +1,5 @@
-backend_result_state <- R6::R6Class(
-  "backend_result_state",
+backend_result_state_V1_2 <- R6::R6Class(
+  "backend_result_state_V1_2",
   public = list(
     curr_data = NULL, curr_name = NULL,
     all_data = list(), all_names = list(),
@@ -9,8 +9,8 @@ backend_result_state <- R6::R6Class(
   )
 )
 
-backend_data_model_state <- R6::R6Class(
-  "backend_data_model_state",
+backend_data_model_state_V1_2 <- R6::R6Class(
+  "backend_data_model_state_V1_2",
   public = list(
     df = NULL,
     formula = NULL,
@@ -23,8 +23,8 @@ backend_data_model_state <- R6::R6Class(
   )
 )
 
-backend_data_wrangling_state <- R6::R6Class(
-  "backend_data_wrangling_state",
+backend_data_wrangling_state_V1_2 <- R6::R6Class(
+  "backend_data_wrangling_state_V1_2",
   public = list(
     df = NULL,
     df_name = "df",
@@ -32,15 +32,15 @@ backend_data_wrangling_state <- R6::R6Class(
     total_pages = 1,
     counter_id = 0,
     intermediate_vars = list(),
-    initialize = function(backend_data_model_state) {
-      self$df_name <- create_df_name(self$df_name, names(backend_data_model_state$df))
-      self$df <- backend_data_model_state$df
+    initialize = function(backend_data_model_state_V1_2) {
+      self$df_name <- create_df_name(self$df_name, names(backend_data_model_state_V1_2$df))
+      self$df <- backend_data_model_state_V1_2$df
     }
   )
 )
 
-communicator <- R6::R6Class(
-  "communicator",
+communicator_V1_2 <- R6::R6Class(
+  "communicator_V1_2",
   public = list(
     print_warn = NULL,
     print_err = NULL,
@@ -58,8 +58,8 @@ communicator <- R6::R6Class(
     }
   )
 )
-backend_communicator <- R6::R6Class(
-  "backend_communicator",
+backend_communicator_V1_2 <- R6::R6Class(
+  "backend_communicator_V1_2",
   public = list(
     print_warn = function(msg) warning(msg),
     print_err = function(msg) stop(msg),
@@ -70,8 +70,8 @@ backend_communicator <- R6::R6Class(
   )
 )
 
-correlation <- R6::R6Class(
-  "correlation",
+correlation_V1_2 <- R6::R6Class(
+  "correlation_V1_2",
   public = list(
     com = NULL,
     df = NULL,
@@ -81,7 +81,7 @@ correlation <- R6::R6Class(
     method = NULL,
     alternative = NULL,
     conflevel = NULL,
-    initialize = function(df, formula, method, alternative, conflevel, com = communicator) {
+    initialize = function(df, formula, method, alternative, conflevel, com = communicator_V1_2) {
       self$df <- df
       self$formula <- formula
       formula <- as.character(formula)
@@ -135,8 +135,8 @@ correlation <- R6::R6Class(
   )
 )
 
-visualisation <- R6::R6Class(
-  "visualisation",
+visualisation_V1_2 <- R6::R6Class(
+  "visualisation_V1_2",
   public = list(
     com = NULL,
     df = NULL,
@@ -168,7 +168,7 @@ visualisation <- R6::R6Class(
                           fill_var, fill_legend_title, fill_theme,
                           facet_var, facet_y_scaling,
                           xrange, yrange, width, height, resolution,
-                          com = communicator) {
+                          com = communicator_V1_2) {
       self$com <- com$new()
 
       # User input
@@ -299,13 +299,13 @@ visualisation <- R6::R6Class(
   )
 )
 
-apply_filter <- R6::R6Class(
-  "apply_filter",
+apply_filter_V1_2 <- R6::R6Class(
+  "apply_filter_V1_2",
   public = list(
     selected_cols = NULL,
     selected_groups = NULL,
     com = NULL,
-    initialize = function(selected_cols, selected_groups, com = communicator) {
+    initialize = function(selected_cols, selected_groups, com = communicator_V1_2) {
       self$selected_cols <- selected_cols
       self$selected_groups <- selected_groups
 
@@ -337,8 +337,8 @@ apply_filter <- R6::R6Class(
     }
   )
 )
-remove_filter <- R6::R6Class(
-  "remove_filter",
+remove_filter_V1_2 <- R6::R6Class(
+  "remove_filter_V1_2",
   public = list(
     initialize = function() {},
     validate = function() {},
@@ -359,8 +359,8 @@ remove_filter <- R6::R6Class(
   )
 )
 
-create_intermediate_var <- R6::R6Class(
-  "create_intermediate_var",
+create_intermediate_var_V1_2 <- R6::R6Class(
+  "create_intermediate_var_V1_2",
   public = list(
     df = NULL,
     df_name = NULL,
@@ -371,7 +371,7 @@ create_intermediate_var <- R6::R6Class(
 
     var_name = NULL,
 
-    initialize = function(df, df_name, intermediate_vars, operation, name, com = communicator) {
+    initialize = function(df, df_name, intermediate_vars, operation, name, com = communicator_V1_2) {
       self$df <- df
       self$df_name <- df_name
       self$intermediate_vars <- intermediate_vars
@@ -455,13 +455,13 @@ create_intermediate_var <- R6::R6Class(
     }
   )
 )
-remove_intermediate_var <- R6::R6Class(
-  "remove_intermediate_var",
+remove_intermediate_var_V1_2 <- R6::R6Class(
+  "remove_intermediate_var_V1_2",
   public = list(
     name = NULL,
     com = NULL,
 
-    initialize = function(name, com = communicator) {
+    initialize = function(name, com = communicator_V1_2) {
       self$name <- name
       self$com <- com$new()
     },
@@ -480,8 +480,8 @@ remove_intermediate_var <- R6::R6Class(
     }
   )
 )
-create_new_col <- R6::R6Class(
-  "create_new_col",
+create_new_col_V1_2 <- R6::R6Class(
+  "create_new_col_V1_2",
   public = list(
     df = NULL,
     df_name = NULL,
@@ -490,7 +490,7 @@ create_new_col <- R6::R6Class(
     name = NULL,
     com = NULL,
 
-    initialize = function(df, df_name, intermediate_vars, operation, name, com = communicator) {
+    initialize = function(df, df_name, intermediate_vars, operation, name, com = communicator_V1_2) {
       self$df <- df
       self$df_name <- df_name
       self$intermediate_vars <- intermediate_vars
@@ -582,15 +582,15 @@ create_new_col <- R6::R6Class(
   )
 )
 
-create_formula <- R6::R6Class(
-  "create_formula ",
+create_formula_V1_2 <- R6::R6Class(
+  "create_formula_V1_2",
   public = list(
     response_var = NULL,
     right_site = NULL,
     df = NULL,
     com = NULL,
 
-    initialize = function(response_var, right_site, df, com = communicator) {
+    initialize = function(response_var, right_site, df, com = communicator_V1_2) {
       self$response_var <- response_var
       self$right_site <- right_site
       self$df <- df
@@ -609,13 +609,13 @@ create_formula <- R6::R6Class(
     }
   )
 )
-summarise_model <- R6::R6Class(
-  "summarise_model",
+summarise_model_V1_2 <- R6::R6Class(
+  "summarise_model_V1_2",
   public = list(
     df = NULL,
     formula = NULL,
     com = NULL,
-    initialize = function(df, formula, com = communicator) {
+    initialize = function(df, formula, com = communicator_V1_2) {
       self$df <- df
       self$formula <- formula
       self$com <- com$new()
@@ -659,14 +659,14 @@ summarise_model <- R6::R6Class(
   )
 )
 
-shapiro_on_data <- R6::R6Class(
-  "shapiro_on_data",
+shapiro_on_data_V1_2 <- R6::R6Class(
+  "shapiro_on_data_V1_2",
   public = list(
     df = NULL,
     formula = NULL,
     com = NULL,
 
-    initialize = function(df, formula, com = communicator) {
+    initialize = function(df, formula, com = communicator_V1_2) {
       self$df <- df
       self$formula <- formula
       self$com = com$new()
@@ -711,14 +711,14 @@ shapiro_on_data <- R6::R6Class(
     }
   )
 )
-shapiro_on_residuals <- R6::R6Class(
-  "shapiro_on_residuals",
+shapiro_on_residuals_V1_2 <- R6::R6Class(
+  "shapiro_on_residuals_V1_2",
   public = list(
     df = NULL,
     formula = NULL,
     com = NULL,
 
-    initialize = function(df, formula, com = communicator) {
+    initialize = function(df, formula, com = communicator_V1_2) {
       self$df <- df
       self$formula <- formula
       self$com <- com$new()
@@ -756,15 +756,15 @@ shapiro_on_residuals <- R6::R6Class(
     }
   )
 )
-levene <- R6::R6Class(
-  "levene",
+levene_V1_2 <- R6::R6Class(
+  "levene_V1_2",
   public = list(
     df = NULL,
     formula = NULL,
     center = NULL,
     com = NULL,
 
-    initialize = function(df, formula, center, com = communicator) {
+    initialize = function(df, formula, center, com = communicator_V1_2) {
       self$df <- df
       self$formula <- formula
       self$center <- center
@@ -804,14 +804,14 @@ levene <- R6::R6Class(
     }
   )
 )
-diagnostic_plots <- R6::R6Class(
-  "diagnostic_plots",
+diagnostic_plots_V1_2 <- R6::R6Class(
+  "diagnostic_plots_V1_2",
   public = list(
     df = NULL,
     formula = NULL,
     com = NULL,
 
-    initialize = function(df, formula, com = communicator) {
+    initialize = function(df, formula, com = communicator_V1_2) {
       self$df <- df
       self$formula <- formula
       self$com <- com$new()
@@ -848,8 +848,8 @@ diagnostic_plots <- R6::R6Class(
   )
 )
 
-dose_response <- R6::R6Class(
-  "dose_response",
+dose_response_V1_2 <- R6::R6Class(
+  "dose_response_V1_2",
   public = list(
     df = NULL,
     outliers = NULL,
@@ -864,7 +864,7 @@ dose_response <- R6::R6Class(
     initialize = function(df, outliers,
                           is_xlog, is_ylog,
                           substance_names,
-                          formula, com = communicator) {
+                          formula, com = communicator_V1_2) {
       self$df <- df
       self$outliers <- outliers
       self$is_xlog <- is_xlog
@@ -973,8 +973,8 @@ dose_response <- R6::R6Class(
   )
 )
 
-t_test <- R6::R6Class(
-  "t_test",
+t_test_V1_2 <- R6::R6Class(
+  "t_test_V1_2",
   public = list(
     df = NULL,
     formula = NULL,
@@ -985,7 +985,7 @@ t_test <- R6::R6Class(
 
     initialize = function(df, formula,
                           variances_equal, conf_level,
-                          alternative_hyp, com = communicator) {
+                          alternative_hyp, com = communicator_V1_2) {
       self$df <- df
       self$formula <- formula
       self$variances_equal <- variances_equal
@@ -1034,8 +1034,8 @@ t_test <- R6::R6Class(
   )
 )
 
-statistical_tests <- R6::R6Class(
-  "statistical_tests",
+statistical_tests_V1_2 <- R6::R6Class(
+  "statistical_tests_V1_2",
   public = list(
     df = NULL,
     formula = NULL,
@@ -1046,7 +1046,7 @@ statistical_tests <- R6::R6Class(
     indep = NULL,
     com = NULL,
 
-    initialize = function(df, formula, balanced_design, p_val, p_val_adj_method, com = communicator) {
+    initialize = function(df, formula, balanced_design, p_val, p_val_adj_method, com = communicator_V1_2) {
       self$df <- df
       self$formula <- formula
       self$balanced_design <- balanced_design
@@ -1181,8 +1181,8 @@ statistical_tests <- R6::R6Class(
   )
 )
 
-remove_result <- R6::R6Class(
-  "remove_result",
+remove_result_V1_2 <- R6::R6Class(
+  "remove_result_V1_2",
   public = list(
     name = NULL,
     initialize = function(name) {

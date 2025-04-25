@@ -86,7 +86,7 @@ SplitByGroupServer <- function(id, DataModelState, ResultsState) {
       print_req(is.data.frame(SplitByGroupState$df), "The dataset is missing")
       selected_cols <- input[[paste0("colnames-dropdown_")]]
       selected_groups <- input[[paste0("levels-dropdown_")]]
-      af <- apply_filter$new(selected_cols, selected_groups)
+      af <- apply_filter_V1_2$new(selected_cols, selected_groups)
       e <- try(
         {
           af$validate()

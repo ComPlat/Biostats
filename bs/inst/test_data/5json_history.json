@@ -1,5 +1,9 @@
 [
   {
+    "type": "Version",
+    "Nr": "1_2"
+  },
+  {
     "type": "CreateIntermediateVariable",
     "operation": "Max(conc)",
     "name": "max_conc"

@@ -105,7 +105,7 @@ testsServer <- function(id, DataModelState, ResultsState) {
       print_form(DataModelState$formula)
 
       res <- try({
-        tt <- t_test$new(DataModelState$df,DataModelState$formula, input$varEq, input$confLevel, input$altHyp)
+        tt <- t_test_V1_2$new(DataModelState$df,DataModelState$formula, input$varEq, input$confLevel, input$altHyp)
         tt$validate()
         tt$eval(ResultsState)
       })
@@ -127,7 +127,7 @@ testsServer <- function(id, DataModelState, ResultsState) {
       print_form(DataModelState$formula)
 
       res <- try( {
-        st <- statistical_tests$new(
+        st <- statistical_tests_V1_2$new(
           DataModelState$df,DataModelState$formula, input$design, input$pval, input$padj
         )
         st$validate()

@@ -302,7 +302,7 @@ OperationEditorServer <- function(id, DataModelState, ResultsState, DataWranglin
         })
         observeEvent(input[[paste0("remove_iv_", name)]], {
           e <- try({
-            riv = remove_intermediate_var$new(name)
+            riv = remove_intermediate_var_V1_2$new(name)
             riv$validate()
             riv$eval(ResultsState, DataWranglingState)
           }, silent = TRUE)
@@ -334,7 +334,7 @@ OperationEditorServer <- function(id, DataModelState, ResultsState, DataWranglin
       if (input$iv == "") {
         runjs("document.getElementById('OP-iv').focus();")
       }
-      civ <- create_intermediate_var$new(
+      civ <- create_intermediate_var_V1_2$new(
         df = DataWranglingState$df, df_name = DataWranglingState$df_name,
         intermediate_vars = DataWranglingState$intermediate_vars,
         operation = input$editable_code,
@@ -358,7 +358,7 @@ OperationEditorServer <- function(id, DataModelState, ResultsState, DataWranglin
       if (input$nc== "") {
         runjs("document.getElementById('OP-nc').focus();")
       }
-      cnc <- create_new_col$new(
+      cnc <- create_new_col_V1_2$new(
         df = DataWranglingState$df, df_name = DataWranglingState$df_name,
         intermediate_vars = DataWranglingState$intermediate_vars,
         operation = input$editable_code,

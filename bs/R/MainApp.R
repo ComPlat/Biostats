@@ -368,6 +368,9 @@ app <- function() {
     observe({
       req(!is.null(DataModelState$df))
       req(is.data.frame(DataModelState$df))
+      if (length(ResultsState$history) == 0) {
+        ResultsState$history[[length(ResultsState$history) + 1]] <- list(type = "Version", Nr = get_current_version())
+      }
       output$df <- renderDT(
         datatable(DataModelState$df, options = list(pageLength = 10))
       )
@@ -508,7 +511,7 @@ app <- function() {
         observeEvent(input[[paste0("remove_res_", name)]],
           {
             e <- try({
-              rr <- remove_result$new(name)
+              rr <- remove_result_V1_2$new(name)
               rr$eval(ResultsState)
             })
             if (inherits(e, "try-error")) {
@@ -577,7 +580,7 @@ app <- function() {
             !is.data.frame(DataModelState$df) ||
             !is.null(DataModelState$backup_df)
         ),
-        actionButton("remove_filter",
+        actionButton("remove_filter_V1_2",
           "Remove the filter from the dataset",
           title = "remove the filter of the dataset",
           disabled = is.null(DataModelState$backup_df) || !is.data.frame(DataModelState$backup_df)
@@ -608,9 +611,9 @@ app <- function() {
       })
     })
     # Remove filter
-    observeEvent(input[["remove_filter"]], {
+    observeEvent(input[["remove_filter_V1_2"]], {
       e <- try({
-        rf <- remove_filter$new()
+        rf <- remove_filter_V1_2$new()
         rf$validate()
         rf$eval(ResultsState, DataModelState)
       })

@@ -3,17 +3,17 @@ library(tinytest)
 
 # Test create formula
 # =======================================================================================
-test_create_formula <- function() {
+test_create_formula_V1_2 <- function() {
   df <- CO2
 
   DataModelState <- new.env()
   DataModelState$formula <- NULL
 
-  cf <- bs:::create_formula$new(
+  cf <- bs:::create_formula_V1_2$new(
     response_var = "uptake",
     right_site = "conc",
     df = df,
-    com = bs:::backend_communicator
+    com = bs:::backend_communicator_V1_2
   )
 
   eq <- cf$eval(DataModelState)
@@ -21,15 +21,15 @@ test_create_formula <- function() {
   expect_equal(DataModelState$formula, as.formula("uptake ~ conc"))
   expect_true(is.character(eq)) # extract_eq() returns a LaTeX-like string
 }
-test_create_formula()
+test_create_formula_V1_2()
 
 
-# Test correlation
+# Test correlation_V1_2
 # =======================================================================================
 test_corr <- function() {
   formula <- as.formula("uptake ~ conc")
-  corr <- bs:::correlation$new(CO2, formula, "pearson", "two.sided",
-    0.95, bs:::backend_communicator)
+  corr <- bs:::correlation_V1_2$new(CO2, formula, "pearson", "two.sided",
+    0.95, bs:::backend_communicator_V1_2)
   trash <- corr$validate()
   ResultsState <- new.env()
   ResultsState$all_data <- list()
@@ -121,11 +121,11 @@ test_corr <- function() {
 }
 test_corr()
 
-# Test visualisation
+# Test visualisation_V1_2
 # =======================================================================================
 test_vis_all <- function() {
   for (method in c("box", "dot", "line")) {
-    vis <- bs:::visualisation$new(
+    vis <- bs:::visualisation_V1_2$new(
       df = CO2,
       x = "conc",
       y = "uptake",
@@ -146,7 +146,7 @@ test_vis_all <- function() {
       width = 20,
       height = 20,
       resolution = 150,
-      com = bs:::backend_communicator
+      com = bs:::backend_communicator_V1_2
     )
 
     ResultsState <- new.env()
@@ -176,7 +176,7 @@ test_vis_all <- function() {
 test_vis_all()
 
 test_vis_warn_size <- function() {
-  vis <- bs:::visualisation$new(
+  vis <- bs:::visualisation_V1_2$new(
     df = CO2, x = "conc", y = "uptake", method = "box",
     xlabel = "x", type_of_x = "factor", ylabel = "y",
     colour_var = "", colour_legend_title = "", colour_theme = "Accent",
@@ -184,7 +184,7 @@ test_vis_warn_size <- function() {
     facet_var = "", facet_y_scaling = "free",
     xrange = c(0, 100), yrange = c(0, 100),
     width = -5, height = 200, resolution = 72,
-    com = bs:::backend_communicator
+    com = bs:::backend_communicator_V1_2
   )
   vis$validate()
   expect_equal(vis$width, 10)
@@ -195,7 +195,7 @@ test_vis_warn_size()
 
 # Filter data
 # =======================================================================================
-test_apply_filter <- function() {
+test_apply_filter_V1_2 <- function() {
   df <- CO2
   ResultsState <- new.env()
   ResultsState$history <- list()
@@ -203,7 +203,7 @@ test_apply_filter <- function() {
   DataModelState <- new.env()
   DataModelState$df <- df
 
-  af <- bs:::apply_filter$new("Plant", c("Qn1", "Qn2"), bs:::backend_communicator)
+  af <- bs:::apply_filter_V1_2$new("Plant", c("Qn1", "Qn2"), bs:::backend_communicator_V1_2)
   af$validate()
   af$eval(DataModelState, ResultsState)
 
@@ -213,8 +213,8 @@ test_apply_filter <- function() {
   expect_equal(DataModelState$filter_group, c("Qn1", "Qn2"))
   expect_equal(ResultsState$history[[1]]$type, "ApplyFilter")
 }
-test_apply_filter()
-test_remove_filter <- function() {
+test_apply_filter_V1_2()
+test_remove_filter_V1_2 <- function() {
   df <- CO2
   DataModelState <- new.env()
   DataModelState$df <- df[CO2$Plant %in% c("Qn1", "Qn2"), ]
@@ -225,18 +225,18 @@ test_remove_filter <- function() {
   ResultsState <- new.env()
   ResultsState$history <- list()
 
-  rf <- bs:::remove_filter$new()
+  rf <- bs:::remove_filter_V1_2$new()
   rf$eval(ResultsState, DataModelState)
 
   expect_equal(nrow(DataModelState$df), nrow(CO2))
   expect_null(DataModelState$backup_df)
   expect_equal(ResultsState$history[[1]]$type, "RemoveFilter")
 }
-test_remove_filter()
+test_remove_filter_V1_2()
 
 # Data wrangling
 # =======================================================================================
-test_create_intermediate_var <- function() {
+test_create_intermediate_var_V1_2 <- function() {
   ResultsState <- new.env()
   ResultsState$all_data <- list()
   ResultsState$history <- list()
@@ -245,13 +245,13 @@ test_create_intermediate_var <- function() {
   DataWranglingState <- new.env()
   DataWranglingState$intermediate_vars <- list()
 
-  ci <- bs:::create_intermediate_var$new(
+  ci <- bs:::create_intermediate_var_V1_2$new(
     df = CO2,
     df_name = "CO2",
     intermediate_vars = list(),
     operation = "uptake + conc",
     name = "myVar",
-    com = bs:::backend_communicator
+    com = bs:::backend_communicator_V1_2
   )
 
   ci$validate()
@@ -261,9 +261,9 @@ test_create_intermediate_var <- function() {
   expect_equal(ResultsState$counter, 1)
   expect_equal(ResultsState$history[[1]]$type, "CreateIntermediateVariable")
 }
-test_create_intermediate_var()
+test_create_intermediate_var_V1_2()
 
-test_create_new_col <- function() {
+test_create_new_col_V1_2 <- function() {
   ResultsState <- new.env()
   ResultsState$all_data <- list()
   ResultsState$history <- list()
@@ -278,13 +278,13 @@ test_create_new_col <- function() {
   DataModelState$df <- CO2
   DataModelState$backup_df <- CO2
 
-  cc <- bs:::create_new_col$new(
+  cc <- bs:::create_new_col_V1_2$new(
     df = CO2,
     df_name = "CO2",
     intermediate_vars = list(),
     operation = "uptake / conc",
     name = "ratio",
-    com = bs:::backend_communicator
+    com = bs:::backend_communicator_V1_2
   )
 
   cc$validate()
@@ -294,26 +294,26 @@ test_create_new_col <- function() {
   expect_equal(ResultsState$counter, 1)
   expect_equal(ResultsState$history[[1]]$type, "CreateNewColumn")
 }
-test_create_new_col()
+test_create_new_col_V1_2()
 
-test_remove_intermediate_var <- function() {
+test_remove_intermediate_var_V1_2 <- function() {
   ResultsState <- new.env()
   ResultsState$history <- list()
 
   DataWranglingState <- new.env()
   DataWranglingState$intermediate_vars <- list(foo = 1:3)
 
-  riv <- bs:::remove_intermediate_var$new("foo", com = bs:::backend_communicator)
+  riv <- bs:::remove_intermediate_var_V1_2$new("foo", com = bs:::backend_communicator_V1_2)
   riv$eval(ResultsState, DataWranglingState)
 
   expect_null(DataWranglingState$intermediate_vars$foo)
   expect_equal(ResultsState$history[[1]]$type, "RemoveIntermediateVariable")
 }
-test_remove_intermediate_var()
+test_remove_intermediate_var_V1_2()
 
 # Statistical tests
 # =======================================================================================
-test_t_test <- function() {
+test_t_test_V1_2 <- function() {
   df <- CO2
   df$group <- rep(c("A", "B"), length.out = nrow(df))
   formula <- as.formula("uptake ~ group")
@@ -323,13 +323,13 @@ test_t_test <- function() {
   ResultsState$history <- list()
   ResultsState$counter <- 0
 
-  tt <- bs:::t_test$new(
+  tt <- bs:::t_test_V1_2$new(
     df = df,
     formula = formula,
     variances_equal = "eq",
     conf_level = 0.95,
     alternative_hyp = "two.sided",
-    com = bs:::backend_communicator
+    com = bs:::backend_communicator_V1_2
   )
 
   result <- tt$eval(ResultsState)
@@ -338,7 +338,7 @@ test_t_test <- function() {
   expect_equal(ResultsState$counter, 1)
   expect_equal(ResultsState$history[[1]]$type, "TTest")
 }
-test_t_test()
+test_t_test_V1_2()
 
 test_statistical_methods <- function() {
   df <- CO2
@@ -357,13 +357,13 @@ test_statistical_methods <- function() {
     ResultsState$history <- list()
     ResultsState$counter <- 0
 
-    st <- bs:::statistical_tests$new(
+    st <- bs:::statistical_tests_V1_2$new(
       df = df,
       formula = formula,
       balanced_design = "Balanced",
       p_val = 0.05,
       p_val_adj_method = "bonferroni",
-      com = bs:::backend_communicator
+      com = bs:::backend_communicator_V1_2
     )
 
     result <- st$eval(ResultsState, method = method)
@@ -378,7 +378,7 @@ test_statistical_methods()
 
 # Assumptions
 # =======================================================================================
-test_shapiro_on_data <- function() {
+test_shapiro_on_data_V1_2 <- function() {
   df <- CO2
   df$group <- rep(c("A", "B"), length.out = nrow(df))
   formula <- as.formula("uptake ~ group")
@@ -388,7 +388,7 @@ test_shapiro_on_data <- function() {
   ResultsState$history <- list()
   ResultsState$counter <- 0
 
-  sh <- bs:::shapiro_on_data$new(df = df, formula = formula, com = bs:::backend_communicator)
+  sh <- bs:::shapiro_on_data_V1_2$new(df = df, formula = formula, com = bs:::backend_communicator_V1_2)
   result <- sh$eval(ResultsState)
 
   expect_true(is.data.frame(result))
@@ -396,8 +396,8 @@ test_shapiro_on_data <- function() {
   expect_equal(ResultsState$counter, 1)
   expect_equal(ResultsState$history[[1]]$type, "ShapiroOnData")
 }
-test_shapiro_on_data()
-test_shapiro_on_residuals <- function() {
+test_shapiro_on_data_V1_2()
+test_shapiro_on_residuals_V1_2 <- function() {
   df <- CO2
   df$group <- rep(c("A", "B"), length.out = nrow(df))
   formula <- as.formula("uptake ~ group")
@@ -407,7 +407,7 @@ test_shapiro_on_residuals <- function() {
   ResultsState$history <- list()
   ResultsState$counter <- 0
 
-  sh <- bs:::shapiro_on_residuals$new(df = df, formula = formula, com = bs:::backend_communicator)
+  sh <- bs:::shapiro_on_residuals_V1_2$new(df = df, formula = formula, com = bs:::backend_communicator_V1_2)
   result <- sh$eval(ResultsState)
 
   expect_true(is.data.frame(result))
@@ -415,8 +415,8 @@ test_shapiro_on_residuals <- function() {
   expect_equal(ResultsState$counter, 1)
   expect_equal(ResultsState$history[[1]]$type, "ShapiroOnResiduals")
 }
-test_shapiro_on_residuals()
-test_levene <- function() {
+test_shapiro_on_residuals_V1_2()
+test_levene_V1_2 <- function() {
   df <- CO2
   df$group <- rep(c("A", "B"), length.out = nrow(df))
   formula <- as.formula("uptake ~ group")
@@ -426,7 +426,7 @@ test_levene <- function() {
   ResultsState$history <- list()
   ResultsState$counter <- 0
 
-  lv <- bs:::levene$new(df = df, formula = formula, center = "mean", com = bs:::backend_communicator)
+  lv <- bs:::levene_V1_2$new(df = df, formula = formula, center = "mean", com = bs:::backend_communicator_V1_2)
   result <- lv$eval(ResultsState)
 
   expect_true(is.data.frame(result))
@@ -434,8 +434,8 @@ test_levene <- function() {
   expect_equal(ResultsState$counter, 1)
   expect_equal(ResultsState$history[[1]]$type, "LeveneTest")
 }
-test_levene()
-test_diagnostic_plots <- function() {
+test_levene_V1_2()
+test_diagnostic_plots_V1_2 <- function() {
   df <- CO2
   df$group <- rep(c("A", "B"), length.out = nrow(df))
   formula <- as.formula("uptake ~ group")
@@ -445,18 +445,18 @@ test_diagnostic_plots <- function() {
   ResultsState$history <- list()
   ResultsState$counter <- 0
 
-  dp <- bs:::diagnostic_plots$new(df = df, formula = formula, com = bs:::backend_communicator)
+  dp <- bs:::diagnostic_plots_V1_2$new(df = df, formula = formula, com = bs:::backend_communicator_V1_2)
   p <- dp$eval(ResultsState)
 
   expect_true(inherits(p, "gg"))
   expect_match(names(ResultsState$all_data), "DiagnosticPlotNr1")
   expect_equal(ResultsState$history[[1]]$type, "DiagnosticPlots")
 }
-test_diagnostic_plots()
+test_diagnostic_plots_V1_2()
 
 # Dose response
 # =======================================================================================
-test_dose_response <- function() {
+test_dose_response_V1_2 <- function() {
   df <- data.frame(
     dose = rep(c(0.1, 1, 10, 100), each = 5),
     response = c(100, 90, 80, 60, 50, 98, 85, 75, 58, 48, 95, 80, 70, 55, 45, 92, 78, 65, 50, 40),
@@ -470,14 +470,14 @@ test_dose_response <- function() {
   ResultsState$counter <- 0
   ResultsState$all_names <- list()
 
-  dr <- bs:::dose_response$new(
+  dr <- bs:::dose_response_V1_2$new(
     df = df,
     outliers = NULL,
     is_xlog = FALSE,
     is_ylog = FALSE,
     substance_names = "name",
     formula = formula,
-    com = bs:::backend_communicator
+    com = bs:::backend_communicator_V1_2
   )
 
   res <- dr$eval(ResultsState)
@@ -486,19 +486,19 @@ test_dose_response <- function() {
   expect_equal(ResultsState$counter, 1)
   expect_equal(ResultsState$history[[1]]$type, "DoseResponse")
 }
-test_dose_response()
+test_dose_response_V1_2()
 
 # Remove result from ResultList
 # =======================================================================================
-test_remove_result <- function() {
+test_remove_result_V1_2 <- function() {
   ResultsState <- new.env()
   ResultsState$all_data <- list("MyResult" = 42)
   ResultsState$history <- list()
 
-  rr <- bs:::remove_result$new("MyResult")
+  rr <- bs:::remove_result_V1_2$new("MyResult")
   rr$eval(ResultsState)
 
   expect_null(ResultsState$all_data$MyResult)
   expect_equal(ResultsState$history[[1]]$type, "RemoveResult")
 }
-test_remove_result()
+test_remove_result_V1_2()

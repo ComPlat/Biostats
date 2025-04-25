@@ -14,7 +14,7 @@ FormulaEditorUI <- function(id) {
         br(),
         div(
           class = "model",
-          actionButton(NS(id, "create_formula"), "Create statistical model", class = "create_button")
+          actionButton(NS(id, "create_formula_V1_2"), "Create statistical model", class = "create_button")
         )
       ),
       column(
@@ -198,7 +198,7 @@ FormulaEditorServer <- function(id, DataModelState, ResultsState) {
     })
 
     # React to create formula
-    observeEvent(input$create_formula, {
+    observeEvent(input$create_formula_V1_2, {
       print_req(is.data.frame(FormulaState$df), "The dataset is missing")
       success <- FALSE
       tryCatch({
@@ -206,13 +206,13 @@ FormulaEditorServer <- function(id, DataModelState, ResultsState) {
           expr = {
             response_var <- input[[paste0("colnames-dropdown_", FormulaState$counter_id)]]
             right_site <- input[["editable_code"]]
-            cf <- create_formula$new(response_var, right_site, DataModelState$df)
+            cf <- create_formula_V1_2$new(response_var, right_site, DataModelState$df)
             cf$validate()
             model_latex <- cf$eval(DataModelState)
             output$model <- renderUI({
               withMathJax(HTML(paste0("$$", model_latex, "$$")))
             })
-            pm <- summarise_model$new(DataModelState$df, DataModelState$formula)
+            pm <- summarise_model_V1_2$new(DataModelState$df, DataModelState$formula)
             pm$validate()
             pm$eval(ResultsState)
             success <- TRUE

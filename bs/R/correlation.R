@@ -38,14 +38,14 @@ corrServer <- function(id, DataModelState, ResultsState) {
     corr_fct <- function(method) {
       print_req(is.data.frame(DataModelState$df), "The dataset is missing")
       print_form( DataModelState$formula)
-      corr <- correlation$new(DataModelState$df, DataModelState$formula,
+      corr <- correlation_V1_2$new(DataModelState$df, DataModelState$formula,
         method, input$alt, input$conflevel)
       tryCatch(
         {
           corr$validate()
           fit <- corr$eval(ResultsState)
           exportTestValues(
-            correlation_res = fit
+            correlation_V1_2_res = fit
           )
         },
         error = function(err) {

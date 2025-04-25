@@ -15,15 +15,15 @@ tinytest::expect_null(
   info = "Invalid type (RocketLaunch)"
 )
 
-dose_response <- read.csv(paste0(test_data_dir, "/DoseResponse.csv"))
-result <- load_and_eval_history(files[3], dose_response)
+dose_response_V1_2 <- read.csv(paste0(test_data_dir, "/DoseResponse.csv"))
+result <- load_and_eval_history(files[3], dose_response_V1_2)
 result <- result$ResultsState$all_data
 tinytest::expect_true(
   inherits(result[[1]], "summaryModel"),
   info = "summary of a model"
 )
 tinytest::expect_equal(
-  broom::tidy(lm(abs ~ conc, data = dose_response)),
+  broom::tidy(lm(abs ~ conc, data = dose_response_V1_2)),
   result[[1]]@summary,
   info = "Result summary"
 )

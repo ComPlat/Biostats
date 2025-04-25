@@ -1,5 +1,9 @@
 [
   {
+    "type": "Version",
+    "Nr": "1_2"
+  },
+  {
     "type": "ApplyFilter",
     "Variable": "Treatment",
     "Variable levels": "nonchilled"

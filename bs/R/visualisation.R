@@ -309,7 +309,7 @@ visServer <- function(id, DataModelState, ResultsState) {
     # Plot stuff
     plotFct <- function(method) {
       print_req(is.data.frame(DataModelState$df), "The dataset is missing")
-      vis <- visualisation$new(
+      vis <- visualisation_V1_2$new(
         df = DataModelState$df, x = input$xVar, y = input$yVar,
         method = method,
         xlabel = input$xaxisText, type_of_x = input$xType,

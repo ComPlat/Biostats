@@ -18,7 +18,7 @@ app$set_inputs(`FO-colnames-dropdown_0` = "uptake")
 app$wait_for_idle()
 app$click("FO-colnames_Treatment_0")
 app$wait_for_idle()
-app$click("FO-create_formula")
+app$click("FO-create_formula_V1_2")
 app$wait_for_idle()
 app$run_js("$('.modal-footer button:contains(\"Close\")').click();")
 app$wait_for_idle()
@@ -46,11 +46,11 @@ expected$`Residuals normal distributed` <- expected$p.value > 0.05
 tinytest::expect_equal(res[[1]], expected)
 
 # Update output value
-app$click("ASS-levene")
+app$click("ASS-levene_V1_2")
 app$wait_for_idle()
 res <- app$get_values()$export
 app$wait_for_idle()
-expected <- broom::tidy(car::leveneTest(uptake ~ Treatment,
+expected <- broom::tidy(car::levene_V1_2Test(uptake ~ Treatment,
   data = CO2, center = "mean"
 ))
 expected$`Variance homogenity` <- expected$p.value > 0.05

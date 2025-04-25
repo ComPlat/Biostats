@@ -11,24 +11,24 @@ history_to_table <- function(history) {
   list(hist) # NOTE: required to add it to result list otherwise the dataframe is split
 }
 
-eval_entry <- function(entry, DataModelState, DataWranglingState, ResultsState) {
+eval_entry_V1_2 <- function(entry, DataModelState, DataWranglingState, ResultsState) {
   res <- NULL
   switch(
     entry$type,
     Correlation = {
-      res <- correlation$new(
+      res <- correlation_V1_2$new(
         DataModelState$df,
         as.formula(entry[["formula"]]),
         entry[["Correlation method"]],
         entry[["alternative hypothesis"]],
         entry[["Confidence level of the interval"]],
-        backend_communicator
+        backend_communicator_V1_2
       )
       res$validate()
       res$eval(ResultsState)
     },
     Visualisation = {
-      res <- visualisation$new(
+      res <- visualisation_V1_2$new(
         df = DataModelState$df, x = entry$x, y = entry$y, method = entry[["Plot-type"]],
         xlabel = entry[["X axis label"]], type_of_x = entry[["Type of x"]], ylabel = entry[["Y axis label"]],
         colour_var = entry[["Colour variable"]], colour_legend_title = entry[["Legend title for colour"]], colour_theme = entry[["Colour theme"]],
@@ -36,138 +36,138 @@ eval_entry <- function(entry, DataModelState, DataWranglingState, ResultsState) 
         facet_var = entry[["Split by"]], facet_y_scaling = entry[["How to scale y in subplots"]],
         xrange = char_to_orig_type(entry[["X-Range"]]), yrange = char_to_orig_type(entry[["Y-Range"]]),
         width = as.numeric(entry["Width"]), height = as.numeric(entry[["Height"]]), resolution = as.numeric(entry[["Resolution"]]),
-        com = backend_communicator
+        com = backend_communicator_V1_2
       )
       res$validate()
       res$eval(ResultsState)
     },
     ApplyFilter = {
-      res <- apply_filter$new(
+      res <- apply_filter_V1_2$new(
         entry[["Variable"]], entry[["Variable levels"]],
-        backend_communicator
+        backend_communicator_V1_2
       )
       res$validate()
       res$eval(DataModelState, ResultsState)
     },
     RemoveFilter = {
-      res <- remove_filter$new()
+      res <- remove_filter_V1_2$new()
       res$validate()
       res$eval(ResultsState, DataModelState)
     },
     CreateIntermediateVariable = {
-      res <- create_intermediate_var$new(
+      res <- create_intermediate_var_V1_2$new(
         DataWranglingState$df, DataWranglingState$df_name,
         DataWranglingState$intermediate_vars,
         entry[["operation"]], entry[["name"]],
-        backend_communicator
+        backend_communicator_V1_2
       )
       res$validate()
       res$eval(ResultsState, DataWranglingState)
     },
     RemoveIntermediateVariable = {
-      res <- remove_intermediate_var$new(
+      res <- remove_intermediate_var_V1_2$new(
         entry[["Intermediate variable"]],
-        backend_communicator
+        backend_communicator_V1_2
       )
       res$validate()
       res$eval(ResultsState, DataWranglingState)
     },
     CreateNewColumn = {
-      res <- create_new_col$new(
+      res <- create_new_col_V1_2$new(
         DataWranglingState$df, DataWranglingState$df_name,
         DataWranglingState$intermediate_vars,
         entry[["operation"]], entry[["column name"]],
-        backend_communicator
+        backend_communicator_V1_2
       )
       res$validate()
       res$eval(ResultsState, DataWranglingState, DataModelState)
     },
     CreateFormula = {
       f <- entry[["formula"]] |> as.formula()
-      res <- create_formula$new(
+      res <- create_formula_V1_2$new(
         f[2], f[3], DataModelState$df,
-        backend_communicator
+        backend_communicator_V1_2
       )
       res$validate()
       res$eval(DataModelState)
     },
     ModelSummary = {
-      res <- summarise_model$new(
+      res <- summarise_model_V1_2$new(
         DataModelState$df, as.formula(entry[["formula"]]),
-        backend_communicator)
+        backend_communicator_V1_2)
       res$validate()
       res$eval(ResultsState)
     },
     ShapiroOnData = {
-      res <- shapiro_on_data$new(
+      res <- shapiro_on_data_V1_2$new(
         DataModelState$df, as.formula(entry[["formula"]]),
-        backend_communicator
+        backend_communicator_V1_2
       )
       res$validate()
       res$eval(ResultsState)
     },
     ShapiroOnResiduals = {
-      res <- shapiro_on_residuals$new(
+      res <- shapiro_on_residuals_V1_2$new(
         DataModelState$df, as.formula(entry[["formula"]]),
-        backend_communicator
+        backend_communicator_V1_2
       )
       res$validate()
       res$eval(ResultsState)
     },
     LeveneTest = {
-      res <- levene$new(
+      res <- levene_V1_2$new(
         DataModelState$df, as.formula(entry[["formula"]]),
         entry[["Data center"]],
-        backend_communicator
+        backend_communicator_V1_2
       )
       res$validate()
       res$eval(ResultsState)
     },
     DiagnosticPlots = {
-      res <- diagnostic_plots$new(
+      res <- diagnostic_plots_V1_2$new(
         DataModelState$df, as.formula(entry[["formula"]]),
-        backend_communicator
+        backend_communicator_V1_2
       )
       res$validate()
       res$eval(ResultsState)
     },
     DoseResponse = {
-      res <- dose_response$new(
+      res <- dose_response_V1_2$new(
         DataModelState$df,
         parse_outlier_info(entry[["outliers"]]),
         entry[["Log transform x-axis"]],
         entry[["Log transform y-axis"]],
         entry[["Column containing the names"]],
         as.formula(entry[["formula"]]),
-        backend_communicator
+        backend_communicator_V1_2
       )
       res$validate()
       res$eval(ResultsState)
     },
     TTest = {
-      res <- t_test$new(
+      res <- t_test_V1_2$new(
         DataModelState$df,
         as.formula(entry[["formula"]]),
         entry[["The two variances are"]],
         entry[["Confidence level of the interval"]],
         entry[["alternative hypothesis"]],
-        backend_communicator
+        backend_communicator_V1_2
       )
       res$validate()
       res$eval(ResultsState)
     },
     ANOVA = {
-      res <- statistical_tests$new(
+      res <- statistical_tests_V1_2$new(
         DataModelState$df, as.formula(entry[["formula"]]),
-        NULL, NULL, NULL, backend_communicator
+        NULL, NULL, NULL, backend_communicator_V1_2
       )
       res$validate()
       res$eval(ResultsState, "aov")
     },
     `Kruskal-Wallis Test` = {
-      res <- statistical_tests$new(
+      res <- statistical_tests_V1_2$new(
         DataModelState$df, as.formula(entry[["formula"]]),
-        NULL, NULL, NULL, backend_communicator
+        NULL, NULL, NULL, backend_communicator_V1_2
       )
       res$validate()
       res$eval(ResultsState, "kruskal")
@@ -175,47 +175,47 @@ eval_entry <- function(entry, DataModelState, DataWranglingState, ResultsState) 
     `Tukey HSD` = {
       bal <- "Unbalanced"
       if (entry[["Balanced design"]]) bal <- "Balanced"
-      res <- statistical_tests$new(
+      res <- statistical_tests_V1_2$new(
         DataModelState$df, as.formula(entry[["formula"]]),
-        bal, entry[["P-value"]], NULL, backend_communicator
+        bal, entry[["P-value"]], NULL, backend_communicator_V1_2
       )
       res$validate()
       res$eval(ResultsState, "HSD")
     },
     `Kruskal Wallis post hoc test` = {
-      res <- statistical_tests$new(
+      res <- statistical_tests_V1_2$new(
         DataModelState$df, as.formula(entry[["formula"]]),
-        NULL, entry[["P-value"]], entry[["Adjusted p value method"]], backend_communicator
+        NULL, entry[["P-value"]], entry[["Adjusted p value method"]], backend_communicator_V1_2
       )
       res$validate()
       res$eval(ResultsState, "kruskalTest")
     },
     `Least significant difference test` = {
-      res <- statistical_tests$new(
+      res <- statistical_tests_V1_2$new(
         DataModelState$df, as.formula(entry[["formula"]]),
-        NULL, entry[["P-value"]], entry[["Adjusted p value method"]], backend_communicator
+        NULL, entry[["P-value"]], entry[["Adjusted p value method"]], backend_communicator_V1_2
       )
       res$validate()
       res$eval(ResultsState, "LSD")
     },
     `Scheffe post hoc test` = {
-      res <- statistical_tests$new(
+      res <- statistical_tests_V1_2$new(
         DataModelState$df, as.formula(entry[["formula"]]),
-        NULL, entry[["P-value"]], NULL, backend_communicator
+        NULL, entry[["P-value"]], NULL, backend_communicator_V1_2
       )
       res$validate()
       res$eval(ResultsState, "scheffe")
     },
     `REGW post hoc test` = {
-      res <- statistical_tests$new(
+      res <- statistical_tests_V1_2$new(
         DataModelState$df, as.formula(entry[["formula"]]),
-        NULL, entry[["P-value"]], NULL, backend_communicator
+        NULL, entry[["P-value"]], NULL, backend_communicator_V1_2
       )
       res$validate()
       res$eval(ResultsState, "REGW")
     },
     RemoveResult = {
-      res <- remove_result$new(entry[["Entry removed"]])
+      res <- remove_result_V1_2$new(entry[["Entry removed"]])
       res$validate()
       res$eval(ResultsState)
     }
@@ -226,6 +226,29 @@ eval_entry <- function(entry, DataModelState, DataWranglingState, ResultsState) 
   return(res)
 }
 
+get_current_version <- function() {
+  return("1_2")
+}
+
+get_available_versions <- function() {
+  return(
+    c("1_2")
+  )
+}
+
+get_correct_eval <- function(version) {
+  list("1_2" = eval_entry_V1_2)[version]
+}
+get_correct_result_state <- function(version) {
+  list("1_2" = backend_result_state_V1_2)[version]
+}
+get_correct_data_model_state <- function(version) {
+  list("1_2" = backend_data_model_state_V1_2)[version]
+}
+get_correct_data_wrangling_state <- function(version) {
+  list("1_2" = backend_data_wrangling_state_V1_2)[version]
+}
+
 eval_history <- function(json_string, df, backend = FALSE) {
   print_err_in_eval_history <- print_err
   if (backend) { # Make it testable
@@ -233,9 +256,14 @@ eval_history <- function(json_string, df, backend = FALSE) {
   }
   e <- try({
     l <- jsonlite::fromJSON(json_string, simplifyVector = FALSE)
-    result_state <- backend_result_state$new()
-    data_model_state <- backend_data_model_state$new(df)
-    data_wrangling_state <- backend_data_wrangling_state$new(data_model_state)
+    version = l[[1]]
+    stopifnot(version$type == "Version")
+    stopifnot(version$Nr %in% get_available_versions())
+    l <- l[-1] # Remove version step as it is not evalled
+    eval_entry <- get_correct_eval(version$Nr)[[1]]
+    result_state <- get_correct_result_state(version$Nr)[[1]]$new()
+    data_model_state <- get_correct_data_model_state(version$Nr)[[1]]$new(df)
+    data_wrangling_state <- get_correct_data_wrangling_state(version$Nr)[[1]]$new(data_model_state)
     for (i in seq_along(l)) {
       inner_e <- try({
         eval_entry(l[[i]], data_model_state, data_wrangling_state, result_state)

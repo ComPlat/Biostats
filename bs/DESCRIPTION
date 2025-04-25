@@ -1,7 +1,7 @@
 Package: bs
 Type: Package
 Title: biostats
-Version: 1.1
+Version: 1.2
 Date: 2022-03-24
 Author: Konrad Krämer
 Maintainer: <konrad_kraemer@kit.edu>

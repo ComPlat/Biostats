@@ -27,7 +27,7 @@ assSidebarUI <- function(id) {
         "Test of variance homogenity"
       )
     ),
-    actionButton(NS(id, "levene"), "Levene test"),
+    actionButton(NS(id, "levene_V1_2"), "Levene test"),
     selectInput(NS(id, "center"), "Data center of each group: mean or median",
       c(
         "Mean" = "mean",
@@ -56,7 +56,7 @@ assServer <- function(id, DataModelState, ResultsState) {
       print_req(is.data.frame(df), "The dataset is missing")
       print_form(DataModelState$formula)
       res <- try({
-        sod <- shapiro_on_data$new(DataModelState$df,DataModelState$formula)
+        sod <- shapiro_on_data_V1_2$new(DataModelState$df,DataModelState$formula)
         sod$validate()
         sod$eval(ResultsState)
       })
@@ -79,7 +79,7 @@ assServer <- function(id, DataModelState, ResultsState) {
       print_req(is.data.frame(df), "The dataset is missing")
       print_form(DataModelState$formula)
       res <- try({
-        sor <- shapiro_on_residuals$new(DataModelState$df,DataModelState$formula)
+        sor <- shapiro_on_residuals_V1_2$new(DataModelState$df,DataModelState$formula)
         sor$validate()
         sor$eval(ResultsState)
       }, silent = TRUE)
@@ -102,7 +102,7 @@ assServer <- function(id, DataModelState, ResultsState) {
       print_req(is.data.frame(df), "The dataset is missing")
       print_form(DataModelState$formula)
       res <- try({
-        l <- levene$new(DataModelState$df,DataModelState$formula, input$center)
+        l <- levene_V1_2$new(DataModelState$df,DataModelState$formula, input$center)
         l$validate()
         l$eval(ResultsState)
       }, silent = TRUE)
@@ -115,7 +115,7 @@ assServer <- function(id, DataModelState, ResultsState) {
         )
       }
     }
-    observeEvent(input$levene, {
+    observeEvent(input$levene_V1_2, {
       runLevene()
     })
 
@@ -124,7 +124,7 @@ assServer <- function(id, DataModelState, ResultsState) {
       print_req(is.data.frame(df), "The dataset is missing")
       print_form(DataModelState$formula)
       p <- try({
-        dp <- diagnostic_plots$new(DataModelState$df,DataModelState$formula)
+        dp <- diagnostic_plots_V1_2$new(DataModelState$df,DataModelState$formula)
         dp$validate()
         dp$eval(ResultsState)
       }, silent = TRUE)

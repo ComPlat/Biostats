@@ -101,7 +101,7 @@ DoseResponseServer <- function(id, DataModelState, ResultsState) {
     }
 
     run_dr <- function(df, outliers) {
-      dr <- dose_response$new(
+      dr <- dose_response_V1_2$new(
         df, outliers, input$xTransform, input$yTransform,
         input$substanceNames, DataModelState$formula
       )
