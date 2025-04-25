@@ -440,7 +440,11 @@ create_intermediate_var <- R6::R6Class(
         ResultsState$counter <- ResultsState$counter + 1
 
         # NOTE: for better saving the results
-        new_df <- setNames(data.frame(new), self$name)
+        if (!inherits(new, "data.frame")) {
+          new_df <- setNames(data.frame(new), self$name)
+        } else {
+          new_df <- new
+        }
         ResultsState$all_data[[paste0(ResultsState$counter, " ", self$var_name)]] <- new_df
         ResultsState$history[[length(ResultsState$history) + 1]] <- list(
           type = "CreateIntermediateVariable",
