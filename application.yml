@@ -1,0 +1,14 @@
+proxy:
+  title: Biostats App
+  port: 8080
+
+  specs:
+    - id: biostats-app
+      display-name: Biostats
+      description: Statistical analysis app
+      container-image: biostats-app:latest
+      container-port: 3838  # <- Important: tells ShinyProxy where to connect inside the container
+      container-log-path: ./container-logs
+
+docker:
+  internal-networking: true

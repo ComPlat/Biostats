@@ -6,3 +6,4 @@ sudo -u shiny /usr/bin/shiny-server
 #cd /srv/shiny-server
 
 #Rscript -e 'shiny::runApp(".", port = 3838)'
+
