@@ -41,6 +41,13 @@ eval_entry_V1_2 <- function(entry, DataModelState, DataWranglingState, ResultsSt
       res$validate()
       res$eval(ResultsState)
     },
+    VisualisationModel = {
+      res <- visualisation_model_V1_2$new(
+        df = DataModelState$df, as.formula(entry[["formula"]]), entry[["Layer"]]
+      )
+      res$validate()
+      res$eval(ResultsState)
+    },
     ApplyFilter = {
       res <- apply_filter_V1_2$new(
         entry[["Variable"]], entry[["Variable levels"]],
@@ -259,7 +266,7 @@ eval_history <- function(json_string, df, backend = FALSE) {
     version = l[[1]]
     stopifnot(version$type == "Version")
     stopifnot(version$Nr %in% get_available_versions())
-    l <- l[-1] # Remove version step as it is not evalled
+    l <- l[-1] # Remove version step as it is not evaluated
     eval_entry <- get_correct_eval(version$Nr)[[1]]
     result_state <- get_correct_result_state(version$Nr)[[1]]$new()
     data_model_state <- get_correct_data_model_state(version$Nr)[[1]]$new(df)

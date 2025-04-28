@@ -298,6 +298,46 @@ visualisation_V1_2 <- R6::R6Class(
     }
   )
 )
+visualisation_model_V1_2 <- R6::R6Class(
+  "visualisation_model_V1_2",
+  public = list(
+    df = NULL,
+    formula = NULL,
+    layer = NULL,
+    com = NULL,
+    initialize = function(df, formula, layer, com = communicator_V1_2) {
+      self$df <- df
+      self$formula <- formula
+      self$layer <- layer
+      self$com = com$new()
+    },
+
+    validate = function() {},
+
+    eval = function(ResultsState) {
+      p <- try({
+        p <- plot_model(self$df, self$formula, self$layer)
+      })
+      check_rls(ResultsState$all_data, p)
+      ggplot_build(p) # NOTE: invokes errors and warnings by building but not rendering plot
+      if (inherits(p, "try-error")) {
+        self$com$print_err(p)
+        return()
+      }
+      ResultsState$counter <- ResultsState$counter + 1
+      new_result_name <- paste0(
+        ResultsState$counter, " Visualization Model ", c(box = "Boxplot", dot = "Scatterplot", line = "Lineplot")[self$layer]
+      )
+      ResultsState$all_data[[new_result_name]] <- new("plot", p = p, width = 10, height = 10, resolution = 600)
+      ResultsState$history[[length(ResultsState$history) + 1]] <- list(
+        type = "VisualizationModel",
+        formula = deparse(self$formula),
+        "Layer" = self$layer,
+        "Result name" = new_result_name
+      )
+    }
+  )
+)
 
 apply_filter_V1_2 <- R6::R6Class(
   "apply_filter_V1_2",

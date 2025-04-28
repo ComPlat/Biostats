@@ -526,8 +526,7 @@ app <- function() {
 
     # Observe open formula editor
     output$open_formula_editor_main <- renderUI({
-      if (input$conditionedPanels == "DataWrangling" ||
-        input$conditionedPanels == "Visualisation") {
+      if (input$conditionedPanels == "DataWrangling") {
         return()
       }
       div(

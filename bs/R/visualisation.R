@@ -75,17 +75,20 @@ visUI <- function(id) {
       tabPanel(
         "Boxplot",
         br(),
-        actionButton(NS(id, "CreatePlotBox"), "Create plot")
+        actionButton(NS(id, "CreatePlotBox"), "Create plot"),
+        actionButton(NS(id, "CreateModelBox"), "Plot model")
       ),
       tabPanel(
         "Scatterplot",
         br(),
-        actionButton(NS(id, "CreatePlotScatter"), "Create plot")
+        actionButton(NS(id, "CreatePlotScatter"), "Create plot"),
+        actionButton(NS(id, "CreateModelScatter"), "Plot model")
       ),
       tabPanel(
         "Lineplot",
         br(),
-        actionButton(NS(id, "CreatePlotLine"), "Create plot")
+        actionButton(NS(id, "CreatePlotLine"), "Create plot"),
+        actionButton(NS(id, "CreateModelLine"), "Plot model")
       ),
       id = "VisConditionedPanels"
     ),
@@ -349,5 +352,43 @@ visServer <- function(id, DataModelState, ResultsState) {
       print_req(is.data.frame(DataModelState$df), "The dataset is missing")
       plotFct("line")
     })
+
+    # Plot model
+    # TODO: add tests for history and backend
+    plot_model_fct <- function(method) {
+      print_req(is.data.frame(DataModelState$df), "The dataset is missing")
+      print_form(DataModelState$formula)
+      vis <- visualisation_model_V1_2$new(
+        df = DataModelState$df, formula = DataModelState$formula,
+        layer = method
+      )
+
+      p <- try({
+        vis$validate()
+        pl <- vis$eval(ResultsState)
+        exportTestValues(
+          plot = pl
+        )
+      })
+      if (inherits(p, "try-error")) {
+        return()
+      }
+    }
+
+    observeEvent(input$CreateModelBox, {
+      print_req(is.data.frame(DataModelState$df), "The dataset is missing")
+      plot_model_fct("box")
+    })
+
+    observeEvent(input$CreateModelScatter, {
+      print_req(is.data.frame(DataModelState$df), "The dataset is missing")
+      plot_model_fct("dot")
+    })
+
+    observeEvent(input$CreateModelLine, {
+      print_req(is.data.frame(DataModelState$df), "The dataset is missing")
+      plot_model_fct("line")
+    })
+
   })
 }

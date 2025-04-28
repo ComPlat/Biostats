@@ -206,3 +206,89 @@ plot_pred <- function(data, formula) {
 create_information_criterions <- function(model) {
   data.frame(AIC = AIC(model), BIC = BIC(model))
 }
+
+# This offers the user the option to directly visualise the data based on a model
+# =================================================================================================
+add_desired_layer <- function(p, layer) {
+  if (layer == "box") {
+    p + geom_boxplot()
+  } else if (layer == "dot") {
+    p + geom_point()
+  } else if (layer == "line") {
+    p + geom_line()
+  }
+}
+
+plot_one <- function(df, type, pred, response, layer) {
+  aes <- NULL
+  if (layer == "box") {
+    aes <- aes(x = .data[[pred[1]]], y = .data[[response]], group = .data[[pred[1]]])
+  } else {
+    aes <- aes(x = .data[[pred[1]]], y = .data[[response]])
+  }
+  p <- ggplot(data = df, aes(!!!aes))
+  add_desired_layer(p, layer)
+}
+plot_two <- function(df, types, preds, response, layer) {
+  aes <- NULL
+  if (layer == "box") {
+    aes <- aes(x = .data[[preds[1]]], y = .data[[response]],
+      fill = .data[[preds[2]]],
+      group = interaction(.data[[preds[1]]], .data[[preds[2]]])
+    )
+  } else {
+    aes <- aes(x = .data[[preds[1]]], y = .data[[response]], colour = .data[[preds[2]]])
+  }
+  p <- ggplot(data = df, aes(!!!aes))
+  add_desired_layer(p, layer)
+}
+plot_three <- function(df, types, preds, response, layer) {
+  p <- plot_two(df, types, preds, response, layer)
+  custom_labels <- function(value) {
+    paste(preds[3], " = ", value)
+  }
+  p + facet_wrap(~ .data[[preds[3]]], labeller = as_labeller(custom_labels))
+}
+plot_four <- function(df, types, preds, response, layer) {
+  p <- plot_two(df, types, preds, response, layer)
+  df[, preds[3]] <- as.factor(df[, preds[3]])
+  df[, preds[4]] <- as.factor(df[, preds[4]])
+  p + facet_grid(
+    rows = vars(.data[[preds[4]]]),
+    cols = vars(.data[[preds[3]]]),
+    labeller = label_both
+  )
+}
+
+plot_model <- function(data, formula, layer) {
+  f_split <- split_formula(formula)
+  predictors <- vars_rhs(f_split$right_site)
+  response <- all.vars(f_split$response)
+  types <- determine_types(predictors, data)
+  if (length(predictors) > 4) {
+    formula <- trim_formula_predictors(formula)
+  }
+  if(length(types) == 1) {
+    return(
+      plot_one(data, types, predictors, response, layer) |> add_theme_model_plot()
+    )
+  } else if (length(types) == 2) {
+    return(
+      plot_two(data, types, predictors, response, layer) |> add_theme_model_plot()
+    )
+  } else if (length(types) == 3) {
+    return(
+      plot_three(data, types, predictors, response, layer) |> add_theme_model_plot()
+    )
+  } else if (length(types) == 4) {
+    return(
+      plot_four(data, types, predictors, response, layer) |> add_theme_model_plot()
+    )
+  } else {
+    warning("Plotted only the first four effects")
+    return(
+      plot_four(data, types[1:4], predictors[1:4], response, layer) |> add_theme_model_plot()
+    )
+  }
+}
+

@@ -337,3 +337,5 @@ LineplotFct <- function(df, x, y, xLabel, yLabel,
   }
   return(p)
 }
+
+# TODO: other plotting based on the model itself
