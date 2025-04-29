@@ -1,3 +1,9 @@
+setClass("LinearFormula",
+  slots = c(
+    formula = "formula"
+  )
+)
+
 setClass("doseResponse",
   slots = c(
     df = "data.frame",

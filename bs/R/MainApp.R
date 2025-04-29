@@ -553,7 +553,11 @@ app <- function() {
     observe({
       req(!is.null(DataModelState$formula))
       output$formula <- renderText({
-        deparse(DataModelState$formula)
+        if (inherits(DataModelState$formula, "LinearFormula")) {
+          deparse(DataModelState$formula@formula)
+        } else {
+          ""
+        }
       })
     })
     output[["formulaUI"]] <- renderUI({

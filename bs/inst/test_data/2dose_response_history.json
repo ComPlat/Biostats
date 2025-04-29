@@ -4,14 +4,16 @@
     "Nr": "1_2"
   },
   {
+    "type": "CreateFormula",
+    "formula": "abs ~ conc",
+    "Model Type": "Linear",
+    "details": ""
+  },
+  {
     "type": "ModelSummary",
     "formula": "abs ~ conc",
     "R2": "R² = 0.780",
     "Result name": "1 Model plot"
-  },
-  {
-    "type": "CreateFormula",
-    "formula": "abs ~ conc"
   },
   {
     "type": "DoseResponse",

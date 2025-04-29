@@ -165,20 +165,30 @@ plot_pred <- function(data, formula) {
   #   If 1.b --> numeric:
   #     c. factor --> geom_point as colour
   #     d. numeric --> quantile(0.1, 0.5, 0.9) as colour
-  f_split <- split_formula(formula)
-  predictors <- vars_rhs(f_split$right_site)
-  response <- all.vars(f_split$response)
-  if (length(predictors) > 4) {
-    formula <- trim_formula_predictors(formula)
+
+  pred_df <- NULL
+  types <- NULL
+  predictors <- NULL
+  response <- NULL
+  r2_label <- NULL
+
+  if (inherits(formula, "LinearFormula")) {
+    formula <- formula@formula
+    f_split <- split_formula(formula)
+    predictors <- vars_rhs(f_split$right_site)
+    response <- all.vars(f_split$response)
+    if (length(predictors) > 4) {
+      formula <- trim_formula_predictors(formula)
+    }
+    model <- lm(formula, data)
+    # R²
+    r2 <- summary(model)$r.squared
+    r2_label <- sprintf("R² = %.3f", r2)
+    n <- 100
+    new_data <- create_new_data(formula, data, predictors, n)
+    types <- determine_types(predictors, data)
+    pred_df <- get_predictions(model, new_data)
   }
-  model <- lm(formula, data)
-  # R²
-  r2 <- summary(model)$r.squared
-  r2_label <- sprintf("R² = %.3f", r2)
-  n <- 100
-  new_data <- create_new_data(formula, data, predictors, n)
-  types <- determine_types(predictors, data)
-  pred_df <- get_predictions(model, new_data)
   if(length(types) == 1) {
     return(
       plot_one_pred(pred_df, types, predictors, response) + labs(caption = r2_label) |> add_theme_model_plot()
@@ -261,6 +271,7 @@ plot_four <- function(df, types, preds, response, layer) {
 }
 
 plot_model <- function(data, formula, layer) {
+  formula <- formula@formula
   f_split <- split_formula(formula)
   predictors <- vars_rhs(f_split$right_site)
   response <- all.vars(f_split$response)

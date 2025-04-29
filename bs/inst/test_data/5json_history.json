@@ -4,14 +4,32 @@
     "Nr": "1_2"
   },
   {
+    "type": "CreateFormula",
+    "formula": "uptake ~ conc",
+    "Model Type": "Linear",
+    "details": ""
+  },
+  {
+    "type": "ModelSummary",
+    "formula": "uptake ~ conc",
+    "R2": "R² = 0.235",
+    "Result name": "1 Model summary"
+  },
+  {
     "type": "CreateIntermediateVariable",
-    "operation": "Max(conc)",
-    "name": "max_conc"
+    "operation": "Mean(conc)",
+    "name": "mean_conc"
   },
   {
     "type": "CreateNewColumn",
-    "operation": "conc / max_conc",
+    "operation": " conc / mean_conc",
     "column name": "conc_norm"
+  },
+  {
+    "type": "VisualizationModel",
+    "formula": "uptake ~ conc",
+    "Layer": "box",
+    "Result name": "4 Visualization Model Boxplot"
   },
   {
     "type": "Visualisation",
@@ -24,187 +42,161 @@
     "Colour variable": "",
     "Legend title for colour": "Title colour",
     "Colour theme": "Accent",
-    "Fill variable": "",
+    "Fill variable": "Treatment",
     "Legend title for fill": "Title fill",
     "Fill theme": "BuGn",
     "Split in subplots": "none",
     "Split by": "",
     "How to scale y in subplots": "free",
-    "X-Range": ["0.0475", "1.25"],
+    "X-Range": ["0.109195402298851", "2.8735632183908"],
     "Y-Range": ["7.315", "47.775"],
     "Width": 10,
     "Height": 10,
     "Resolution": 300,
-    "Result name": "3 Visualization Boxplot"
-  },
-  {
-    "type": "Visualisation",
-    "x": "Treatment",
-    "y": "uptake",
-    "Plot-type": "box",
-    "X axis label": "x label",
-    "Y axis label": "y label",
-    "Type of x": "factor",
-    "Colour variable": "",
-    "Legend title for colour": "Title colour",
-    "Colour theme": "Accent",
-    "Fill variable": "",
-    "Legend title for fill": "Title fill",
-    "Fill theme": "BuGn",
-    "Split in subplots": "none",
-    "Split by": "",
-    "How to scale y in subplots": "free",
-    "X-Range": ["nonchilled", "chilled"],
-    "Y-Range": ["7.315", "47.775"],
-    "Width": 10,
-    "Height": 10,
-    "Resolution": 300,
-    "Result name": "4 Visualization Boxplot"
-  },
-  {
-    "type": "ModelSummary",
-    "formula": "uptake ~ conc",
-    "R2": "R² = 0.235",
-    "Result name": "5 Model plot"
-  },
-  {
-    "type": "CreateFormula",
-    "formula": "uptake ~ conc"
+    "Result name": "5 Visualization Boxplot"
   },
   {
     "type": "ShapiroOnData",
     "formula": "uptake ~ conc",
-    "Result name": "ShapiroDataNr7"
+    "Result name": "6 Shapiro on data"
   },
   {
     "type": "ShapiroOnResiduals",
     "formula": "uptake ~ conc",
-    "Result name": "ShaprioResidualsNr8"
-  },
-  {
-    "type": "ModelSummary",
-    "formula": "uptake ~ Treatment",
-    "R2": "R² = 0.102",
-    "Result name": "9 Model plot"
-  },
-  {
-    "type": "CreateFormula",
-    "formula": "uptake ~ Treatment"
-  },
-  {
-    "type": "LeveneTest",
-    "formula": "uptake ~ Treatment",
-    "Data center": "mean",
-    "Result name": "LeveneTestNr11"
+    "Result name": "7 Shapiro on residuals"
   },
   {
     "type": "DiagnosticPlots",
-    "formula": "uptake ~ Treatment",
-    "Result name": "DiagnosticPlotNr12"
-  },
-  {
-    "type": "ModelSummary",
-    "formula": "uptake ~ conc_norm",
-    "R2": "R² = 0.235",
-    "Result name": "13 Model plot"
+    "formula": "uptake ~ conc",
+    "Result name": "8 Diagnostic plot"
   },
   {
     "type": "CreateFormula",
-    "formula": "uptake ~ conc_norm"
-  },
-  {
-    "type": "Correlation",
-    "formula": "uptake ~ conc_norm",
-    "Correlation method": "pearson",
-    "Alternative hypothesis": "two.sided",
-    "Confidence level of the interval": 0.95,
-    "Result name": "15 Correlation Pearson"
-  },
-  {
-    "type": "Correlation",
-    "formula": "uptake ~ conc_norm",
-    "Correlation method": "spearman",
-    "Alternative hypothesis": "two.sided",
-    "Confidence level of the interval": 0.95,
-    "Result name": "16 Correlation Spearman"
-  },
-  {
-    "type": "Correlation",
-    "formula": "uptake ~ conc_norm",
-    "Correlation method": "kendall",
-    "Alternative hypothesis": "two.sided",
-    "Confidence level of the interval": 0.95,
-    "Result name": "17 Correlation Kendall"
+    "formula": "uptake ~ Type",
+    "Model Type": "Linear",
+    "details": ""
   },
   {
     "type": "ModelSummary",
     "formula": "uptake ~ Type",
     "R2": "R² = 0.347",
-    "Result name": "18 Model plot"
+    "Result name": "9 Model summary"
+  },
+  {
+    "type": "LeveneTest",
+    "formula": "uptake ~ Type",
+    "Data center": "mean",
+    "Result name": "10 Levene test"
   },
   {
     "type": "CreateFormula",
-    "formula": "uptake ~ Type"
-  },
-  {
-    "type": "TTest",
-    "formula": "uptake ~ Type",
-    "Confidence level of the interval": 0.95,
-    "alternative hypothesis": "two.sided",
-    "The two variances are": "eq",
-    "Result name": "TTestNr20"
+    "formula": "uptake ~ conc",
+    "Model Type": "Linear",
+    "details": ""
   },
   {
     "type": "ModelSummary",
     "formula": "uptake ~ conc",
     "R2": "R² = 0.235",
-    "Result name": "21 Model plot"
+    "Result name": "11 Model summary"
+  },
+  {
+    "type": "Correlation",
+    "formula": "uptake ~ conc",
+    "Correlation method": "pearson",
+    "Alternative hypothesis": "two.sided",
+    "Confidence level of the interval": 0.95,
+    "Result name": "12 Correlation Pearson"
+  },
+  {
+    "type": "Correlation",
+    "formula": "uptake ~ conc",
+    "Correlation method": "spearman",
+    "Alternative hypothesis": "two.sided",
+    "Confidence level of the interval": 0.95,
+    "Result name": "13 Correlation Spearman"
+  },
+  {
+    "type": "Correlation",
+    "formula": "uptake ~ conc",
+    "Correlation method": "kendall",
+    "Alternative hypothesis": "two.sided",
+    "Confidence level of the interval": 0.95,
+    "Result name": "14 Correlation Kendall"
   },
   {
     "type": "CreateFormula",
-    "formula": "uptake ~ conc"
+    "formula": "uptake ~ Treatment",
+    "Model Type": "Linear",
+    "details": ""
+  },
+  {
+    "type": "ModelSummary",
+    "formula": "uptake ~ Treatment",
+    "R2": "R² = 0.102",
+    "Result name": "15 Model summary"
+  },
+  {
+    "type": "TTest",
+    "formula": "uptake ~ Treatment",
+    "Confidence level of the interval": 0.95,
+    "alternative hypothesis": "two.sided",
+    "The two variances are": "eq",
+    "Result name": "16 T-Test"
   },
   {
     "type": "ANOVA",
-    "formula": "uptake ~ conc",
-    "Result name": "Test_aovNr23"
+    "formula": "uptake ~ Treatment",
+    "Result name": "17 Test aov"
   },
   {
     "type": "Kruskal-Wallis Test",
-    "formula": "uptake ~ conc",
-    "Result name": "Test_kruskalNr24"
+    "formula": "uptake ~ Treatment",
+    "Result name": "18 Test kruskal"
   },
   {
     "type": "Tukey HSD",
-    "formula": "uptake ~ conc",
+    "formula": "uptake ~ Treatment",
     "Balanced design": false,
     "P-value": 0.05,
-    "Result name": "Test_HSDNr25"
+    "Result name": "19 Test HSD"
   },
   {
     "type": "Kruskal Wallis post hoc test",
-    "formula": "uptake ~ conc",
+    "formula": "uptake ~ Treatment",
     "Adjusted p value method": "holm",
     "P-value": 0.05,
-    "Result name": "Test_kruskalTestNr26"
+    "Result name": "20 Test kruskalTest"
   },
   {
     "type": "Least significant difference test",
-    "formula": "uptake ~ conc",
+    "formula": "uptake ~ Treatment",
     "Adjusted p value method": "holm",
     "P-value": 0.05,
-    "Result name": "Test_LSDNr27"
+    "Result name": "21 Test LSD"
   },
   {
     "type": "Scheffe post hoc test",
-    "formula": "uptake ~ conc",
+    "formula": "uptake ~ Treatment",
     "P-value": 0.05,
-    "Result name": "Test_scheffeNr28"
+    "Result name": "22 Test scheffe"
+  },
+  {
+    "type": "CreateFormula",
+    "formula": "uptake ~ conc_norm",
+    "Model Type": "Linear",
+    "details": ""
+  },
+  {
+    "type": "ModelSummary",
+    "formula": "uptake ~ conc_norm",
+    "R2": "R² = 0.235",
+    "Result name": "23 Model summary"
   },
   {
     "type": "REGW post hoc test",
-    "formula": "uptake ~ conc",
+    "formula": "uptake ~ conc_norm",
     "P-value": 0.05,
-    "Result name": "Test_REGWNr29"
+    "Result name": "24 Test REGW"
   }
 ]

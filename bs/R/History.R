@@ -18,7 +18,7 @@ eval_entry_V1_2 <- function(entry, DataModelState, DataWranglingState, ResultsSt
     Correlation = {
       res <- correlation_V1_2$new(
         DataModelState$df,
-        as.formula(entry[["formula"]]),
+        DataModelState$formula,
         entry[["Correlation method"]],
         entry[["alternative hypothesis"]],
         entry[["Confidence level of the interval"]],
@@ -41,9 +41,9 @@ eval_entry_V1_2 <- function(entry, DataModelState, DataWranglingState, ResultsSt
       res$validate()
       res$eval(ResultsState)
     },
-    VisualisationModel = {
+    VisualizationModel = {
       res <- visualisation_model_V1_2$new(
-        df = DataModelState$df, as.formula(entry[["formula"]]), entry[["Layer"]]
+        df = DataModelState$df, DataModelState$formula, entry[["Layer"]]
       )
       res$validate()
       res$eval(ResultsState)
@@ -96,18 +96,18 @@ eval_entry_V1_2 <- function(entry, DataModelState, DataWranglingState, ResultsSt
         backend_communicator_V1_2
       )
       res$validate()
-      res$eval(DataModelState)
+      res$eval(ResultsState, DataModelState, entry[["Model Type"]], entry[["details"]])
     },
     ModelSummary = {
       res <- summarise_model_V1_2$new(
-        DataModelState$df, as.formula(entry[["formula"]]),
+        DataModelState$df, DataModelState$formula,
         backend_communicator_V1_2)
       res$validate()
       res$eval(ResultsState)
     },
     ShapiroOnData = {
       res <- shapiro_on_data_V1_2$new(
-        DataModelState$df, as.formula(entry[["formula"]]),
+        DataModelState$df,  DataModelState$formula,
         backend_communicator_V1_2
       )
       res$validate()
@@ -115,7 +115,7 @@ eval_entry_V1_2 <- function(entry, DataModelState, DataWranglingState, ResultsSt
     },
     ShapiroOnResiduals = {
       res <- shapiro_on_residuals_V1_2$new(
-        DataModelState$df, as.formula(entry[["formula"]]),
+        DataModelState$df, DataModelState$formula,
         backend_communicator_V1_2
       )
       res$validate()
@@ -123,7 +123,7 @@ eval_entry_V1_2 <- function(entry, DataModelState, DataWranglingState, ResultsSt
     },
     LeveneTest = {
       res <- levene_V1_2$new(
-        DataModelState$df, as.formula(entry[["formula"]]),
+        DataModelState$df, DataModelState$formula,
         entry[["Data center"]],
         backend_communicator_V1_2
       )
@@ -132,7 +132,7 @@ eval_entry_V1_2 <- function(entry, DataModelState, DataWranglingState, ResultsSt
     },
     DiagnosticPlots = {
       res <- diagnostic_plots_V1_2$new(
-        DataModelState$df, as.formula(entry[["formula"]]),
+        DataModelState$df, DataModelState$formula,
         backend_communicator_V1_2
       )
       res$validate()
@@ -145,7 +145,7 @@ eval_entry_V1_2 <- function(entry, DataModelState, DataWranglingState, ResultsSt
         entry[["Log transform x-axis"]],
         entry[["Log transform y-axis"]],
         entry[["Column containing the names"]],
-        as.formula(entry[["formula"]]),
+        DataModelState$formula,
         backend_communicator_V1_2
       )
       res$validate()
@@ -154,7 +154,7 @@ eval_entry_V1_2 <- function(entry, DataModelState, DataWranglingState, ResultsSt
     TTest = {
       res <- t_test_V1_2$new(
         DataModelState$df,
-        as.formula(entry[["formula"]]),
+        DataModelState$formula,
         entry[["The two variances are"]],
         entry[["Confidence level of the interval"]],
         entry[["alternative hypothesis"]],
@@ -165,7 +165,8 @@ eval_entry_V1_2 <- function(entry, DataModelState, DataWranglingState, ResultsSt
     },
     ANOVA = {
       res <- statistical_tests_V1_2$new(
-        DataModelState$df, as.formula(entry[["formula"]]),
+        DataModelState$df,
+        DataModelState$formula,
         NULL, NULL, NULL, backend_communicator_V1_2
       )
       res$validate()
@@ -173,7 +174,8 @@ eval_entry_V1_2 <- function(entry, DataModelState, DataWranglingState, ResultsSt
     },
     `Kruskal-Wallis Test` = {
       res <- statistical_tests_V1_2$new(
-        DataModelState$df, as.formula(entry[["formula"]]),
+        DataModelState$df,
+        DataModelState$formula,
         NULL, NULL, NULL, backend_communicator_V1_2
       )
       res$validate()
@@ -183,7 +185,8 @@ eval_entry_V1_2 <- function(entry, DataModelState, DataWranglingState, ResultsSt
       bal <- "Unbalanced"
       if (entry[["Balanced design"]]) bal <- "Balanced"
       res <- statistical_tests_V1_2$new(
-        DataModelState$df, as.formula(entry[["formula"]]),
+        DataModelState$df,
+        DataModelState$formula,
         bal, entry[["P-value"]], NULL, backend_communicator_V1_2
       )
       res$validate()
@@ -191,7 +194,8 @@ eval_entry_V1_2 <- function(entry, DataModelState, DataWranglingState, ResultsSt
     },
     `Kruskal Wallis post hoc test` = {
       res <- statistical_tests_V1_2$new(
-        DataModelState$df, as.formula(entry[["formula"]]),
+        DataModelState$df,
+        DataModelState$formula,
         NULL, entry[["P-value"]], entry[["Adjusted p value method"]], backend_communicator_V1_2
       )
       res$validate()
@@ -199,7 +203,8 @@ eval_entry_V1_2 <- function(entry, DataModelState, DataWranglingState, ResultsSt
     },
     `Least significant difference test` = {
       res <- statistical_tests_V1_2$new(
-        DataModelState$df, as.formula(entry[["formula"]]),
+        DataModelState$df,
+        DataModelState$formula,
         NULL, entry[["P-value"]], entry[["Adjusted p value method"]], backend_communicator_V1_2
       )
       res$validate()
@@ -207,7 +212,8 @@ eval_entry_V1_2 <- function(entry, DataModelState, DataWranglingState, ResultsSt
     },
     `Scheffe post hoc test` = {
       res <- statistical_tests_V1_2$new(
-        DataModelState$df, as.formula(entry[["formula"]]),
+        DataModelState$df,
+        DataModelState$formula,
         NULL, entry[["P-value"]], NULL, backend_communicator_V1_2
       )
       res$validate()
@@ -215,7 +221,8 @@ eval_entry_V1_2 <- function(entry, DataModelState, DataWranglingState, ResultsSt
     },
     `REGW post hoc test` = {
       res <- statistical_tests_V1_2$new(
-        DataModelState$df, as.formula(entry[["formula"]]),
+        DataModelState$df,
+        DataModelState$formula,
         NULL, entry[["P-value"]], NULL, backend_communicator_V1_2
       )
       res$validate()

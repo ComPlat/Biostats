@@ -84,15 +84,16 @@ correlation_V1_2 <- R6::R6Class(
     initialize = function(df, formula, method, alternative, conflevel, com = communicator_V1_2) {
       self$df <- df
       self$formula <- formula
-      formula <- as.character(formula)
-      self$dep <- formula[2]
-      self$indep <- formula[3]
       self$method <- method
       self$alternative <- alternative
       self$conflevel <- conflevel
       self$com <- com$new()
     },
     validate = function() {
+      stopifnot("Formula is not of type linear" = inherits(self$formula, "LinearFormula"))
+      formula <- as.character(self$formula@formula)
+      self$dep <- formula[2]
+      self$indep <- formula[3]
       check_ast(str2lang(self$indep), colnames(self$df))
       check_ast(str2lang(self$dep), colnames(self$df))
     },
@@ -125,7 +126,7 @@ correlation_V1_2 <- R6::R6Class(
     create_history = function(new_name, ResultsState) {
       ResultsState$history[[length(ResultsState$history) + 1]] <- list(
         type = "Correlation",
-        formula = deparse(self$formula),
+        formula = deparse(self$formula@formula),
         "Correlation method" = self$method,
         "Alternative hypothesis" = self$alternative,
         "Confidence level of the interval" = self$conflevel,
@@ -331,7 +332,7 @@ visualisation_model_V1_2 <- R6::R6Class(
       ResultsState$all_data[[new_result_name]] <- new("plot", p = p, width = 10, height = 10, resolution = 600)
       ResultsState$history[[length(ResultsState$history) + 1]] <- list(
         type = "VisualizationModel",
-        formula = deparse(self$formula),
+        formula = deparse(self$formula@formula),
         "Layer" = self$layer,
         "Result name" = new_result_name
       )
@@ -639,13 +640,25 @@ create_formula_V1_2 <- R6::R6Class(
 
     validate = function() {},
 
-    eval = function(DataModelState) {
+    eval = function(ResultsState, DataModelState, model_type, details = "") {
       formula <- paste(self$response_var, " ~ ", self$right_site)
       formula <- as.formula(formula)
       check_ast(formula, colnames(self$df))
-      DataModelState$formula <- formula
-      model <- lm(formula, data = self$df)
-      extract_eq(model, wrap = TRUE)
+
+      eq <- NULL
+      if (model_type == "Linear") {
+        ResultsState$history[[length(ResultsState$history) + 1]] <- list(
+          type = "CreateFormula",
+          formula = deparse(formula),
+          "Model Type" = "Linear",
+          details = ""
+        )
+        DataModelState$formula <- new("LinearFormula", formula = formula)
+        model <- lm(formula, data = self$df)
+        eq <- extract_eq(model, wrap = TRUE)
+      }
+
+      return(eq)
     }
   )
 )
@@ -675,10 +688,17 @@ summarise_model_V1_2 <- R6::R6Class(
       )
       ggplot_build(p) # NOTE: invokes errors and warnings by building but not rendering plot
       p <- new("plot", p = p, width = 15, height = 15, resolution = 600)
-      model <- lm(self$formula, data = self$df)
-      summary <- broom::tidy(model)
-      ic <- create_information_criterions(model)
 
+      summary <- NULL
+      ic <- NULL
+      r2_label <- NULL
+      if (inherits(self$formula, "LinearFormula")) {
+        model <- lm(self$formula@formula, data = self$df)
+        summary <- broom::tidy(model)
+        ic <- create_information_criterions(model)
+        r2 <- summary(model)$r.squared
+        r2_label <- sprintf("R² = %.3f", r2)
+      }
       ResultsState$counter <- ResultsState$counter + 1
       new_result_name <- paste0(
         ResultsState$counter, " Model summary"
@@ -686,11 +706,9 @@ summarise_model_V1_2 <- R6::R6Class(
       ResultsState$all_data[[new_result_name]] <-
         new("summaryModel", p = p, summary = summary, information_criterions = ic)
 
-      r2 <- summary(model)$r.squared
-      r2_label <- sprintf("R² = %.3f", r2)
       ResultsState$history[[length(ResultsState$history) + 1]] <- list(
         type = "ModelSummary",
-        formula = deparse(self$formula),
+        formula = deparse(self$formula@formula),
         R2 = r2_label,
         "Result name" = new_result_name
       )
@@ -708,7 +726,7 @@ shapiro_on_data_V1_2 <- R6::R6Class(
 
     initialize = function(df, formula, com = communicator_V1_2) {
       self$df <- df
-      self$formula <- formula
+      self$formula <- formula@formula
       self$com = com$new()
     },
 
@@ -764,13 +782,15 @@ shapiro_on_residuals_V1_2 <- R6::R6Class(
       self$com <- com$new()
     },
 
-    validate = function() {},
+    validate = function() {
+      stopifnot("Formula is not of type linear" = inherits(self$formula, "LinearFormula"))
+    },
 
     eval = function(ResultsState) {
       res <- NULL
       withCallingHandlers(
         {
-          fit <- lm(self$formula, data = self$df)
+          fit <- lm(self$formula@formula, data = self$df)
           r <- resid(fit)
           res <- broom::tidy(shapiro.test(r))
           res$`Residuals normal distributed` <- res$p.value > 0.05
@@ -789,7 +809,7 @@ shapiro_on_residuals_V1_2 <- R6::R6Class(
       ResultsState$all_data[[new_name]] <- res
       ResultsState$history[[length(ResultsState$history) + 1]] <- list(
         type = "ShapiroOnResiduals",
-        formula = deparse(self$formula),
+        formula = deparse(self$formula@formula),
         "Result name" = new_name
       )
       return(res)
@@ -811,14 +831,16 @@ levene_V1_2 <- R6::R6Class(
       self$com <- com$new()
     },
 
-    validate = function() {},
+    validate = function() {
+      stopifnot("Formula is not of type linear" = inherits(self$formula, "LinearFormula"))
+    },
 
     eval = function(ResultsState) {
       res <- NULL
       withCallingHandlers(
         {
           res <- broom::tidy(
-            car::leveneTest(self$formula, data = self$df, center = self$center)
+            car::leveneTest(self$formula@formula, data = self$df, center = self$center)
           )
           res$`Variance homogenity` <- res$p.value > 0.05
           check_rls(ResultsState$all_data, res)
@@ -836,7 +858,7 @@ levene_V1_2 <- R6::R6Class(
       ResultsState$all_data[[new_name]] <- res
       ResultsState$history[[length(ResultsState$history) + 1]] <- list(
         type = "LeveneTest",
-        formula = deparse(self$formula),
+        formula = deparse(self$formula@formula),
         "Data center" = self$center,
         "Result name" = new_name
       )
@@ -857,13 +879,15 @@ diagnostic_plots_V1_2 <- R6::R6Class(
       self$com <- com$new()
     },
 
-    validate = function() {},
+    validate = function() {
+      stopifnot("Formula is not of type linear" = inherits(self$formula, "LinearFormula"))
+    },
 
     eval = function(ResultsState) {
       p <- NULL
       withCallingHandlers(
         {
-          p <- diagnosticPlots(self$df, self$formula)
+          p <- diagnosticPlots(self$df, self$formula@formula)
           check_rls(ResultsState$all_data, p)
           p
         },
@@ -880,7 +904,7 @@ diagnostic_plots_V1_2 <- R6::R6Class(
         new("plot", p = p, width = 15, height = 15, resolution = 600)
       ResultsState$history[[length(ResultsState$history) + 1]] <- list(
         type = "DiagnosticPlots",
-        formula = deparse(self$formula),
+        formula = deparse(self$formula@formula),
         "Result name" = new_result_name
       )
       return(p)
@@ -910,7 +934,7 @@ dose_response_V1_2 <- R6::R6Class(
       self$is_xlog <- is_xlog
       self$is_ylog <- is_ylog
       self$substance_names <- substance_names
-      self$formula <- formula
+      self$formula <- formula@formula
       self$com <- com$new()
     },
 
@@ -1027,7 +1051,7 @@ t_test_V1_2 <- R6::R6Class(
                           variances_equal, conf_level,
                           alternative_hyp, com = communicator_V1_2) {
       self$df <- df
-      self$formula <- formula
+      self$formula <- formula@formula
       self$variances_equal <- variances_equal
       self$conf_level <- conf_level
       self$alternative_hyp <- alternative_hyp
@@ -1088,7 +1112,7 @@ statistical_tests_V1_2 <- R6::R6Class(
 
     initialize = function(df, formula, balanced_design, p_val, p_val_adj_method, com = communicator_V1_2) {
       self$df <- df
-      self$formula <- formula
+      self$formula <- formula@formula
       self$balanced_design <- balanced_design
       self$p_val <- p_val
       self$p_val_adj_method <- p_val_adj_method

@@ -1,3 +1,4 @@
+# TODO: add missing tests for plot_pred and plot_model
 library(bs)
 library(tinytest)
 
