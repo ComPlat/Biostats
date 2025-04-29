@@ -550,22 +550,32 @@ app <- function() {
       ))
     })
     # display current formula
-    observe({
-      req(!is.null(DataModelState$formula))
-      output$formula <- renderText({
-        if (inherits(DataModelState$formula, "LinearFormula")) {
-          deparse(DataModelState$formula@formula)
-        } else {
-          ""
-        }
-      })
-    })
     output[["formulaUI"]] <- renderUI({
       if (input$conditionedPanels == "DataWrangling" ||
         input$conditionedPanels == "Visualisation") {
         return()
       } else {
-        verbatimTextOutput("formula")
+        renderUI({
+          if (inherits(DataModelState$formula, "LinearFormula")) {
+            div(
+              class = "var-box-output",
+              p("Linear model"),
+              deparse(DataModelState$formula@formula)
+            )
+          } else if (inherits(DataModelState$formula, "GeneralisedLinearFormula")) {
+            div(
+              class = "var-box-output",
+              p("Generalised Linear Model"),
+              deparse(DataModelState$formula@formula),
+              br(),
+              paste0("Family: ", deparse(DataModelState$formula@family)),
+              br(),
+              paste0("Link fct.: ", deparse(DataModelState$formula@link_fct))
+            )
+          } else {
+            ""
+          }
+        })
       }
     })
 
