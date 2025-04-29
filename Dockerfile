@@ -43,7 +43,8 @@ RUN install2.r --error --skipinstalled \
   car \
   equatiomatic \
   quarto \
-  jsonlite
+  jsonlite \
+  emmeans
 
 USER shiny
 COPY ./bs/R ./myapp

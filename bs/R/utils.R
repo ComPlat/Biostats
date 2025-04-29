@@ -1,3 +1,12 @@
+num_to_factor <- function(df, cols) {
+  for (i in seq_along(cols)) {
+    if (is.numeric(df[, cols[i]])) {
+      df[, cols[i]] <- as.factor(df[, cols[i]])
+    }
+  }
+  return(df)
+}
+
 parse_outlier_info <- function(outliers) {
   if (is.null(outliers)) return(outliers)
   outliers <- strsplit(outliers, split = ";")[[1]]

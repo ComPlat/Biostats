@@ -152,7 +152,7 @@ assServer <- function(id, DataModelState, ResultsState) {
       print_req(is.data.frame(df), "The dataset is missing")
       print_form(DataModelState$formula)
       p <- try({
-        dp <- diagnostic_plots_V1_2$new(DataModelState$df,DataModelState$formula)
+        dp <- diagnostic_plots_V1_2$new(DataModelState$df, DataModelState$formula)
         dp$validate()
         dp$eval(ResultsState)
       }, silent = TRUE)

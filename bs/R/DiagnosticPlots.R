@@ -1,6 +1,14 @@
 CooksDistance <- function(df, formula) {
   # https://rpubs.com/DragonflyStats/Cooks-Distance
-  model <- lm(formula, data = df)
+  model <- NULL
+  if (inherits(formula, "LinearFormula")) {
+    model <- lm(formula@formula, data = df)
+  } else if (inherits(formula, "GeneralisedLinearFormula")) {
+    family <- formula@family
+    link_fct <- formula@link_fct
+    family <- str2lang(paste0("stats::", family, "(\"", link_fct, "\")"))
+    model <- glm(formula@formula, data = df, family = eval(family))
+  }
   cd <- cooks.distance(model)
   cd <- data.frame(CooksDistance = cd,
     Index = 1:length(cd))
@@ -8,7 +16,7 @@ CooksDistance <- function(df, formula) {
   # NOTE: number of predictors -1 (remove intercept via -1)
   k <- length(coef(model)) - 1 
   cutoff <- 4 / (n - k - 1)
-  ggplot(data = cd, aes(Index, CooksDistance)) +
+  p <- ggplot(data = cd, aes(Index, CooksDistance)) +
     geom_point() +
     geom_line() +
     geom_hline(yintercept = cutoff,
@@ -20,20 +28,32 @@ CooksDistance <- function(df, formula) {
       aes(label = Index),
       vjust = -1,
       color = "black",
-      size = 3) +
-    labs(caption = "Cook's distance is used to detect
-influential data points in a regression model.
-Points with large Cook's distances (above the cutoff line)
-may be having a disproportionate influence on the estimated coefficients.
-The dashed line represents the threshold for identifying influential points.
-Any data points above this line should be considered for further investigation,
-as they could potentially distort the results of the regression analysis.
-Influential points are labelled with the row index in the dataset.") +
-    theme(plot.caption = element_text(size = 12, hjust = 0))
+      size = 3)
+
+  if (inherits(formula, "LinearFormula")) {
+    p <- p + labs(caption = "Cook's distance is used to detect
+      influential data points in a regression model.
+      Points with large Cook's distances (above the cutoff line)
+      may be having a disproportionate influence on the estimated coefficients.
+      The dashed line represents the threshold for identifying influential points.
+      Any data points above this line should be considered for further investigation,
+      as they could potentially distort the results of the regression analysis.
+      Influential points are labelled with the row index in the dataset.") +
+      theme(plot.caption = element_text(size = 12, hjust = 0))
+  }
+  p
 }
 
 diagnosticPlots <- function(df, formula) {
-  model <- lm(formula, data = df)
+  model <- NULL
+  if (inherits(formula, "LinearFormula")) {
+    model <- lm(formula@formula, data = df)
+  } else if (inherits(formula, "GeneralisedLinearFormula")) {
+    family <- formula@family
+    link_fct <- formula@link_fct
+    family <- str2lang(paste0("stats::", family, "(\"", link_fct, "\")"))
+    model <- glm(formula@formula, data = df, family = eval(family))
+  }
   resids <- residuals(model)
   fitted <- fitted(model)
 
@@ -70,15 +90,22 @@ diagnosticPlots <- function(df, formula) {
       vjust = -1,
       color = "black",
       size = 3) +
-    labs(
+    theme(plot.caption = element_text(size = 12, hjust = 0))
+  if (inherits(formula, "LinearFormula")) {
+    resids_vs_fitted <- resids_vs_fitted + labs(
       y = "Residuals", x = "Fitted values",
       title = "Residuals vs Fitted values",
       caption = "In this plot, residuals should scatter randomly around zero
-with consistent spread across fitted values for homoscedasticity.
-Patterns like fanning or funneling indicate heteroscedasticity, where residual
-variance changes with fitted values, violating the homoscedasticity assumption."
-    ) +
-    theme(plot.caption = element_text(size = 12, hjust = 0))
+      with consistent spread across fitted values for homoscedasticity.
+      Patterns like fanning or funneling indicate heteroscedasticity, where residual
+      variance changes with fitted values, violating the homoscedasticity assumption."
+    )
+  } else if (inherits(formula, "GeneralisedLinearFormula")) {
+    resids_vs_fitted <- resids_vs_fitted + labs(
+      y = "Residuals", x = "Fitted values",
+      title = "Residuals vs Fitted values"
+    )
+  }
 
   # qq norm plot
   standardized_resids <- resids / sd(resids)
@@ -107,16 +134,23 @@ variance changes with fitted values, violating the homoscedasticity assumption."
       vjust = -1,
       color = "black",
       size = 3) +
-    labs(
+    theme(plot.caption = element_text(size = 12, hjust = 0))
+  if (inherits(formula, "LinearFormula")) {
+    resids_vs_quantiles <- resids_vs_quantiles + labs(
       y = "Standardized residuals", x = "Theoretical Quantiles",
       title = "Q-Q Residuals",
       caption = "In this plot, the points should fall along
-the reference line if the residuals are normally distributed.
-Large deviations from the line suggest non-normality.
-The closer the points are to the line,
-the more likely the residuals follow a normal distribution."
-    ) +
-    theme(plot.caption = element_text(size = 12, hjust = 0))
+      the reference line if the residuals are normally distributed.
+      Large deviations from the line suggest non-normality.
+      The closer the points are to the line,
+      the more likely the residuals follow a normal distribution."
+    )
+  } else if (inherits(formula, "GeneralisedLinearFormula")) {
+    resids_vs_quantiles <- resids_vs_quantiles + labs(
+      y = "Standardized residuals", x = "Theoretical Quantiles",
+      title = "Q-Q Residuals"
+    )
+  }
 
   # Manual Scale-Location Plot
   line_data <- lowess(fitted, sqrt_resids) |> as.data.frame()
@@ -139,20 +173,28 @@ the more likely the residuals follow a normal distribution."
       vjust = -1,
       color = "black",
       size = 3) +
-    labs(
+    theme(plot.caption = element_text(size = 12, hjust = 0))
+
+  if (inherits(formula, "LinearFormula")) {
+    sqrt_resids_vs_fitted <- sqrt_resids_vs_fitted +     labs(
       y = expression(sqrt("Standardized residuals")),
       x = "Fitted values",
       title = "Scale-Location",
       caption = "In this plot, the square root of the
-standardized residuals is plotted against the fitted values.
-For homoscedasticity, the points should show a random scatter
-without a trend, and the spread of residuals should be
-consistent across all levels of fitted values.
-A fan or funnel shape indicates heteroscedasticity,
-meaning the variance of residuals is not constant."
-    ) +
-    theme(plot.caption = element_text(size = 12, hjust = 0))
-
+      standardized residuals is plotted against the fitted values.
+      For homoscedasticity, the points should show a random scatter
+      without a trend, and the spread of residuals should be
+      consistent across all levels of fitted values.
+      A fan or funnel shape indicates heteroscedasticity,
+      meaning the variance of residuals is not constant."
+    )
+  } else if (inherits(formula, "GeneralisedLinearFormula")) {
+    sqrt_resids_vs_fitted <- sqrt_resids_vs_fitted +     labs(
+      y = expression(sqrt("Standardized residuals")),
+      x = "Fitted values",
+      title = "Scale-Location"
+    )
+  }
   # Residuals vs Leverage
   line_data <- lowess(leverage, standardized_resids) |> as.data.frame()
   residuals_leverage_df <- data.frame(
@@ -178,18 +220,26 @@ meaning the variance of residuals is not constant."
       vjust = -1,
       color = "black",
       size = 3) +
-    labs(
+
+    theme(plot.caption = element_text(size = 12, hjust = 0))
+  if (inherits(formula, "LinearFormula")) {
+    residuals_vs_leverage <- residuals_vs_leverage +     labs(
       y = "Standardized residuals", x = "Leverage",
       title = "Residuals vs Leverage",
       caption = "In this plot, residuals are plotted against leverage
-values to detect influential data points. High leverage points,
-particularly those with large residuals, can disproportionately affect
-the fitted model. The dashed horizontal line represents zero residuals.
-Points that are far from this line (with high residuals) and have high
-leverage may be influential outliers. Influential points are labelled with
-the row index in the dataset."
-    ) +
-    theme(plot.caption = element_text(size = 12, hjust = 0))
+      values to detect influential data points. High leverage points,
+      particularly those with large residuals, can disproportionately affect
+      the fitted model. The dashed horizontal line represents zero residuals.
+      Points that are far from this line (with high residuals) and have high
+      leverage may be influential outliers. Influential points are labelled with
+      the row index in the dataset."
+    )
+  } else if (inherits(formula, "GeneralisedLinearFormula")) {
+    residuals_vs_leverage <- residuals_vs_leverage +     labs(
+      y = "Standardized residuals", x = "Leverage",
+      title = "Residuals vs Leverage"
+    )
+  }
 
   plot_grid(
     resids_vs_fitted,

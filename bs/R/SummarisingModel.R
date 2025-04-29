@@ -233,8 +233,14 @@ plot_pred <- function(data, formula) {
 }
 
 create_information_criterions <- function(model) {
-  data.frame(AIC = AIC(model), BIC = BIC(model))
+  out <- data.frame(AIC = AIC(model), BIC = BIC(model))
+  if (inherits(model, "glm")) {
+    dispersion <- summary(model)$dispersion
+    out$Dispersion <- dispersion
+  }
+  return(out)
 }
+
 
 # This offers the user the option to directly visualise the data based on a model
 # =================================================================================================

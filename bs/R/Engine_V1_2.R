@@ -907,15 +907,13 @@ diagnostic_plots_V1_2 <- R6::R6Class(
       self$com <- com$new()
     },
 
-    validate = function() {
-      stopifnot("Formula is not of type linear" = inherits(self$formula, "LinearFormula"))
-    },
+    validate = function() {},
 
     eval = function(ResultsState) {
       p <- NULL
       withCallingHandlers(
         {
-          p <- diagnosticPlots(self$df, self$formula@formula)
+          p <- diagnosticPlots(self$df, self$formula)
           check_rls(ResultsState$all_data, p)
           p
         },
@@ -1140,7 +1138,7 @@ statistical_tests_V1_2 <- R6::R6Class(
 
     initialize = function(df, formula, balanced_design, p_val, p_val_adj_method, com = communicator_V1_2) {
       self$df <- df
-      self$formula <- formula@formula
+      self$formula <- formula
       self$balanced_design <- balanced_design
       self$p_val <- p_val
       self$p_val_adj_method <- p_val_adj_method
@@ -1151,8 +1149,8 @@ statistical_tests_V1_2 <- R6::R6Class(
 
     eval = function(ResultsState, method) {
       e <- try({
-        self$indep <- as.character(self$formula)[3]
-        self$dep <- as.character(self$formula)[2]
+        self$indep <- as.character(self$formula@formula)[3]
+        self$dep <- as.character(self$formula@formula)[2]
       })
       if (inherits(e, "try-error")) {
         err <- conditionMessage(attr(e, "condition"))
@@ -1167,21 +1165,29 @@ statistical_tests_V1_2 <- R6::R6Class(
         {
           switch(method,
             aov = {
-              fit <- broom::tidy(aov(
-                self$formula,
-                data = self$df
-              ))
-              history_data <- list(type = "ANOVA", formula = deparse(self$formula))
+              if (inherits(self$formula, "LinearFormula")) {
+                fit <- broom::tidy(aov(
+                  self$formula@formula,
+                  data = self$df
+                ))
+              } else if (inherits(self$formula, "GeneralisedLinearFormula")) {
+                family <- self$formula@family
+                link_fct <- self$formula@link_fct
+                family <- str2lang(paste0("stats::", family, "(\"", link_fct, "\")"))
+                model <- glm(self$formula@formula, data = self$df, family = eval(family))
+                fit <- broom::tidy(anova(model, test = "Chisq"))
+              }
+              history_data <- list(type = "ANOVA", formula = deparse(self$formula@formula))
             },
             kruskal = {
               fit <- broom::tidy(
-                kruskal.test(self$formula, data = self$df)
+                kruskal.test(self$formula@formula, data = self$df)
               ) # Keep here the restriction for respone ~ predictor
-              history_data <- list(type = "Kruskal-Wallis Test", formula = deparse(self$formula))
+              history_data <- list(type = "Kruskal-Wallis Test", formula = deparse(self$formula@formula))
             },
             HSD = {
-              check_formula(self$formula)
-              aov_res <- aov(self$formula, data = self$df)
+              check_formula(self$formula@formula)
+              aov_res <- aov(self$formula@formula, data = self$df)
               bal <- self$balanced_design
               req(bal)
               if (bal == "Balanced") {
@@ -1194,62 +1200,83 @@ statistical_tests_V1_2 <- R6::R6Class(
                 alpha = self$p_val, group = TRUE, unbalanced = bal
               )$groups
               history_data <- list(type = "Tukey HSD",
-                formula = deparse(self$formula), "Balanced design" = bal,
+                formula = deparse(self$formula@formula), "Balanced design" = bal,
                 "P-value" = self$p_val)
             },
             kruskalTest = {
               # FIX: I think kruskal does not have a p adjustment method
               # It is silently ignored
-              check_formula(self$formula)
+              check_formula(self$formula@formula)
               fit <- with(self$df, kruskal(self$df[, self$dep], self$df[, self$indep]),
                 alpha = self$p_val, p.adj = self$p_val_adj_method, group = TRUE
               )$groups
               names(fit)[1] <- self$dep
               history_data <- list(type = "Kruskal Wallis post hoc test",
-                formula = deparse(self$formula),
+                formula = deparse(self$formula@formula),
                 "Adjusted p value method" = self$p_val_adj_method,
                 "P-value" = self$p_val)
             },
             LSD = {
-              check_formula(self$formula)
-              aov_res <- aov(self$formula, data = self$df)
+              check_formula(self$formula@formula)
+              aov_res <- aov(self$formula@formula, data = self$df)
               fit <- agricolae::LSD.test(aov_res,
                 trt = self$indep,
                 alpha = self$p_val, p.adj = self$p_val_adj_method, group = TRUE
               )$groups
               history_data <- list(type = "Least significant difference test",
-                formula = deparse(self$formula),
+                formula = deparse(self$formula@formula),
                 "Adjusted p value method" = self$p_val_adj_method,
                 "P-value" = self$p_val)
             },
             scheffe = {
-              check_formula(self$formula)
-              aov_res <- aov(self$formula, data = self$df)
+              check_formula(self$formula@formula)
+              aov_res <- aov(self$formula@formula, data = self$df)
               fit <- agricolae::scheffe.test(
                 aov_res,
                 trt = self$indep, alpha = self$p_val, group = TRUE
               )$groups
               history_data <- list(type = "Scheffe post hoc test",
-                formula = deparse(self$formula),
+                formula = deparse(self$formula@formula),
                 "P-value" = self$p_val)
             },
             REGW = {
-              check_formula(self$formula)
-              aov_res <- aov(self$formula, data = self$df)
+              check_formula(self$formula@formula)
+              aov_res <- aov(self$formula@formula, data = self$df)
               fit <- agricolae::REGW.test(
                 aov_res,
                 trt = self$indep, alpha = self$p_val, group = TRUE
               )$groups
               history_data <- list(type = "REGW post hoc test",
-                formula = deparse(self$formula),
+                formula = deparse(self$formula@formula),
                 "P-value" = self$p_val)
             }
           )
+          # TODO: add Emmeans/glm posthoc tests to history
+          if (is.null(fit) && grepl("Emmeans", method)) {
+            method_adj <- gsub("Emmeans_", "", method)
+            family <- self$formula@family
+            link_fct <- self$formula@link_fct
+            family <- str2lang(paste0("stats::", family, "(\"", link_fct, "\")"))
+
+            f_split <- split_formula(self$formula@formula)
+            rhs_vars <- vars_rhs(f_split$right_site)
+            df_temp <- num_to_factor(self$df, rhs_vars)
+            if (any(apply(self$df, 2, is.numeric))) {
+              warning(paste0("Found numeric predictors and converted them to factors"))
+            }
+            model <- glm(self$formula@formula, data = df_temp, family = eval(family))
+            emm <- emmeans::emmeans(model, rhs_vars)
+            fit <- pairs(emm, adjust = method_adj)
+            fit <- as.data.frame(fit)
+          }
           check_rls(ResultsState$all_data, fit)
-
-          fit <- cbind(fit, row.names(fit))
-          names(fit)[ncol(fit)] <- paste0(self$indep, collapse = ".")
-
+          if (!grepl("Emmeans", method)) {
+            fit <- cbind(fit, row.names(fit))
+            names(fit)[ncol(fit)] <- paste0(self$indep, collapse = ".")
+          }
+          history_data <- list(type = paste0(strsplit(method, "_")[[1]], collapse = " "),
+            formula = deparse(self$formula@formula)
+          )
           fit
         },
         warning = function(warn) {
