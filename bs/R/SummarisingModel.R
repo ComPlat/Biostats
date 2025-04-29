@@ -188,6 +188,25 @@ plot_pred <- function(data, formula) {
     new_data <- create_new_data(formula, data, predictors, n)
     types <- determine_types(predictors, data)
     pred_df <- get_predictions(model, new_data)
+  } else if (inherits(formula, "GeneralisedLinearFormula")) {
+    family <- formula@family
+    link_fct <- formula@link_fct
+    formula <- formula@formula
+    f_split <- split_formula(formula)
+    predictors <- vars_rhs(f_split$right_site)
+    response <- all.vars(f_split$response)
+    if (length(predictors) > 4) {
+      formula <- trim_formula_predictors(formula)
+    }
+    family <- str2lang(paste0("stats::", family, "(\"", link_fct, "\")"))
+    model <- glm(formula, data = data, family = eval(family))
+    # R²
+    r2 <- summary(model)$r.squared
+    r2_label <- sprintf("R² = %.3f", r2)
+    n <- 100
+    new_data <- create_new_data(formula, data, predictors, n)
+    types <- determine_types(predictors, data)
+    pred_df <- get_predictions(model, new_data)
   }
   if(length(types) == 1) {
     return(

@@ -1,9 +1,11 @@
 source("./bs/R/SummarisingModel.R")
+source("./bs/R/StorageClasses.R")
 library(ggplot2)
 library(cowplot)
 
 compare <- function(data, formula) {
-  p1 <- plot_pred(data, formula)
+  formula_class <- new("GeneralisedLinearFormula", formula = formula, family = "Gamma", link_fct = "identity")
+  p1 <- plot_pred(data, formula_class)
   model <- lm(formula, data)
   f_split <- split_formula(formula)
   predictors <- vars_rhs(f_split$right_site)

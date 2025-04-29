@@ -640,13 +640,12 @@ create_formula_V1_2 <- R6::R6Class(
 
     validate = function() {},
 
-    eval = function(ResultsState, DataModelState, model_type, details = "") {
-      formula <- paste(self$response_var, " ~ ", self$right_site)
-      formula <- as.formula(formula)
-      check_ast(formula, colnames(self$df))
-
+    eval = function(ResultsState, DataModelState, model_type, ...) {
       eq <- NULL
       if (model_type == "Linear") {
+        formula <- paste(self$response_var, " ~ ", self$right_site)
+        formula <- as.formula(formula)
+        check_ast(formula, colnames(self$df))
         ResultsState$history[[length(ResultsState$history) + 1]] <- list(
           type = "CreateFormula",
           formula = deparse(formula),
@@ -655,6 +654,26 @@ create_formula_V1_2 <- R6::R6Class(
         )
         DataModelState$formula <- new("LinearFormula", formula = formula)
         model <- lm(formula, data = self$df)
+        eq <- extract_eq(model, wrap = TRUE)
+      } else if (model_type == "Generalised Linear Model") {
+        details <- c(...)
+        family <- details[[1]]
+        link_fct <- details[[2]]
+        formula <- paste(self$response_var, " ~ ", self$right_site)
+        formula <- as.formula(formula)
+        check_ast(formula, colnames(self$df))
+        ResultsState$history[[length(ResultsState$history) + 1]] <- list(
+          type = "CreateFormula",
+          formula = deparse(formula),
+          "Model Type" = "Generalised Linear Model",
+          details = paste0(family, "; ", link_fct)
+        )
+        DataModelState$formula <- new("GeneralisedLinearFormula",
+          formula = formula, family = family, link_fct = link_fct
+        )
+        family <- str2lang(paste0("stats::", family, "(\"", link_fct, "\")"))
+
+        model <- glm(formula, data = self$df, family = eval(family))
         eq <- extract_eq(model, wrap = TRUE)
       }
 
@@ -694,6 +713,15 @@ summarise_model_V1_2 <- R6::R6Class(
       r2_label <- NULL
       if (inherits(self$formula, "LinearFormula")) {
         model <- lm(self$formula@formula, data = self$df)
+        summary <- broom::tidy(model)
+        ic <- create_information_criterions(model)
+        r2 <- summary(model)$r.squared
+        r2_label <- sprintf("R² = %.3f", r2)
+      } else if (inherits(self$formula, "GeneralisedLinearFormula")) {
+        family <- self$formula@family
+        link_fct <- self$formula@link_fct
+        family <- str2lang(paste0("stats::", family, "(\"", link_fct, "\")"))
+        model <- glm(self$formula@formula, data = self$df, family = eval(family))
         summary <- broom::tidy(model)
         ic <- create_information_criterions(model)
         r2 <- summary(model)$r.squared

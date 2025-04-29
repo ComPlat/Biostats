@@ -18,10 +18,13 @@ FormulaEditorUI <- function(id) {
         ),
         selectInput(NS(id, "model_type"), "Choose the model type",
           c(
-            "Linear" = "Linear"
+            "Linear" = "Linear",
+            "Generalised Linear Model" = "Generalised Linear Model"
           ),
           selectize = FALSE
-        )
+        ),
+        uiOutput(NS(id, "glm_family_dropdown")),
+        uiOutput(NS(id, "glm_link_fct_dropdown"))
 
       ),
       column(
@@ -143,6 +146,87 @@ FormulaEditorServer <- function(id, DataModelState, ResultsState) {
       )
     })
 
+    # If glm is choosen create family
+    output[["glm_family_dropdown"]] <- renderUI({
+      if (input$model_type == "Linear") {
+        NULL
+      } else if (input$model_type == "Generalised Linear Model") {
+        selectInput(inputId = "FO-Family", "The distribution family which describes the residuals",
+          c(
+            "binomial" = "binomial",
+            "gaussian" = "gaussian",
+            "Gamma" = "Gamma",
+            "inverse.gaussian" = "inverse.gaussian",
+            "poisson" = "poisson",
+            "quasi" = "quasi",
+            "quasibinomial" = "quasibinomial",
+            "quasipoisson" = "quasipoisson"
+          ),
+          selectize = FALSE
+        )
+      }
+    })
+    # If glm is choosen create link function
+    output[["glm_link_fct_dropdown"]] <- renderUI({
+      req(input$Family)
+      if (input$model_type == "Linear") {
+        NULL
+      } else if (input$model_type == "Generalised Linear Model") {
+        if (input[["Family"]] == "binomial") {
+          selectInput("FO-Link function", "The link function", # TODO: requires better description
+            c(
+              "logit" = "logit",
+              "probit" = "probit",
+              "cauchit" = "cauchit"
+            ),
+            selectize = FALSE
+          )
+        } else if (input[["Family"]] %in% c("gaussian", "Gamma")) {
+          selectInput("FO-Link function", "The link function", # TODO: requires better description
+            c(
+              "identity" = "identity",
+              "log" = "log",
+              "inverse" = "inverse"
+            ),
+            selectize = FALSE
+          )
+        } else if (input[["Family"]] == "inverse.gaussian") {
+          selectInput("FO-Link function", "The link function", # TODO: requires better description
+            c(
+              "identity" = "identity",
+              "log" = "log",
+              "inverse" = "inverse",
+              "1/mu^2" = "1/mu^2"
+            ),
+            selectize = FALSE
+          )
+        } else if (input[["Family"]] == "poisson") {
+          selectInput("FO-Link function", "The link function", # TODO: requires better description
+            c(
+              "identity" = "identity",
+              "log" = "log",
+              "sqrt" = "sqrt"
+            ),
+            selectize = FALSE
+          )
+        } else if (input[["Family"]] %in% c("quasi", "quasibinomial", "quasipoisson")) {
+          selectInput("FO-Link function", "The link function", # TODO: requires better description
+            c(
+              "identity" = "identity",
+              "inverse" = "inverse",
+              "log" = "log",
+              "cloglog" = "cloglog",
+              "logit" = "logit",
+              "probit" = "probit",
+              "1/mu^2" = "1/mu^2",
+              "sqrt" = "sqrt"
+            ),
+            selectize = FALSE
+          )
+        }
+      }
+    })
+
     # React to colnames buttons
     observe({
       req(FormulaState$df)
@@ -214,7 +298,13 @@ FormulaEditorServer <- function(id, DataModelState, ResultsState) {
             right_site <- input[["editable_code"]]
             cf <- create_formula_V1_2$new(response_var, right_site, DataModelState$df)
             cf$validate()
-            model_latex <- cf$eval(ResultsState, DataModelState, input$model_type)
+            model_latex <- NULL
+            if (input$model_type == "Linear") {
+              model_latex <- cf$eval(ResultsState, DataModelState, input$model_type)
+            } else if (input$model_type == "Generalised Linear Model") {
+              model_latex <- cf$eval(ResultsState, DataModelState, input$model_type, input$Family, input$`Link function`)
+            }
+
             output$model <- renderUI({
               withMathJax(HTML(paste0("$$", model_latex, "$$")))
             })

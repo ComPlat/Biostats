@@ -4,6 +4,14 @@ setClass("LinearFormula",
   )
 )
 
+setClass("GeneralisedLinearFormula",
+  slots = c(
+    formula = "formula",
+    family = "character",
+    link_fct = "character"
+  )
+)
+
 setClass("doseResponse",
   slots = c(
     df = "data.frame",
