@@ -17,10 +17,9 @@ testsServer <- function(id, DataModelState, ResultsState) {
   moduleServer(id, function(input, output, session) {
     # Render tabs
     output$tabs <- renderUI({
-      req(DataModelState$formula)
       tabs <- list()
 
-      if (inherits(DataModelState$formula, "LinearFormula")) {
+      if (is.null(DataModelState$formula) || inherits(DataModelState$formula, "LinearFormula")) {
         tabs[[length(tabs) + 1]] <- tabPanel("Two groups", br())
       }
 
@@ -31,14 +30,9 @@ testsServer <- function(id, DataModelState, ResultsState) {
     })
     # Render Sidebar
     output$SidebarTests <- renderUI({
-      if (is.null(DataModelState$formula)) {
-        return(
-          div("Tests will first be available after defining a formula.")
-        )
-      }
       req(input$TestsConditionedPanels)
-      req(DataModelState$formula)
-      if (input$TestsConditionedPanels == "Two groups" && inherits(DataModelState$formula, "LinearFormula")) {
+
+      if (input$TestsConditionedPanels == "Two groups" && (is.null(DataModelState$formula) || inherits(DataModelState$formula, "LinearFormula"))) {
         div(
           sliderInput(NS(id, "confLevel"), "Confidence level of the interval",
             min = 0, max = 1, value = 0.95
@@ -69,7 +63,7 @@ testsServer <- function(id, DataModelState, ResultsState) {
             title = "Use the Kruskal-Wallis test when comparing more than two groups but the assumptions of normality or equal variances are not met. It is a non-parametric test. For more information see the Assumption tab"
           )
         )
-      } else if (input$TestsConditionedPanels == "Posthoc tests" && inherits(DataModelState$formula, "LinearFormula")) {
+      } else if (input$TestsConditionedPanels == "Posthoc tests" && (is.null(DataModelState$formula) || inherits(DataModelState$formula, "LinearFormula"))) {
         div(
           selectInput(NS(id, "PostHocTests"), "Choose a Post Hoc test",
             choices = c(
@@ -105,7 +99,7 @@ testsServer <- function(id, DataModelState, ResultsState) {
               "hommel" = "hommel"
             )
           ),
-          actionButton(NS(id, "PostHocEmmeansTest"), "run test")
+          actionButton(NS(id, "PostHocEmmeansTest"), "run PostHoc test")
         )
       }
     })
@@ -193,7 +187,7 @@ testsServer <- function(id, DataModelState, ResultsState) {
     })
 
     observeEvent(input$PostHocEmmeansTest, {
-      conductTests(paste0("Emmeans_", input$PostHocEmmeans)) # NOTE: pasted Emmeans to differentiate between glm and lm easily in engine
+      conductTests(input$PostHocEmmeans)
     })
   })
 

@@ -43,10 +43,7 @@ corrServer <- function(id, DataModelState, ResultsState) {
       tryCatch(
         {
           corr$validate()
-          fit <- corr$eval(ResultsState)
-          exportTestValues(
-            correlation_V1_2_res = fit
-          )
+          corr$eval(ResultsState)
         },
         error = function(err) {
           err <- err$message

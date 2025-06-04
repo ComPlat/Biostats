@@ -58,7 +58,8 @@ DoseResponseServer <- function(id, DataModelState, ResultsState) {
       currentPage = 1,
       currentPageOverview = 1,
       outliers = NULL,
-      df_dr = NULL
+      df_dr = NULL,
+      promise_result_name = NULL
     )
 
     # Render names of substances
@@ -91,6 +92,7 @@ DoseResponseServer <- function(id, DataModelState, ResultsState) {
       DoseResponseState$currentPageOverview <- 1
       DoseResponseState$outliers <- NULL
       DoseResponseState$df_dr <- NULL
+      DoseResponseState$promise_result_name <- NULL
     }
 
     check_dr <- function() {
@@ -100,12 +102,12 @@ DoseResponseServer <- function(id, DataModelState, ResultsState) {
       req(!is.null(DataModelState$formula))
     }
 
-    run_dr <- function(df, outliers) {
+    run_dr <- function(df, outliers, new_name) {
       dr <- dose_response_V1_2$new(
         df, outliers, input$xTransform, input$yTransform,
         input$substanceNames, DataModelState$formula
       )
-      dr$eval(NULL)
+      dr$eval(ResultsState, new_name)
     }
 
     dr_complete <- function() {
@@ -114,54 +116,48 @@ DoseResponseServer <- function(id, DataModelState, ResultsState) {
       reset_dr()
       resDF <- NULL
       resP <- NULL
-      e <- try(
-        {
-          res <- run_dr(df, NULL)
-          if (inherits(res, "try-error")) {
-            m <- conditionMessage(attr(res, "condition"))
-            stop(m)
-          }
-          resDF <- res[[1]]
-          resP <- res[[2]]
-          DoseResponseState$plots <- resP
-          DoseResponseState$names <- resDF$name
-          DoseResponseState$df_dr <- resDF
-          overviewPlots <- create_plot_pages(resP)
-          DoseResponseState$overview_plots <- overviewPlots
-        },
-        silent = TRUE
-      )
-      if (inherits(e, "try-error")) {
-        err <- conditionMessage(attr(e, "condition"))
-        reset_dr()
-        output$dr_result <- renderTable(data.frame(), digits = 6)
-        print_err(err)
-      } else {
-        output$dr_result <- renderTable(resDF, digits = 6)
-        ResultsState$curr_data <- new("doseResponse", df = resDF, p = resP, outlier_info = "")
-        ResultsState$curr_name <- paste(
-          "Test Nr", length(ResultsState$all_names) + 1,
-          "Conducted dose response analysis"
-        )
-        ResultsState$counter <- ResultsState$counter + 1
-        new_result_name <- paste0("DoseResponseNr", ResultsState$counter)
-        ResultsState$all_data[[new_result_name]] <- new(
-          "doseResponse",
-          df = resDF, p = resP, outlier_info = ""
-        )
-        exportTestValues(
-          doseresponse_res = ResultsState$curr_data
-        )
-        ResultsState$history[[length(ResultsState$history) + 1]] <- list(
-          type = "DoseResponse",
-          "Column containing the names" = input$substanceNames,
-          "Log transform x-axis" = input$xTransform,
-          "Log transform y-axis" = input$yTransform,
-          "formula" = deparse(DataModelState$formula),
-          "Result name" = new_result_name
-        )
+      new_name <- paste0(ResultsState$counter + 1, " DoseResponse")
+      e <- try(run_dr(df, NULL, new_name))
+      if (!inherits(e, "try-error")) {
+        DoseResponseState$promise_result_name <- new_name
       }
     }
+    observe({
+      if (!is.null(DoseResponseState$promise_result_name)) {
+        invalidateLater(500)
+        # TODO: requires check whether process is alive or died
+        # Or even better when process throws an error the promise result name in DoseResponseState
+        # should be set to NULL
+        if (!is.null(ResultsState$all_data[[DoseResponseState$promise_result_name]])) {
+          res <- ResultsState$all_data[[DoseResponseState$promise_result_name]]
+          if (is.null(DoseResponseState$outliers)) {
+            DoseResponseState$plots <- res@p
+            DoseResponseState$names <- res@df$name
+            DoseResponseState$df_dr <- res@df
+            overviewPlots <- create_plot_pages(res@p)
+            DoseResponseState$overview_plots <- overviewPlots
+            DoseResponseState$promise_result_name <- NULL
+            output$dr_result <- renderTable(res@df, digits = 6)
+          } else {
+            names <- DoseResponseState$names
+            name <- DoseResponseState$names[DoseResponseState$currentPage]
+            idx <- which(name == names)
+            resDF <- res@df
+            resP <- res@p
+            old_plots <- DoseResponseState$plots
+            old_df_dr <- DoseResponseState$df_dr
+            old_plots[[idx]] <- resP[[1]]
+            old_df_dr[idx, ] <- resDF
+            DoseResponseState$plots <- old_plots
+            DoseResponseState$df_dr <- old_df_dr
+            overviewPlots <- create_plot_pages(DoseResponseState$plots)
+            DoseResponseState$overview_plots <- overviewPlots
+            DoseResponseState$promise_result_name <- NULL
+            output$dr_result <- renderTable(DoseResponseState$df_dr, digits = 6)
+          }
+        }
+      }
+    })
 
     observeEvent(input$ic50, {
       dr_complete()
@@ -222,68 +218,23 @@ DoseResponseServer <- function(id, DataModelState, ResultsState) {
       outliers <- NULL
       e <- try(
         {
+          new_name <- paste0(ResultsState$counter + 1, " DoseResponse")
           outliers <- list(DoseResponseState$outliers[[name]])
           names(outliers) <- name
           if (length(outliers[[name]]) == 0) {
             outliers <- list(NULL)
             names(outliers) <- name
           }
-          res <- run_dr(df, outliers)
+          res <- run_dr(df, outliers, new_name)
           if (inherits(res, "try-error")) {
             m <- conditionMessage(attr(res, "condition"))
             stop(m)
           }
-          names <- DoseResponseState$names
-          idx <- which(name == names)
-          resDF <- res[[1]]
-          resP <- res[[2]][[1]]
-          old_plots <- DoseResponseState$plots
-          old_df_dr <- DoseResponseState$df_dr
-          old_plots[[idx]] <- resP
-          old_df_dr[idx, ] <- resDF
-          DoseResponseState$plots <- old_plots
-          DoseResponseState$df_dr <- old_df_dr
-          resP <- DoseResponseState$plots
-          resDF <- DoseResponseState$df_dr
-          overviewPlots <- create_plot_pages(resP)
-          DoseResponseState$overview_plots <- overviewPlots
-          check_rls(ResultsState$all_data, res)
         },
         silent = TRUE
       )
-      if (inherits(e, "try-error")) {
-        err <- conditionMessage(attr(e, "condition"))
-        output$dr_result <- renderTable(data.frame(), digits = 6)
-        print_err(err)
-      } else {
-        output$dr_result <- renderTable(resDF, digits = 6)
-        ResultsState$curr_data <- new(
-          "doseResponse",
-          df = resDF, p = resP, outlier_info = create_outlier_info(DoseResponseState$outliers)
-        )
-        ResultsState$curr_name <- paste(
-          "Test Nr", length(ResultsState$all_names) + 1,
-          "Conducted dose response analysis"
-        )
-        ResultsState$counter <- ResultsState$counter + 1
-        new_result_name <- paste0("DoseResponseNr", ResultsState$counter)
-        ResultsState$all_data[[new_result_name]] <- new(
-          "doseResponse",
-          df = resDF, p = resP, outlier_info = create_outlier_info(DoseResponseState$outliers)
-        )
-        exportTestValues(
-          doseresponse_res = ResultsState$curr_data
-        )
-        outliers <- list(DoseResponseState$outliers[[name]])
-        ResultsState$history[[length(ResultsState$history) + 1]] <- list(
-          type = "DoseResponse",
-          "Column containing the names" = input$substanceNames,
-          "Log transform x-axis" = input$xTransform,
-          "Log transform y-axis" = input$yTransform,
-          "formula" = deparse(DataModelState$formula),
-          outliers = create_outlier_info(DoseResponseState$outliers),
-          "Result name" = new_result_name
-        )
+      if (!inherits(e, "try-error")) {
+        DoseResponseState$promise_result_name <- new_name
       }
     }
 
@@ -296,8 +247,8 @@ DoseResponseServer <- function(id, DataModelState, ResultsState) {
         name_col <- input$substanceNames
         df <- DataModelState$df
         sub_df <- df[df[, name_col] == DoseResponseState$names[DoseResponseState$currentPage], ]
-        f <- as.character(DataModelState$formula)
-        formula <- DataModelState$formula
+        f <- as.character(DataModelState$formula@formula)
+        formula <- DataModelState$formula@formula
         check_formula(formula)
         dep <- f[2]
         indep <- f[3]

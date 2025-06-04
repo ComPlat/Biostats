@@ -1,5 +1,5 @@
-# TODO: before i can offer this the formula and the type of model have to be saved
 library(ggplot2)
+
 make_loss_fn <- function(formula, df) {
   rhs <- as.character(formula)[3] |> str2lang()
   lhs <- as.character(formula)[2]
@@ -68,6 +68,7 @@ optimize <- function(formula, df, lower_boundary, upper_boundary) {
       hjust = 0, vjust = 4, size = 4)
 
   p
+  param_str
 }
 
 # Simulate calibration data
@@ -81,3 +82,23 @@ df <- data.frame(conc = conc, response = response)
 formula <- response ~ a * conc / (b + conc)
 res <- optimize(formula, df, -10000, 10000)
 res
+
+optim_res <- optimize(uptake ~ a + m*conc, CO2, -10^2, 10^2)
+# TODO: offer the optim approach and nls
+# describe nls as "fitting model (non least square)" and optim will be named "free optimization" formula
+# Free Optimization Formula (Optim-Based)
+#     "Fit any formula to your data by optimizing parameter values without statistical assumptions.
+#     Ideal for calibration curves or parameter extraction where model validation is not required."
+# Fitting Model (Nonlinear Least Squares)
+#     "Fit a nonlinear model to your data using statistical methods.
+#     Provides parameter estimates, confidence intervals, and residual diagnostics based on statistical assumptions."
+# nls --> same assumptions as for lm
+nls_res <- nls(uptake ~ a + m*conc, data = CO2, start = list(a = 1, m = 2))
+lm_res <- lm(uptake ~ conc, data = CO2)
+
+optim_res
+nls_res
+lm_res
+
+summary(nls_res)
+summary(lm_res)

@@ -119,6 +119,20 @@ app <- function() {
         border-radius: 5px;
         margin-top: 10px;
         }
+        .var-box-name {
+        font-size: 15px;
+        font-weight: 600;
+        color: #1f2937;
+        margin-bottom: 8px;
+        margin-top: 4px;
+        }
+        .info-box {
+        background-color: #e0f2fe;
+        color: #0369a1;
+        padding: 12px 16px;
+        border-radius: 4px;
+        margin-top: 16px;
+        }
         .nav-tabs > li > a {
           text-decoration: none;
           color: #900C3F;
@@ -134,12 +148,13 @@ app <- function() {
     sidebarLayout(
       sidebarPanel(
         div(
-          style = "position: relative",
+          style = "display: flex; align-items: center; gap: 6px;",
           actionButton(
             "docu",
             label = NULL,
             icon = icon("question-circle")
-          )
+          ),
+          uiOutput("running_status")
         ),
         uiOutput("open_formula_editor_main"),
         uiOutput("formulaUI"),
@@ -227,6 +242,9 @@ app <- function() {
   )
 
   server <- function(input, output, session) {
+    # Create background process instance
+    bgp <- bg_process_V1_2$new()
+
     # States
     DataModelState <- reactiveValues(
       df = NULL, formula = NULL,
@@ -237,8 +255,10 @@ app <- function() {
       curr_data = NULL, curr_name = NULL,
       all_data = list(), all_names = list(),
       history = list(),
-      counter = 0
+      counter = 0,
+      bgp = bgp
     )
+    bgp$init(ResultsState) # NOTE: creates the polling observer
 
     DataWranglingState <- reactiveValues(
       df = NULL, df_name = "df",
@@ -246,6 +266,38 @@ app <- function() {
       counter_id = 0,
       intermediate_vars = list()
     )
+
+    # React to press cancel
+    observeEvent(input$confirm_stop, {
+      removeModal()
+      ResultsState$bgp$cancel()
+
+      req(ResultsState$bgp$queued_request)
+      ResultsState$bgp$start(
+        fun = ResultsState$bgp$queued_request$fun,
+        args = ResultsState$bgp$queued_request$args,
+        promise_result_name = ResultsState$bgp$queued_request$promise_result_name,
+        promise_history_entry = ResultsState$bgp$queued_request$promise_history_entry,
+        run_queue = TRUE
+      )
+    })
+
+    # Show running_status
+    output$running_status <- renderUI({
+      invalidateLater(750)
+      status <- ResultsState$bgp$running_status
+      if (status != "Idle") {
+        return(
+          div(
+            style = "display: flex; align-items: center; gap: 6px;",
+            tags$p(status, style = "margin: 0;"),
+            icon("spinner", class = "fa-spin", style = "color: #007BFF;")
+          )
+        )
+      } else {
+        NULL
+      }
+    })
 
     # docu
     observeEvent(input[["docu"]], {
@@ -533,12 +585,12 @@ app <- function() {
         class = "boxed-output",
         actionButton("open_formula_editor",
           "Open formula editor",
-          title = "Open the formula editor to create or modify a formula",
-          disabled = is.null(DataModelState$df) || !is.data.frame(DataModelState$df)
+          title = "Open the formula editor to create or modify a formula"
         )
       )
     })
     observeEvent(input[["open_formula_editor"]], {
+      print_req(is.data.frame(DataModelState$df), "The dataset is missing")
       showModal(modalDialog(
         title = "FormulaEditor",
         FormulaEditorUI("FO"),
@@ -588,10 +640,7 @@ app <- function() {
         class = "boxed-output",
         actionButton("open_split_by_group",
           "Open the split by group functionality",
-          title = "Open the split by group helper window",
-          disabled = is.null(DataModelState$df) ||
-            !is.data.frame(DataModelState$df) ||
-            !is.null(DataModelState$backup_df)
+          title = "Open the split by group helper window"
         ),
         actionButton("remove_filter_V1_2",
           "Remove the filter from the dataset",
@@ -601,6 +650,7 @@ app <- function() {
       )
     })
     observeEvent(input[["open_split_by_group"]], {
+      print_req(is.data.frame(DataModelState$df), "The dataset is missing")
       showModal(modalDialog(
         title = "SplitByGroup",
         SplitByGroupUI("SG"),
@@ -634,11 +684,6 @@ app <- function() {
         err <- conditionMessage(attr(e, "condition"))
         print_err(err)
       }
-    })
-
-    # Download handler for local
-    observe({
-
     })
 
     observeEvent(input$download, {

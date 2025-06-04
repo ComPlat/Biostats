@@ -11,7 +11,7 @@ history_to_table <- function(history) {
   list(hist) # NOTE: required to add it to result list otherwise the dataframe is split
 }
 
-eval_entry_V1_2 <- function(entry, DataModelState, DataWranglingState, ResultsState) {
+eval_entry_V1_2 <- function(entry, DataModelState, DataWranglingState, ResultsState, get_result) {
   res <- NULL
   switch(
     entry$type,
@@ -26,6 +26,7 @@ eval_entry_V1_2 <- function(entry, DataModelState, DataWranglingState, ResultsSt
       )
       res$validate()
       res$eval(ResultsState)
+      get_result(ResultsState)
     },
     Visualisation = {
       res <- visualisation_V1_2$new(
@@ -40,6 +41,7 @@ eval_entry_V1_2 <- function(entry, DataModelState, DataWranglingState, ResultsSt
       )
       res$validate()
       res$eval(ResultsState)
+      get_result(ResultsState)
     },
     VisualizationModel = {
       res <- visualisation_model_V1_2$new(
@@ -47,6 +49,7 @@ eval_entry_V1_2 <- function(entry, DataModelState, DataWranglingState, ResultsSt
       )
       res$validate()
       res$eval(ResultsState)
+      get_result(ResultsState)
     },
     ApplyFilter = {
       res <- apply_filter_V1_2$new(
@@ -96,7 +99,7 @@ eval_entry_V1_2 <- function(entry, DataModelState, DataWranglingState, ResultsSt
         backend_communicator_V1_2
       )
       res$validate()
-      res$eval(ResultsState, DataModelState, entry[["Model Type"]], entry[["details"]])
+      res$eval(ResultsState, DataModelState, entry[["Model Type"]], entry[["family"]], entry[["Link function"]])
     },
     ModelSummary = {
       res <- summarise_model_V1_2$new(
@@ -104,6 +107,7 @@ eval_entry_V1_2 <- function(entry, DataModelState, DataWranglingState, ResultsSt
         backend_communicator_V1_2)
       res$validate()
       res$eval(ResultsState)
+      get_result(ResultsState)
     },
     ShapiroOnData = {
       res <- shapiro_on_data_V1_2$new(
@@ -112,6 +116,7 @@ eval_entry_V1_2 <- function(entry, DataModelState, DataWranglingState, ResultsSt
       )
       res$validate()
       res$eval(ResultsState)
+      get_result(ResultsState)
     },
     ShapiroOnResiduals = {
       res <- shapiro_on_residuals_V1_2$new(
@@ -120,6 +125,7 @@ eval_entry_V1_2 <- function(entry, DataModelState, DataWranglingState, ResultsSt
       )
       res$validate()
       res$eval(ResultsState)
+      get_result(ResultsState)
     },
     LeveneTest = {
       res <- levene_V1_2$new(
@@ -129,6 +135,7 @@ eval_entry_V1_2 <- function(entry, DataModelState, DataWranglingState, ResultsSt
       )
       res$validate()
       res$eval(ResultsState)
+      get_result(ResultsState)
     },
     DiagnosticPlots = {
       res <- diagnostic_plots_V1_2$new(
@@ -137,6 +144,7 @@ eval_entry_V1_2 <- function(entry, DataModelState, DataWranglingState, ResultsSt
       )
       res$validate()
       res$eval(ResultsState)
+      get_result(ResultsState)
     },
     DoseResponse = {
       res <- dose_response_V1_2$new(
@@ -150,6 +158,7 @@ eval_entry_V1_2 <- function(entry, DataModelState, DataWranglingState, ResultsSt
       )
       res$validate()
       res$eval(ResultsState)
+      get_result(ResultsState)
     },
     TTest = {
       res <- t_test_V1_2$new(
@@ -162,6 +171,7 @@ eval_entry_V1_2 <- function(entry, DataModelState, DataWranglingState, ResultsSt
       )
       res$validate()
       res$eval(ResultsState)
+      get_result(ResultsState)
     },
     ANOVA = {
       res <- statistical_tests_V1_2$new(
@@ -171,6 +181,7 @@ eval_entry_V1_2 <- function(entry, DataModelState, DataWranglingState, ResultsSt
       )
       res$validate()
       res$eval(ResultsState, "aov")
+      get_result(ResultsState)
     },
     `Kruskal-Wallis Test` = {
       res <- statistical_tests_V1_2$new(
@@ -180,6 +191,7 @@ eval_entry_V1_2 <- function(entry, DataModelState, DataWranglingState, ResultsSt
       )
       res$validate()
       res$eval(ResultsState, "kruskal")
+      get_result(ResultsState)
     },
     `Tukey HSD` = {
       bal <- "Unbalanced"
@@ -191,6 +203,7 @@ eval_entry_V1_2 <- function(entry, DataModelState, DataWranglingState, ResultsSt
       )
       res$validate()
       res$eval(ResultsState, "HSD")
+      get_result(ResultsState)
     },
     `Kruskal Wallis post hoc test` = {
       res <- statistical_tests_V1_2$new(
@@ -200,6 +213,7 @@ eval_entry_V1_2 <- function(entry, DataModelState, DataWranglingState, ResultsSt
       )
       res$validate()
       res$eval(ResultsState, "kruskalTest")
+      get_result(ResultsState)
     },
     `Least significant difference test` = {
       res <- statistical_tests_V1_2$new(
@@ -209,6 +223,7 @@ eval_entry_V1_2 <- function(entry, DataModelState, DataWranglingState, ResultsSt
       )
       res$validate()
       res$eval(ResultsState, "LSD")
+      get_result(ResultsState)
     },
     `Scheffe post hoc test` = {
       res <- statistical_tests_V1_2$new(
@@ -218,6 +233,7 @@ eval_entry_V1_2 <- function(entry, DataModelState, DataWranglingState, ResultsSt
       )
       res$validate()
       res$eval(ResultsState, "scheffe")
+      get_result(ResultsState)
     },
     `REGW post hoc test` = {
       res <- statistical_tests_V1_2$new(
@@ -227,6 +243,108 @@ eval_entry_V1_2 <- function(entry, DataModelState, DataWranglingState, ResultsSt
       )
       res$validate()
       res$eval(ResultsState, "REGW")
+      get_result(ResultsState)
+    },
+    # Start glm
+    `ANOVA-Chisq` = {
+      res <- statistical_tests_V1_2$new(
+        DataModelState$df,
+        DataModelState$formula,
+        NULL, NULL, NULL, backend_communicator_V1_2
+      )
+      res$validate()
+      res$eval(ResultsState, "aov")
+      get_result(ResultsState)
+    }, # Kruskal-Wallis is the same as for lm and also recognised there
+    `GLM PostHoc adjusted by: tukey` = {
+      res <- statistical_tests_V1_2$new(
+        DataModelState$df,
+        DataModelState$formula,
+        NULL, NULL, NULL, backend_communicator_V1_2
+      )
+      res$validate()
+      res$eval(ResultsState, "tukey")
+      get_result(ResultsState)
+    },
+    `GLM PostHoc adjusted by: sidak` = {
+      res <- statistical_tests_V1_2$new(
+        DataModelState$df,
+        DataModelState$formula,
+        NULL, NULL, NULL, backend_communicator_V1_2
+      )
+      res$validate()
+      res$eval(ResultsState, "sidak")
+      get_result(ResultsState)
+    },
+    `GLM PostHoc adjusted by: bonferroni` = {
+      res <- statistical_tests_V1_2$new(
+        DataModelState$df,
+        DataModelState$formula,
+        NULL, NULL, NULL, backend_communicator_V1_2
+      )
+      res$validate()
+      res$eval(ResultsState, "bonferroni")
+      get_result(ResultsState)
+    },
+    `GLM PostHoc adjusted by: scheffe` = {
+      res <- statistical_tests_V1_2$new(
+        DataModelState$df,
+        DataModelState$formula,
+        NULL, NULL, NULL, backend_communicator_V1_2
+      )
+      res$validate()
+      res$eval(ResultsState, "scheffe")
+      get_result(ResultsState)
+    },
+    `GLM PostHoc adjusted by: none` = {
+      res <- statistical_tests_V1_2$new(
+        DataModelState$df,
+        DataModelState$formula,
+        NULL, NULL, NULL, backend_communicator_V1_2
+      )
+      res$validate()
+      res$eval(ResultsState, "none")
+      get_result(ResultsState)
+    },
+    `GLM PostHoc adjusted by: fdr` = {
+      res <- statistical_tests_V1_2$new(
+        DataModelState$df,
+        DataModelState$formula,
+        NULL, NULL, NULL, backend_communicator_V1_2
+      )
+      res$validate()
+      res$eval(ResultsState, "fdr")
+      get_result(ResultsState)
+    },
+    `GLM PostHoc adjusted by: holm` = {
+      res <- statistical_tests_V1_2$new(
+        DataModelState$df,
+        DataModelState$formula,
+        NULL, NULL, NULL, backend_communicator_V1_2
+      )
+      res$validate()
+      res$eval(ResultsState, "holm")
+      get_result(ResultsState)
+    },
+    `GLM PostHoc adjusted by: hochberg` = {
+      res <- statistical_tests_V1_2$new(
+        DataModelState$df,
+        DataModelState$formula,
+        NULL, NULL, NULL, backend_communicator_V1_2
+      )
+      res$validate()
+      res$eval(ResultsState, "hochberg")
+      get_result(ResultsState)
+    },
+    `GLM PostHoc adjusted by: hommel` = {
+      res <- statistical_tests_V1_2$new(
+        DataModelState$df,
+        DataModelState$formula,
+        NULL, NULL, NULL, backend_communicator_V1_2
+      )
+      res$validate()
+      res$eval(ResultsState, "hommel")
+      get_result(ResultsState)
     },
     RemoveResult = {
       res <- remove_result_V1_2$new(entry[["Entry removed"]])
@@ -262,6 +380,10 @@ get_correct_data_model_state <- function(version) {
 get_correct_data_wrangling_state <- function(version) {
   list("1_2" = backend_data_wrangling_state_V1_2)[version]
 }
+get_correct_get_result_fct <- function(version) {
+  list("1_2" = backend_get_result_V1_2)[version]
+}
+
 
 eval_history <- function(json_string, df, backend = FALSE) {
   print_err_in_eval_history <- print_err
@@ -278,9 +400,10 @@ eval_history <- function(json_string, df, backend = FALSE) {
     result_state <- get_correct_result_state(version$Nr)[[1]]$new()
     data_model_state <- get_correct_data_model_state(version$Nr)[[1]]$new(df)
     data_wrangling_state <- get_correct_data_wrangling_state(version$Nr)[[1]]$new(data_model_state)
+    get_result <- get_correct_get_result_fct(version$Nr)[[1]]
     for (i in seq_along(l)) {
       inner_e <- try({
-        eval_entry(l[[i]], data_model_state, data_wrangling_state, result_state)
+        eval_entry(l[[i]], data_model_state, data_wrangling_state, result_state, get_result)
       })
       if (inherits(inner_e, "try-error")) {
         err <- conditionMessage(attr(inner_e, "condition"))

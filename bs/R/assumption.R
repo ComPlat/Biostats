@@ -35,6 +35,9 @@ assUI <- function(id) {
 # 1. Assumptions for the ratio = mean/var analysis; Dispersion is the factor the variance is larger than expected
 # 2. Residuen analysis; residual plots on response scale and link scale
 # 3. relationship of response and predictors; Complicated
+#
+# TODO: Show all assumptions
+# Show all assumption tests even when no formula is set in the same way it is handled in the tests tab
 
 assServer <- function(id, DataModelState, ResultsState) {
   moduleServer(id, function(input, output, session) {
@@ -67,8 +70,8 @@ assServer <- function(id, DataModelState, ResultsState) {
               "Test of variance homogenity"
             )
           ),
-          actionButton(NS(id, "ASS-levene"), "Levene test"),
-          selectInput(NS(id, "ASS-center"), "Data center of each group: mean or median",
+          actionButton(NS(id, "levene"), "Levene test"), # NOTE: using ASS-levene is in this case wrong dont know why?
+          selectInput(NS(id, "center"), "Data center of each group: mean or median", # The same is true for center
             c(
               "Mean" = "mean",
               "Median" = "median"

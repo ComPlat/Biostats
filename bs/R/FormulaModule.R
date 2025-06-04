@@ -39,11 +39,7 @@ FormulaEditorUI <- function(id) {
               icon = icon("question-circle")
             )
           ),
-          h3(class = "title", "Right Side of Statistical Model"),
-          div(
-            uiOutput(NS(id, "colnames_list")),
-            class = "boxed-output"
-          ),
+          uiOutput(NS(id, "colnames_list")),
           br(),
           div(
             h3("Arithmetic Operators"),
@@ -120,7 +116,13 @@ FormulaEditorServer <- function(id, DataModelState, ResultsState) {
           title = paste("Select variable", i, "as a predictor for the model")
         )
       })
-      do.call(tagList, button_list)
+      div(
+        h3(class = "title", "Right Side of Statistical Model"),
+        div(
+          do.call(tagList, button_list),
+          class = "boxed-output"
+        )
+      )
     })
 
     # Create colnames dropdown

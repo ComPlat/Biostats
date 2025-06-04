@@ -1,3 +1,154 @@
+bg_process_V1_2 <- R6::R6Class("bg_process_V1_2",
+  public = list(
+    process = NULL,
+    result_val = NULL,
+    poll_interval = NULL,
+    cancel_clicked = FALSE,
+    warnings = NULL,
+    com = NULL,
+    running_status = NULL,
+    is_running = NULL,
+    promise_result_name = NULL,
+    promise_history_entry = NULL,
+    queued_request = NULL,
+
+    initialize = function(poll_interval = 250, com = communicator_V1_2) {
+      self$com <- com$new()
+      self$poll_interval <- poll_interval
+      self$process <- NULL
+      self$result_val <- NULL
+      self$running_status <- "Idle"
+      self$is_running <- FALSE
+      self$promise_result_name <- NULL
+      self$promise_history_entry <- NULL
+    },
+
+    init = function(ResultsState) {
+      # Polling loop
+      observe({
+        invalidateLater(250)
+        if (!is.null(ResultsState$bgp$process) && !ResultsState$bgp$process$is_alive()) {
+          res <- tryCatch(ResultsState$bgp$process$get_result(), error = function(e) e)
+          if (inherits(res, "error") && !ResultsState$bgp$cancel_clicked) {
+            ResultsState$bgp$running_status <- sprintf("Error failed with: %s", res$parent$message)
+            ResultsState$bgp$com$print_err(res$parent$message)
+          } else if (ResultsState$bgp$cancel_clicked) {
+            ResultsState$bgp$running_status <- "Canceled process"
+          } else {
+            ResultsState$bgp$warnings <- ResultsState$bgp$process$read_error()
+            if (ResultsState$bgp$warnings != "") {
+              ResultsState$bgp$com$print_warn(ResultsState$bgp$warnings)
+            }
+            e <- try(check_rls(ResultsState$all_data, res))
+            if (inherits(e, "try-error")) {
+              self$com$print_err(conditionMessage(e))
+              return()
+            }
+            ResultsState$all_data[[ResultsState$bgp$promise_result_name]] <- res
+            ResultsState$counter <- ResultsState$counter + 1
+            ResultsState$history[[length(ResultsState$history) + 1]] <- ResultsState$bgp$promise_history_entry
+            ResultsState$bgp$result_val <- res
+            ResultsState$bgp$running_status <- "Idle"
+
+            exportTestValues(
+              result_list = ResultsState$all_data
+            )
+          }
+          ResultsState$bgp$process <- NULL
+          ResultsState$bgp$is_running <- FALSE
+          ResultsState$bgp$promise_result_name <- NULL
+          ResultsState$bgp$promise_history_entry <- NULL
+          ResultsState$bgp$cancel_clicked <- FALSE
+        }
+      })
+
+    },
+
+    start = function(fun, args = list(), promise_result_name, promise_history_entry, run_queue = FALSE) {
+      if (self$is_running && !run_queue) {
+        # Store what the user wanted to do after cancel
+        self$queued_request <- list(
+          fun = fun,
+          args = args,
+          promise_result_name = promise_result_name,
+          promise_history_entry = promise_history_entry
+        )
+        showModal(modalDialog(
+          title = "Cancel running process",
+          "Do you want to stop the current task?",
+          easyClose = FALSE,
+          footer = tagList(
+            modalButton("Cancel"),
+            actionButton("confirm_stop", "Yes, stop running process", class = "btn-danger")
+          )
+        ))
+        return()
+      }
+      req(is.null(self$process) || !self$process$is_alive())
+      self$promise_result_name <- promise_result_name
+      self$promise_history_entry <- promise_history_entry
+      self$is_running <- TRUE
+      r6_args <- names(args)[sapply(args, function(x) inherits(x, "R6"))]
+      req(length(r6_args) == 0, paste("Cannot pass R6 objects to background process:", paste(r6_args, collapse = ", ")))
+      self$result_val <- NULL
+      self$process <- callr::r_bg(fun, args = args)
+      self$running_status <- "Running..."
+    },
+
+    cancel = function() {
+      req(!is.null(self$process), self$process$is_alive())
+      self$process$interrupt()
+      self$running_status <- "Canceled"
+      self$cancel_clicked <- TRUE
+    },
+
+    get_result = function() self$result_val
+
+  )
+)
+
+# When running the app in interactive mode this functions equivalent is:
+# the observer spawnd by init
+backend_get_result_V1_2 <- function(ResultsState) {
+  # This is basically the polling in the backend
+  while(!is.null(ResultsState$bgp$process) && ResultsState$bgp$process$is_alive()) {
+    Sys.sleep(0.5)
+  }
+  # After the background process has finished check whether evrything was fine or not
+  res <- tryCatch(ResultsState$bgp$process$get_result(), error = function(e) e)
+  if (inherits(res, "error") && !ResultsState$bgp$cancel_clicked) {
+    ResultsState$bgp$running_status <- sprintf("Error failed with: %s", res$message)
+    ResultsState$bgp$com$print_err(res$message)
+    ResultsState$bgp$cancel_clicked <- FALSE
+    ResultsState$bgp$is_running <- FALSE
+  } else if (ResultsState$bgp$cancel_clicked) {
+    ResultsState$bgp$running_status <- "Canceled process"
+    ResultsState$bgp$cancel_clicked <- FALSE
+    ResultsState$bgp$is_running <- FALSE
+  } else {
+    ResultsState$bgp$warnings <- ResultsState$bgp$process$read_error()
+    if (ResultsState$bgp$warnings != "") {
+      ResultsState$bgp$com$print_warn(ResultsState$bgp$warnings)
+    }
+    ResultsState$bgp$result_val <- res
+    ResultsState$bgp$running_status <- "Completed"
+    ResultsState$bgp$cancel_clicked <- FALSE
+    ResultsState$bgp$is_running <- FALSE
+  }
+  ResultsState$bgp$process <- NULL
+  # If everything was fine store the result
+  if (ResultsState$bgp$running_status == "Completed") {
+    res <- ResultsState$bgp$get_result()
+    check_rls(ResultsState$all_data, res)
+    ResultsState$all_data[[ResultsState$bgp$promise_result_name]] <- res
+    ResultsState$counter <- ResultsState$counter + 1
+    ResultsState$bgp$running_status <- "Idle"
+    ResultsState$history[[length(ResultsState$history) + 1]] <- ResultsState$bgp$promise_history_entry
+    ResultsState$bgp$promise_result_name <- NULL
+  }
+
+}
+
 backend_result_state_V1_2 <- R6::R6Class(
   "backend_result_state_V1_2",
   public = list(
@@ -5,7 +156,10 @@ backend_result_state_V1_2 <- R6::R6Class(
     all_data = list(), all_names = list(),
     history = list(),
     counter = 0,
-    initialize = function() {}
+    bgp = NULL,
+    initialize = function() {
+      self$bgp <- bg_process_V1_2$new(500, backend_communicator_V1_2)
+    }
   )
 )
 
@@ -98,33 +252,39 @@ correlation_V1_2 <- R6::R6Class(
       check_ast(str2lang(self$dep), colnames(self$df))
     },
     eval = function(ResultsState) {
-      fit <- NULL
       withCallingHandlers(
         expr = {
-          fit <- broom::tidy(
-            cor.test(
-              self$df[, self$dep], self$df[, self$indep],
-              method = self$method,
-              alternative = self$alternative,
-              conf.level = self$conflevel
-            ))
-          ResultsState$counter <- ResultsState$counter + 1
           new_name <- paste0(
-            ResultsState$counter, " Correlation ", firstup(self$method)
+            ResultsState$counter + 1, " Correlation ", firstup(self$method)
           )
-          self$create_history(new_name, ResultsState)
-          ResultsState$all_data[[new_name]] <- fit
-          check_rls(ResultsState$all_data, fit)
+          promise_history_entry <- self$create_history(new_name)
+          ResultsState$bgp$start(
+            fun = function(dep, indep, method, alternative, conflevel) {
+              broom::tidy(
+                cor.test(
+                  dep, indep,
+                  method = method,
+                  alternative = alternative,
+                  conf.level = conflevel
+                ))
+            },
+            args = list(
+              dep = self$df[, self$dep], indep = self$df[, self$indep],
+              method = self$method, alternative = self$alternative,
+              conflevel = self$conflevel
+            ),
+            promise_result_name = new_name,
+            promise_history_entry = promise_history_entry
+          )
         },
         warning = function(warn) {
           self$com$print_warn(warn$message)
           invokeRestart("muffleWarning")
         }
       )
-      return(fit)
     },
-    create_history = function(new_name, ResultsState) {
-      ResultsState$history[[length(ResultsState$history) + 1]] <- list(
+    create_history = function(new_name) {
+      list(
         type = "Correlation",
         formula = deparse(self$formula@formula),
         "Correlation method" = self$method,
@@ -225,63 +385,67 @@ visualisation_V1_2 <- R6::R6Class(
       }
     },
     eval = function(ResultsState) {
-      p <- tryCatch(
-        {
+      new_result_name <- paste0(
+        ResultsState$counter + 1,
+        " Visualization ", c(box = "Boxplot", dot = "Scatterplot", line = "Lineplot")[self$method]
+      )
+      promise_history_entry <- self$create_history(new_result_name)
+      ResultsState$bgp$start(
+        fun = function(method, df, x, y, xlabel, ylabel,
+                       fill_var, fill_legend_title, fill_theme,
+                       colour_var, colour_legend_title, colour_theme,
+                       facet_mode, facet_var, facet_y_scaling,
+                       xrange_min, xrange_max, yrange_min, yrange_max,
+                       width, height, resolution) {
           withCallingHandlers(
             {
-              if (self$method == "box") {
-                p <- BoxplotFct(
-                  self$df, self$x, self$y, self$xlabel, self$ylabel,
-                  self$fill_var, self$fill_legend_title, self$fill_theme,
-                  self$colour_var, self$colour_legend_title, self$colour_theme,
-                  self$facet_mode, self$facet_var, self$facet_y_scaling,
-                  self$xrange[1], self$xrange[2], self$yrange[1], self$yrange[2]
+              if (method == "box") {
+                p <- bs:::BoxplotFct(
+                  df, x, y, xlabel, ylabel,
+                  fill_var, fill_legend_title, fill_theme,
+                  colour_var, colour_legend_title, colour_theme,
+                  facet_mode, facet_var, facet_y_scaling,
+                  xrange_min, xrange_max, yrange_min, yrange_max
                 )
-              } else if (self$method == "dot") {
-                p <- DotplotFct(
-                  self$df, self$x, self$y, self$xlabel, self$ylabel,
-                  self$fit_method,
-                  self$colour_var, self$colour_legend_title, self$colour_theme,
-                  self$facet_mode, self$facet_var, self$facet_y_scaling,
-                  k = NULL,
-                  self$xrange[1], self$xrange[2], self$yrange[1], self$yrange[2]
+              } else if (method == "dot") {
+                p <- bs:::DotplotFct(
+                  df, x, y, xlabel, ylabel,
+                  fit_method,
+                  colour_var, colour_legend_title, colour_theme,
+                  facet_mode, facet_var, facet_y_scaling,
+                  k = NULL, # TODO: remove the fitting stuff not needed anymore
+                  xrange_min, xrange_max, yrange_min, yrange_max
                 )
-              } else if (self$method == "line") {
-                p <- LineplotFct(
-                  self$df, self$x, self$y, self$xlabel, self$ylabel,
-                  self$colour_var, self$colour_legend_title, self$colour_theme,
-                  self$facet_mode, self$facet_var, self$facet_y_scaling,
-                  self$xrange[1], self$xrange[2], self$yrange[1], self$yrange[2]
+              } else if (method == "line") {
+                p <- bs:::LineplotFct(
+                  df, x, y, xlabel, ylabel,
+                  colour_var, colour_legend_title, colour_theme,
+                  facet_mode, facet_var, facet_y_scaling,
+                  xrange_min, xrange_max, yrange_min, yrange_max
                 )
               }
             },
             warning = function(warn) {
-              self$com$print_warn(warn$message)
+              com$print_warn(warn$message)
               invokeRestart("muffleWarning")
             }
           )
-          check_rls(ResultsState$all_data, p)
-          ggplot_build(p) # NOTE: invokes errors and warnings by building but not rendering plot
-          ResultsState$counter <- ResultsState$counter + 1
-          new_result_name <- paste0(
-            ResultsState$counter, " Visualization ", c(box = "Boxplot", dot = "Scatterplot", line = "Lineplot")[self$method]
-          )
-          ResultsState$all_data[[new_result_name]] <- new("plot", p = p, width = self$width, height = self$height, resolution = self$resolution)
-          self$create_history(new_result_name, ResultsState)
+          ggplot2::ggplot_build(p) # NOTE: invokes errors and warnings by building but not rendering plot
+          new("plot", p = p, width = width, height = height, resolution = resolution)
         },
-        warning = function(warn) {
-          self$com$print_warn(warn$message)
-          return(p)
-        },
-        error = function(err) {
-          self$com$print_err(paste("An error occurred: ", conditionMessage(err)))
-          stop(conditionMessage(err))
-        }
+        args = list(self$method, self$df, self$x, self$y, self$xlabel, self$ylabel,
+          self$fill_var, self$fill_legend_title, self$fill_theme,
+          self$colour_var, self$colour_legend_title, self$colour_theme,
+          self$facet_mode, self$facet_var, self$facet_y_scaling,
+          self$xrange_min, self$xrange_max, self$yrange_min, self$yrange_max,
+          self$width, self$height, self$resolution
+        ),
+        promise_result_name = new_result_name,
+        promise_history_entry = promise_history_entry
       )
-      return(p)
     },
-    create_history = function(new_result_name, ResultsState) {
-      ResultsState$history[[length(ResultsState$history) + 1]] <- list(
+    create_history = function(new_result_name) {
+      list(
         type = "Visualisation",
         x = self$x, y = self$y, "Plot-type" = self$method,
         "X axis label" = self$xlabel, "Y axis label" = self$ylabel, "Type of x" = self$type_of_x,
@@ -315,26 +479,41 @@ visualisation_model_V1_2 <- R6::R6Class(
 
     validate = function() {},
 
-    eval = function(ResultsState) {
-      p <- try({
-        p <- plot_model(self$df, self$formula, self$layer)
-      })
-      check_rls(ResultsState$all_data, p)
-      ggplot_build(p) # NOTE: invokes errors and warnings by building but not rendering plot
-      if (inherits(p, "try-error")) {
-        self$com$print_err(p)
-        return()
-      }
-      ResultsState$counter <- ResultsState$counter + 1
-      new_result_name <- paste0(
-        ResultsState$counter, " Visualization Model ", c(box = "Boxplot", dot = "Scatterplot", line = "Lineplot")[self$layer]
-      )
-      ResultsState$all_data[[new_result_name]] <- new("plot", p = p, width = 10, height = 10, resolution = 600)
-      ResultsState$history[[length(ResultsState$history) + 1]] <- list(
+    create_history = function(new_name) {
+      list(
         type = "VisualizationModel",
         formula = deparse(self$formula@formula),
         "Layer" = self$layer,
-        "Result name" = new_result_name
+        "Result name" = new_name
+      )
+    },
+
+    eval = function(ResultsState) {
+      withCallingHandlers(
+        expr = {
+          new_name <- paste0(
+            ResultsState$counter + 1, " Visualization Model ", c(box = "Boxplot", dot = "Scatterplot", line = "Lineplot")[self$layer]
+          )
+          promise_history_entry <- self$create_history(new_name)
+          ResultsState$bgp$start(
+            fun = function(df, formula, layer) {
+              p <- bs:::plot_model(df, formula, layer)
+              ggplot2::ggplot_build(p) # NOTE: invokes errors and warnings by building but not rendering plot
+              return(
+                new("plot", p = p, width = 10, height = 10, resolution = 600)
+              )
+            },
+            args = list(
+              df = self$df, formula = self$formula, layer = self$layer
+            ),
+            promise_result_name = new_name,
+            promise_history_entry = promise_history_entry
+          )
+        },
+        warning = function(warn) {
+          self$com$print_warn(warn$message)
+          invokeRestart("muffleWarning")
+        }
       )
     }
   )
@@ -372,8 +551,8 @@ apply_filter_V1_2 <- R6::R6Class(
     create_history = function(ResultsState) {
       ResultsState$history[[length(ResultsState$history) + 1]] <- list(
         type = "ApplyFilter",
-        Variable = paste(self$selected_cols, collapse = ", "),
-        "Variable levels" = paste(self$selected_groups, collapse = ", ")
+        Variable = self$selected_cols,
+        "Variable levels" = self$selected_groups
       )
     }
   )
@@ -465,7 +644,7 @@ create_intermediate_var_V1_2 <- R6::R6Class(
 
     eval = function(ResultsState, DataWranglingState) {
       e <- try({
-        eval_env <- new.env()
+        eval_env <- new.env() # parent = emptyenv()
         list2env(self$intermediate_vars, envir = eval_env)
         list2env(self$df, envir = eval_env) # NOTE: this adds each column as own variable
         new <- eval(parse(text =self$operation), envir = eval_env)
@@ -646,15 +825,15 @@ create_formula_V1_2 <- R6::R6Class(
         formula <- paste(self$response_var, " ~ ", self$right_site)
         formula <- as.formula(formula)
         check_ast(formula, colnames(self$df))
+        DataModelState$formula <- new("LinearFormula", formula = formula)
+        model <- lm(formula, data = self$df)
+        eq <- extract_eq(model, wrap = TRUE)
         ResultsState$history[[length(ResultsState$history) + 1]] <- list(
           type = "CreateFormula",
           formula = deparse(formula),
           "Model Type" = "Linear",
           details = ""
         )
-        DataModelState$formula <- new("LinearFormula", formula = formula)
-        model <- lm(formula, data = self$df)
-        eq <- extract_eq(model, wrap = TRUE)
       } else if (model_type == "Generalised Linear Model") {
         details <- c(...)
         family <- details[[1]]
@@ -662,19 +841,19 @@ create_formula_V1_2 <- R6::R6Class(
         formula <- paste(self$response_var, " ~ ", self$right_site)
         formula <- as.formula(formula)
         check_ast(formula, colnames(self$df))
-        ResultsState$history[[length(ResultsState$history) + 1]] <- list(
-          type = "CreateFormula",
-          formula = deparse(formula),
-          "Model Type" = "Generalised Linear Model",
-          details = paste0(family, "; ", link_fct)
-        )
         DataModelState$formula <- new("GeneralisedLinearFormula",
           formula = formula, family = family, link_fct = link_fct
         )
         family <- str2lang(paste0("stats::", family, "(\"", link_fct, "\")"))
-
         model <- glm(formula, data = self$df, family = eval(family))
         eq <- extract_eq(model, wrap = TRUE)
+        ResultsState$history[[length(ResultsState$history) + 1]] <- list(
+          type = "CreateFormula",
+          formula = deparse(formula),
+          "Model Type" = "Generalised Linear Model",
+          family = family,
+          "Link function" = link_fct
+        )
       }
 
       return(eq)
@@ -695,50 +874,77 @@ summarise_model_V1_2 <- R6::R6Class(
 
     validate = function() {},
 
-    eval = function(ResultsState) {
-      p <- withCallingHandlers(
+    eval_lm = function(ResultsState, new_name, promise_history_entry) {
+      withCallingHandlers(
         {
-          p <- plot_pred(self$df, self$formula)
+          expr = {
+            ResultsState$bgp$start(
+              fun = function(df, formula) {
+                p <- bs:::plot_pred_lm(df, formula)
+                ggplot2::ggplot_build(p)
+                p <- new("plot", p = p, width = 15, height = 15, resolution = 600)
+                model <- lm(formula@formula, data = df)
+                summary <- broom::tidy(model)
+                ic <- bs:::create_information_criterions(model)
+                new("summaryModel", p = p, summary = summary, information_criterions = ic)
+              },
+              args = list(df = self$df, formula = self$formula),
+              promise_result_name = new_name,
+              promise_history_entry = promise_history_entry
+            )
+          }
         },
         warning = function(warn) {
           self$com$print_warn(warn$message)
           invokeRestart("muffleWarning")
         }
       )
-      ggplot_build(p) # NOTE: invokes errors and warnings by building but not rendering plot
-      p <- new("plot", p = p, width = 15, height = 15, resolution = 600)
+    },
 
-      summary <- NULL
-      ic <- NULL
-      r2_label <- NULL
-      if (inherits(self$formula, "LinearFormula")) {
-        model <- lm(self$formula@formula, data = self$df)
-        summary <- broom::tidy(model)
-        ic <- create_information_criterions(model)
-        r2 <- summary(model)$r.squared
-        r2_label <- sprintf("R² = %.3f", r2)
-      } else if (inherits(self$formula, "GeneralisedLinearFormula")) {
-        family <- self$formula@family
-        link_fct <- self$formula@link_fct
-        family <- str2lang(paste0("stats::", family, "(\"", link_fct, "\")"))
-        model <- glm(self$formula@formula, data = self$df, family = eval(family))
-        summary <- broom::tidy(model)
-        ic <- create_information_criterions(model)
-        r2 <- summary(model)$r.squared
-        r2_label <- sprintf("R² = %.3f", r2)
-      }
-      ResultsState$counter <- ResultsState$counter + 1
-      new_result_name <- paste0(
-        ResultsState$counter, " Model summary"
+    eval_glm = function(ResultsState, new_name, promise_history_entry) {
+      withCallingHandlers(
+        {
+          expr = {
+            ResultsState$bgp$start(
+              fun = function(df, formula) {
+                p <- bs:::plot_pred_glm(df, formula)
+                ggplot2::ggplot_build(p)
+                p <- new("plot", p = p, width = 15, height = 15, resolution = 600)
+                family <- self$formula@family
+                link_fct <- self$formula@link_fct
+                family <- str2lang(paste0("stats::", family, "(\"", link_fct, "\")"))
+                model <- glm(self$formula@formula, data = self$df, family = eval(family))
+                summary <- broom::tidy(model)
+                ic <- bs:::create_information_criterions(model)
+                new("summaryModel", p = p, summary = summary, information_criterions = ic)
+              },
+              args = list(df = self$df, formula = self$formula),
+              promise_result_name = new_name,
+              promise_history_entry = promise_history_entry
+            )
+          }
+        },
+        warning = function(warn) {
+          self$com$print_warn(warn$message)
+          invokeRestart("muffleWarning")
+        }
       )
-      ResultsState$all_data[[new_result_name]] <-
-        new("summaryModel", p = p, summary = summary, information_criterions = ic)
+    },
 
-      ResultsState$history[[length(ResultsState$history) + 1]] <- list(
+    eval = function(ResultsState) {
+      new_name <- paste0(ResultsState$counter + 1, " Model summary")
+      promise_history_entry <- self$create_history(new_name)
+      if (inherits(self$formula, "LinearFormula")) {
+        res <- self$eval_lm(ResultsState, new_name, promise_history_entry)
+      } else if (inherits(self$formula, "GeneralisedLinearFormula")) {
+        res <- self$eval_glm(ResultsState, new_name, promise_history_entry)
+      }
+    },
+    create_history = function(new_name) {
+      list(
         type = "ModelSummary",
         formula = deparse(self$formula@formula),
-        R2 = r2_label,
-        "Result name" = new_result_name
+        "Result name" = new_name
       )
     }
 
@@ -761,39 +967,46 @@ shapiro_on_data_V1_2 <- R6::R6Class(
     validate = function() {},
 
     eval = function(ResultsState) {
-      res <- list()
-      res <- withCallingHandlers(
+      withCallingHandlers(
         {
-          dat <- splitData(self$df, self$formula)
-          for (i in unique(dat[, 2])) {
-            tempDat <- dat[dat[, 2] == i, ]
-            temp <- broom::tidy(shapiro.test(tempDat[, 1]))
-            if (!is.null(temp)) {
-              temp$variable <- i
-              temp$`Normal distributed` <- temp$p.value > 0.05
-              res[[length(res) + 1]] <- temp
-            }
-          }
-          res <- do.call(rbind, res)
-          check_rls(ResultsState$all_data, res)
-          res
+          new_name <- paste0(
+            ResultsState$counter + 1, " Shapiro on data"
+          )
+          promise_history_entry <- self$create_history(new_name)
+          ResultsState$bgp$start(
+            fun = function(df, formula) {
+              res <- list()
+              dat <- bs:::splitData(df, formula)
+              for (i in unique(dat[, 2])) {
+                tempDat <- dat[dat[, 2] == i, ]
+                temp <- broom::tidy(shapiro.test(tempDat[, 1]))
+                if (!is.null(temp)) {
+                  temp$variable <- i
+                  temp$`Normal distributed` <- temp$p.value > 0.05
+                  res[[length(res) + 1]] <- temp
+                }
+              }
+              res <- do.call(rbind, res)
+              res
+            },
+            args = list(df = self$df, formula = self$formula),
+            promise_result_name = new_name,
+            promise_history_entry = promise_history_entry
+          )
         },
         warning = function(warn) {
           self$com$print_warn(warn$message)
           invokeRestart("muffleWarning")
         }
       )
-      ResultsState$counter <- ResultsState$counter + 1
-      new_name <- paste0(
-        ResultsState$counter, " Shapiro on data"
-      )
-      ResultsState$all_data[[new_name]] <-res
-      ResultsState$history[[length(ResultsState$history) + 1]] <- list(
+    },
+
+    create_history = function(new_name) {
+      list(
         type = "ShapiroOnData",
         formula = deparse(self$formula),
         "Result name" = new_name
       )
-      return(res)
     }
   )
 )
@@ -815,32 +1028,36 @@ shapiro_on_residuals_V1_2 <- R6::R6Class(
     },
 
     eval = function(ResultsState) {
-      res <- NULL
       withCallingHandlers(
-        {
-          fit <- lm(self$formula@formula, data = self$df)
-          r <- resid(fit)
-          res <- broom::tidy(shapiro.test(r))
-          res$`Residuals normal distributed` <- res$p.value > 0.05
-          check_rls(ResultsState$all_data, res)
-          res
+        expr = {
+          new_name <- paste0(ResultsState$counter + 1, " Shapiro on residuals")
+          promise_history_entry <- self$create_history(new_name)
+          ResultsState$bgp$start(
+            fun = function(df, formula) {
+              fit <- lm(formula@formula, data = df)
+              r <- resid(fit)
+              res <- broom::tidy(shapiro.test(r))
+              res$`Residuals normal distributed` <- res$p.value > 0.05
+              res
+            },
+            args = list(df = self$df, formula = self$formula),
+            promise_result_name = new_name,
+            promise_history_entry = promise_history_entry
+          )
         },
         warning = function(warn) {
           self$com$print_warn(warn$message)
           invokeRestart("muffleWarning")
         }
       )
-      ResultsState$counter <- ResultsState$counter + 1
-      new_name <- paste0(
-        ResultsState$counter, " Shapiro on residuals"
-      )
-      ResultsState$all_data[[new_name]] <- res
-      ResultsState$history[[length(ResultsState$history) + 1]] <- list(
+    },
+
+    create_history = function(new_name) {
+      list(
         type = "ShapiroOnResiduals",
         formula = deparse(self$formula@formula),
         "Result name" = new_name
       )
-      return(res)
     }
   )
 )
@@ -864,33 +1081,37 @@ levene_V1_2 <- R6::R6Class(
     },
 
     eval = function(ResultsState) {
-      res <- NULL
       withCallingHandlers(
-        {
-          res <- broom::tidy(
-            car::leveneTest(self$formula@formula, data = self$df, center = self$center)
+        expr = {
+          new_name <- paste0(ResultsState$counter + 1, " Levene test")
+          promise_history_entry <- self$create_history(new_name)
+          ResultsState$bgp$start(
+            fun = function(df, formula, center) {
+              res <- broom::tidy(
+                car::leveneTest(formula, data = df, center = center)
+              )
+              res$`Variance homogenity` <- res$p.value > 0.05
+              res
+            },
+            args = list(df = self$df, formula = self$formula@formula, center = self$center),
+            promise_result_name = new_name,
+            promise_history_entry = promise_history_entry
           )
-          res$`Variance homogenity` <- res$p.value > 0.05
-          check_rls(ResultsState$all_data, res)
-          res
         },
         warning = function(warn) {
           self$com$print_warn(warn$message)
           invokeRestart("muffleWarning")
         }
       )
-      ResultsState$counter <- ResultsState$counter + 1
-      new_name <- paste0(
-        ResultsState$counter, " Levene test"
-      )
-      ResultsState$all_data[[new_name]] <- res
-      ResultsState$history[[length(ResultsState$history) + 1]] <- list(
+    },
+
+    create_history = function(new_name) {
+      list(
         type = "LeveneTest",
         formula = deparse(self$formula@formula),
         "Data center" = self$center,
         "Result name" = new_name
       )
-      return(res)
     }
   )
 )
@@ -910,34 +1131,38 @@ diagnostic_plots_V1_2 <- R6::R6Class(
     validate = function() {},
 
     eval = function(ResultsState) {
-      p <- NULL
       withCallingHandlers(
-        {
-          p <- diagnosticPlots(self$df, self$formula)
-          check_rls(ResultsState$all_data, p)
-          p
+        expr = {
+          new_name <- paste0(ResultsState$counter + 1, " Diagnostic plot")
+          promise_history_entry <- self$create_history(new_name)
+          ResultsState$bgp$start(
+            fun = function(df, formula) {
+              p <- bs:::diagnosticPlots(df, formula)
+              new("plot", p = p, width = 15, height = 15, resolution = 600)
+            },
+            args = list(df = self$df, formula = self$formula),
+            promise_result_name = new_name,
+            promise_history_entry = promise_history_entry
+          )
         },
         warning = function(warn) {
           self$com$print_warn(warn$message)
           invokeRestart("muffleWarning")
         }
       )
-      ResultsState$counter <- ResultsState$counter + 1
-      new_result_name <- paste0(
-        ResultsState$counter, " Diagnostic plot"
-      )
-      ResultsState$all_data[[new_result_name]] <-
-        new("plot", p = p, width = 15, height = 15, resolution = 600)
-      ResultsState$history[[length(ResultsState$history) + 1]] <- list(
+    },
+
+    create_history = function(new_name) {
+      list(
         type = "DiagnosticPlots",
         formula = deparse(self$formula@formula),
-        "Result name" = new_result_name
+        "Result name" = new_name
       )
-      return(p)
     }
   )
 )
 
+# TODO: build get result to update the DoseResponseState in the evaluation of history
 dose_response_V1_2 <- R6::R6Class(
   "dose_response_V1_2",
   public = list(
@@ -967,6 +1192,7 @@ dose_response_V1_2 <- R6::R6Class(
     validate = function() {},
 
     set_result = function(ResultsState, res_df, res_p) {
+      # TODO: check is this required?
       # NOTE: this is only the case if history is replayed
       # To keep the structure of the complex dose response state
         new_result_name <- ""
@@ -1013,51 +1239,79 @@ dose_response_V1_2 <- R6::R6Class(
         )
     },
 
-    eval = function(ResultsState) {
-      f <- as.character(self$formula)
-      dep <- f[2]
-      indep <- f[3]
-      res_p <- NULL
-      res_df <- NULL
-      err <- try({
-        check_formula(self$formula)
-        check_ast(str2lang(indep), colnames(self$df))
-        check_ast(str2lang(dep), colnames(self$df))
-        res <- ic50(
-          self$df, dep,
-          indep, self$substance_names, self$outliers,
-          self$is_xlog, self$is_ylog
-        )
-        if (inherits(res, "errorClass")) {
-          stop(res$error_message)
-        }
-        res_df <- lapply(res, function(x) {
-          if (inherits(x, "errorClass")) {
-            return(NULL)
-          }
-          return(x[[1]])
-        })
-        res_df <- res_df[!is.null(res_df)]
-        res_df <- res_df[!sapply(res_df, is.null)]
-        res_df <- Reduce(rbind, res_df)
-        res_p <- lapply(res, function(x) {
-          if (inherits(x, "errorClass")) {
-            return(NULL)
-          }
-          return(x[[2]])
-        })
-        res_p <- res_p[!is.null(res_p)]
-        res_p <- res_p[!sapply(res_p, is.null)]
-      })
-      if (inherits(err, "try-error")) {
-        self$com$print(err$message)
-        return(err)
-      }
-      if (!is.null(ResultsState)) {
-        self$set_result(ResultsState, res_df, res_p)
-      }
+    eval = function(ResultsState, new_name) {
+      withCallingHandlers(
+        expr = {
+          promise_history_entry <- self$create_history(new_name)
+          ResultsState$bgp$start(
+            fun = function(df, formula, substance_names, outliers, is_xlog, is_ylog) {
+              f <- as.character(formula)
+              dep <- f[2]
+              indep <- f[3]
+              res_p <- NULL
+              res_df <- NULL
+              err <- try({
+                bs:::check_formula(formula)
+                bs:::check_ast(str2lang(indep), colnames(df))
+                bs:::check_ast(str2lang(dep), colnames(df))
 
-      return(list(res_df, res_p))
+              res <- bs:::ic50(
+                df, dep,
+                indep, substance_names, outliers,
+                is_xlog, is_ylog
+              )
+              if (inherits(res, "errorClass")) {
+                stop(res$error_message)
+              }
+              res_df <- lapply(res, function(x) {
+                if (inherits(x, "errorClass")) {
+                  return(NULL)
+                }
+                return(x[[1]])
+              })
+              res_df <- res_df[!is.null(res_df)]
+              res_df <- res_df[!sapply(res_df, is.null)]
+              res_df <- Reduce(rbind, res_df)
+              res_p <- lapply(res, function(x) {
+                if (inherits(x, "errorClass")) {
+                  return(NULL)
+                }
+                return(x[[2]])
+              })
+              res_p <- res_p[!is.null(res_p)]
+              res_p <- res_p[!sapply(res_p, is.null)]
+              })
+              if (inherits(err, "try-error")) {
+                stop(err$message)
+              }
+              new("doseResponse", df = res_df, p = res_p, outlier_info = bs:::create_outlier_info(outliers))
+            },
+            args = list(
+              df = self$df, formula = self$formula, substance_names = self$substance_names,
+              outliers = self$outliers, is_xlog = self$is_xlog, is_ylog = self$is_ylog
+            ),
+            promise_result_name = new_name,
+            promise_history_entry = promise_history_entry
+          )
+        },
+        warning = function(warn) {
+          self$com$print_warn(warn$message)
+          invokeRestart("muffleWarning")
+        }
+      )
+
+    },
+
+    create_history = function(new_name) {
+      list(
+        type = "DoseResponse",
+        "Column containing the names" = self$substance_names,
+        "Log transform x-axis" = self$is_xlog,
+        "Log transform y-axis" = self$is_ylog,
+        "formula" = deparse(self$formula),
+        outliers = create_outlier_info(self$outliers),
+        "Result name" = new_name
+      )
     }
 
   )
@@ -1087,31 +1341,39 @@ t_test_V1_2 <- R6::R6Class(
     validate = function() {},
 
     eval = function(ResultsState) {
-      fit <- NULL
       withCallingHandlers(
         {
-          eq <- TRUE
-          if (self$variances_equal == "noeq") {
-            eq <- FALSE
-          }
-          fit <- broom::tidy(t.test(self$formula,
-            data = self$df, conf.level = self$conf_level,
-            alternative = self$alternative_hyp, var.equal = eq
-          ))
-          check_rls(ResultsState$all_data, fit)
-          fit
+          new_name <- paste0( ResultsState$counter + 1, " T-Test")
+          promise_history_entry <- self$create_history(new_name)
+          ResultsState$bgp$start(
+            fun = function(formula, df, conf_level, alternative_hyp, variances_equal) {
+              eq <- TRUE
+              if (variances_equal == "noeq") {
+                eq <- FALSE
+              }
+              broom::tidy(t.test(formula,
+                data = df, conf.level = conf_level,
+                alternative = alternative_hyp, var.equal = eq
+              ))
+            },
+            args = list(
+              formula = self$formula, df = self$df,
+              conf_level = self$conf_level, alternative_hyp = self$alternative_hyp,
+              variances_equal = self$variances_equal
+            ),
+            promise_result_name = new_name,
+            promise_history_entry = promise_history_entry
+          )
         },
         warning = function(warn) {
           self$com$print_warn(warn$message)
           invokeRestart("muffleWarning")
         }
       )
-      ResultsState$counter <- ResultsState$counter + 1
-      new_name <- paste0(
-        ResultsState$counter, " T-Test"
-      )
-      ResultsState$all_data[[new_name]] <- fit
-      ResultsState$history[[length(ResultsState$history) + 1]] <- list(
+    },
+
+    create_history = function(new_name) {
+      list(
         type = "TTest",
         formula = deparse(self$formula),
         "Confidence level of the interval" = self$conf_level,
@@ -1119,7 +1381,6 @@ t_test_V1_2 <- R6::R6Class(
         "The two variances are" = self$variances_equal,
         "Result name" = new_name
       )
-      return(fit)
     }
   )
 )
@@ -1147,6 +1408,135 @@ statistical_tests_V1_2 <- R6::R6Class(
 
     validate = function() {},
 
+    eval_lm = function(method, new_name, ResultsState) {
+      withCallingHandlers(
+        expr = {
+          promise_history_entry <- self$create_history(new_name, method)
+          ResultsState$bgp$start(
+            fun = function(formula, df, dep, indep, balanced_design, p_val_adj_method, p_val, method) {
+              fit <- NULL
+              switch(method,
+                aov = {
+                  fit <- broom::tidy(aov(
+                    formula@formula,
+                    data = df
+                  ))
+                },
+                kruskal = {
+                  fit <- broom::tidy(
+                    kruskal.test(formula@formula, data = df)
+                  ) # Keep here the restriction for respone ~ predictor
+                },
+                HSD = {
+                  bs:::check_formula(formula@formula)
+                  aov_res <- aov(formula@formula, data = df)
+                  bal <- balanced_design
+                  if (bal == "Balanced") {
+                    bal <- TRUE
+                  } else {
+                    bal <- FALSE
+                  }
+                  fit <- agricolae::HSD.test(aov_res,
+                    trt = indep,
+                    alpha = p_val, group = TRUE, unbalanced = bal
+                  )$groups
+                },
+                kruskalTest = {
+                  # FIX: I think kruskal does not have a p adjustment method
+                  # It is silently ignored
+                  bs:::check_formula(formula@formula)
+                  fit <- with(df, kruskal(df[, dep], df[, indep]),
+                    alpha = p_val, p.adj = p_val_adj_method, group = TRUE
+                  )$groups
+                  names(fit)[1] <- dep
+                },
+                LSD = {
+                  bs:::check_formula(formula@formula)
+                  aov_res <- aov(formula@formula, data = df)
+                  fit <- agricolae::LSD.test(aov_res,
+                    trt = indep,
+                    alpha = p_val, p.adj = p_val_adj_method, group = TRUE
+                  )$groups
+                },
+                scheffe = {
+                  bs:::check_formula(formula@formula)
+                  aov_res <- aov(formula@formula, data = df)
+                  fit <- agricolae::scheffe.test(
+                    aov_res,
+                    trt = indep, alpha = p_val, group = TRUE
+                  )$groups
+                },
+                REGW = {
+                  bs:::check_formula(formula@formula)
+                  aov_res <- aov(formula@formula, data = df)
+                  fit <- agricolae::REGW.test(
+                    aov_res,
+                    trt = indep, alpha = p_val, group = TRUE
+                  )$groups
+                }
+              )
+              fit <- cbind(fit, row.names(fit))
+              names(fit)[ncol(fit)] <- paste0(indep, collapse = ".")
+              fit
+            },
+            args = list(
+              formula = self$formula, df = self$df, dep = self$dep, indep = self$indep,
+              balanced_design = self$balanced_design, p_val_adj_method = self$p_val_adj_method,
+              p_val = self$p_val, method = method
+            ),
+            promise_result_name = new_name,
+            promise_history_entry = promise_history_entry
+          )
+        }
+      )
+    },
+
+    eval_glm = function(method, new_name, ResultsState) {
+      withCallingHandlers(
+        expr = {
+          promise_history_entry <- self$create_history(new_name, method)
+          ResultsState$bgp$start(
+            fun = function(formula, df, method) {
+              fit <- NULL
+              switch(method,
+                aov = {
+                  family <- formula@family
+                  link_fct <- formula@link_fct
+                  family <- str2lang(paste0("stats::", family, "(\"", link_fct, "\")"))
+                  model <- glm(formula@formula, data = df, family = eval(family))
+                  fit <- broom::tidy(anova(model, test = "Chisq"))
+                },
+                kruskal = {
+                  fit <- broom::tidy(
+                    kruskal.test(formula@formula, data = df)
+                  ) # Keep here the restriction for respone ~ predictor
+                }
+              )
+              if (is.null(fit)) { # This covers all the emmeans post hoc tests
+                family <- formula@family
+                link_fct <- formula@link_fct
+                family <- str2lang(paste0("stats::", family, "(\"", link_fct, "\")"))
+
+                f_split <- bs:::split_formula(formula@formula)
+                rhs_vars <- bs:::vars_rhs(f_split$right_site)
+                df_temp <- bs:::num_to_factor(df, rhs_vars)
+                if (any(apply(df, 2, is.numeric))) {
+                  warning(paste0("Found numeric predictors and converted them to factors"))
+                }
+                model <- glm(formula@formula, data = df_temp, family = eval(family))
+                emm <- emmeans::emmeans(model, rhs_vars)
+                fit <- emmeans::pairs(emm, adjust = method)
+                fit <- as.data.frame(fit)
+              }
+              fit
+            },
+            args = list( formula = self$formula, df = self$df, method = method),
+              promise_result_name = new_name,
+            promise_history_entry = promise_history_entry
+          )
+        })
+    },
+
     eval = function(ResultsState, method) {
       e <- try({
         self$indep <- as.character(self$formula@formula)[3]
@@ -1163,139 +1553,111 @@ statistical_tests_V1_2 <- R6::R6Class(
       history_data <- NULL
       withCallingHandlers(
         {
-          switch(method,
-            aov = {
-              if (inherits(self$formula, "LinearFormula")) {
-                fit <- broom::tidy(aov(
-                  self$formula@formula,
-                  data = self$df
-                ))
-              } else if (inherits(self$formula, "GeneralisedLinearFormula")) {
-                family <- self$formula@family
-                link_fct <- self$formula@link_fct
-                family <- str2lang(paste0("stats::", family, "(\"", link_fct, "\")"))
-                model <- glm(self$formula@formula, data = self$df, family = eval(family))
-                fit <- broom::tidy(anova(model, test = "Chisq"))
-              }
-              history_data <- list(type = "ANOVA", formula = deparse(self$formula@formula))
-            },
-            kruskal = {
-              fit <- broom::tidy(
-                kruskal.test(self$formula@formula, data = self$df)
-              ) # Keep here the restriction for respone ~ predictor
-              history_data <- list(type = "Kruskal-Wallis Test", formula = deparse(self$formula@formula))
-            },
-            HSD = {
-              check_formula(self$formula@formula)
-              aov_res <- aov(self$formula@formula, data = self$df)
-              bal <- self$balanced_design
-              req(bal)
-              if (bal == "Balanced") {
-                bal <- TRUE
-              } else {
-                bal <- FALSE
-              }
-              fit <- agricolae::HSD.test(aov_res,
-                trt = self$indep,
-                alpha = self$p_val, group = TRUE, unbalanced = bal
-              )$groups
-              history_data <- list(type = "Tukey HSD",
-                formula = deparse(self$formula@formula), "Balanced design" = bal,
-                "P-value" = self$p_val)
-            },
-            kruskalTest = {
-              # FIX: I think kruskal does not have a p adjustment method
-              # It is silently ignored
-              check_formula(self$formula@formula)
-              fit <- with(self$df, kruskal(self$df[, self$dep], self$df[, self$indep]),
-                alpha = self$p_val, p.adj = self$p_val_adj_method, group = TRUE
-              )$groups
-              names(fit)[1] <- self$dep
-              history_data <- list(type = "Kruskal Wallis post hoc test",
-                formula = deparse(self$formula@formula),
-                "Adjusted p value method" = self$p_val_adj_method,
-                "P-value" = self$p_val)
-            },
-            LSD = {
-              check_formula(self$formula@formula)
-              aov_res <- aov(self$formula@formula, data = self$df)
-              fit <- agricolae::LSD.test(aov_res,
-                trt = self$indep,
-                alpha = self$p_val, p.adj = self$p_val_adj_method, group = TRUE
-              )$groups
-              history_data <- list(type = "Least significant difference test",
-                formula = deparse(self$formula@formula),
-                "Adjusted p value method" = self$p_val_adj_method,
-                "P-value" = self$p_val)
-            },
-            scheffe = {
-              check_formula(self$formula@formula)
-              aov_res <- aov(self$formula@formula, data = self$df)
-              fit <- agricolae::scheffe.test(
-                aov_res,
-                trt = self$indep, alpha = self$p_val, group = TRUE
-              )$groups
-              history_data <- list(type = "Scheffe post hoc test",
-                formula = deparse(self$formula@formula),
-                "P-value" = self$p_val)
-            },
-            REGW = {
-              check_formula(self$formula@formula)
-              aov_res <- aov(self$formula@formula, data = self$df)
-              fit <- agricolae::REGW.test(
-                aov_res,
-                trt = self$indep, alpha = self$p_val, group = TRUE
-              )$groups
-              history_data <- list(type = "REGW post hoc test",
-                formula = deparse(self$formula@formula),
-                "P-value" = self$p_val)
-            }
-          )
-          # TODO: add Emmeans/glm posthoc tests to history
-          if (is.null(fit) && grepl("Emmeans", method)) {
-            method_adj <- gsub("Emmeans_", "", method)
-            family <- self$formula@family
-            link_fct <- self$formula@link_fct
-            family <- str2lang(paste0("stats::", family, "(\"", link_fct, "\")"))
-
-            f_split <- split_formula(self$formula@formula)
-            rhs_vars <- vars_rhs(f_split$right_site)
-            df_temp <- num_to_factor(self$df, rhs_vars)
-            if (any(apply(self$df, 2, is.numeric))) {
-              warning(paste0("Found numeric predictors and converted them to factors"))
-            }
-            model <- glm(self$formula@formula, data = df_temp, family = eval(family))
-            emm <- emmeans::emmeans(model, rhs_vars)
-            fit <- pairs(emm, adjust = method_adj)
-            fit <- as.data.frame(fit)
+          new_name <- paste0( ResultsState$counter, " Test ", method)
+          if (inherits(self$formula, "LinearFormula")) {
+            self$eval_lm(method, new_name, ResultsState)
+          } else if (inherits(self$formula, "GeneralisedLinearFormula")) {
+            self$eval_glm(method, new_name, ResultsState)
           }
-          check_rls(ResultsState$all_data, fit)
-          if (!grepl("Emmeans", method)) {
-            fit <- cbind(fit, row.names(fit))
-            names(fit)[ncol(fit)] <- paste0(self$indep, collapse = ".")
-          }
-          history_data <- list(type = paste0(strsplit(method, "_")[[1]], collapse = " "),
-            formula = deparse(self$formula@formula)
-          )
-          fit
         },
         warning = function(warn) {
           self$com$print_warn(warn$message)
           invokeRestart("muffleWarning")
         }
       )
+    },
 
-      ResultsState$counter <- ResultsState$counter + 1
-      new_name <- paste0(
-        ResultsState$counter, " Test ", method
+    create_history_lm = function(new_name, method) {
+      switch(method,
+        aov = {
+          history_data <- list(
+            type = "ANOVA", formula = deparse(self$formula@formula), "Result name" = new_name
+          )
+        },
+        kruskal = {
+          history_data <- list(
+            type = "Kruskal-Wallis Test", formula = deparse(self$formula@formula), "Result name" = new_name
+          )
+        },
+        HSD = {
+          check_formula(self$formula@formula)
+          bal <- self$balanced_design
+          req(bal)
+          if (bal == "Balanced") {
+            bal <- TRUE
+          } else {
+            bal <- FALSE
+          }
+          history_data <- list(
+            type = "Tukey HSD",
+            formula = deparse(self$formula@formula),
+            "Balanced design" = bal,
+            "P-value" = self$p_val, "Result name" = new_name
+          )
+        },
+        kruskalTest = {
+          check_formula(self$formula@formula)
+          history_data <- list(
+            type = "Kruskal Wallis post hoc test",
+            formula = deparse(self$formula@formula),
+            "Adjusted p value method" = self$p_val_adj_method,
+            "P-value" = self$p_val, "Result name" = new_name
+          )
+        },
+        LSD = {
+          check_formula(self$formula@formula)
+          history_data <- list(
+            type = "Least significant difference test",
+            formula = deparse(self$formula@formula),
+            "Adjusted p value method" = self$p_val_adj_method,
+            "P-value" = self$p_val, "Result name" = new_name
+          )
+        },
+        scheffe = {
+          check_formula(self$formula@formula)
+          history_data <- list(type = "Scheffe post hoc test",
+            formula = deparse(self$formula@formula),
+            "P-value" = self$p_val, "Result name" = new_name
+          )
+        },
+        REGW = {
+          check_formula(self$formula@formula)
+          history_data <- list(
+            type = "REGW post hoc test",
+            formula = deparse(self$formula@formula),
+            "P-value" = self$p_val, "Result name" = new_name
+          )
+        }
       )
-      ResultsState$all_data[[new_name]] <- fit
-      ResultsState$history[[length(ResultsState$history) + 1]] <- c(
-        history_data,
-        "Result name" = new_name
+    },
+    create_history_glm = function(new_name, method) {
+      switch(method,
+        aov = {
+          history_data <- list(
+            type = "ANOVA-Chisq", formula = deparse(self$formula@formula),
+            family = self$formula@family, link_fct = self$formula@link_fct,
+            "Result name" = new_name
+          )
+        },
+        kruskal = {
+          history_data <- list(
+            type = "Kruskal-Wallis Test", formula = deparse(self$formula@formula), "Result name" = new_name
+          )
+        }
       )
-
-      return(fit)
+      if (is.null(fit)) { # This covers all the emmeans post hoc tests
+        history_data <- list(type = paste0("GLM PostHoc adjusted by: ", method),
+          formula = deparse(self$formula@formula), family = self$formula@family,
+          link_fct = self$formula@link_fct, "Result name" = new_name
+        )
+      }
+    },
+    create_history = function(new_name, method) {
+      if (inherits(self$formula, "LinearFormula")) {
+        self$create_history_lm(new_name, method)
+      } else if (inherits(self$formula, "GeneralisedLinearFormula")) {
+        self$create_history_glm(new_name, method)
+      }
     }
   )
 )

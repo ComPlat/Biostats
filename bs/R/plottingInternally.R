@@ -246,7 +246,7 @@ DotplotFct <- function(df, x, y, xLabel, yLabel,
     p <- addInterval(p, df, x, y, xMin, xMax, yMin, yMax)
   }
 
-  return(p)
+  return(p + theme(text = element_text(size = 20)))
 }
 
 BoxplotFct <- function(df, x, y, xLabel, yLabel,
@@ -297,7 +297,7 @@ BoxplotFct <- function(df, x, y, xLabel, yLabel,
   } else {
     p <- addInterval(p, df, x, y, xMin, xMax, yMin, yMax)
   }
-  return(p)
+  return(p + theme(text = element_text(size = 20)))
 }
 
 LineplotFct <- function(df, x, y, xLabel, yLabel,
@@ -335,7 +335,7 @@ LineplotFct <- function(df, x, y, xLabel, yLabel,
   } else {
     p <- addInterval(p, df, x, y, xMin, xMax, yMin, yMax)
   }
-  return(p)
+  return(p + theme(text = element_text(size = 20)))
 }
 
 # TODO: other plotting based on the model itself
