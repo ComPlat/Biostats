@@ -27,10 +27,12 @@ parse_outlier_info <- function(outliers) {
 }
 
 char_to_orig_type <- function(vec) {
+  if (is.list(vec)) vec <- unlist(vec)
   if (any(is.na(as.numeric(vec)))) {
     return(vec)
   }
-  as.numeric(vec)
+  vec <- as.numeric(vec)
+  vec
 }
 
 firstup <- function(x) {

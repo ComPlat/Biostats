@@ -10,7 +10,6 @@ bg_process_V1_2 <- R6::R6Class("bg_process_V1_2",
     is_running = NULL,
     promise_result_name = NULL,
     promise_history_entry = NULL,
-    queued_request = NULL,
 
     initialize = function(poll_interval = 250, com = communicator_V1_2) {
       self$com <- com$new()
@@ -64,24 +63,24 @@ bg_process_V1_2 <- R6::R6Class("bg_process_V1_2",
 
     },
 
-    start = function(fun, args = list(), promise_result_name, promise_history_entry, run_queue = FALSE) {
-      if (self$is_running && !run_queue) {
-        # Store what the user wanted to do after cancel
-        self$queued_request <- list(
-          fun = fun,
-          args = args,
-          promise_result_name = promise_result_name,
-          promise_history_entry = promise_history_entry
-        )
-        showModal(modalDialog(
-          title = "Cancel running process",
-          "Do you want to stop the current task?",
-          easyClose = FALSE,
-          footer = tagList(
-            modalButton("Cancel"),
-            actionButton("confirm_stop", "Yes, stop running process", class = "btn-danger")
-          )
-        ))
+    start_direct = function(fun, args = list(), promise_result_name, promise_history_entry, ResultsState) {
+      res <- try(do.call(fun, args))
+      if (!inherits(res, "try-error")) {
+        ResultsState$all_data[[promise_result_name]] <- res
+        ResultsState$counter <- ResultsState$counter + 1
+        ResultsState$history[[length(ResultsState$history) + 1]] <- promise_history_entry
+      } else {
+        self$com$print_err(conditionMessage(res))
+      }
+    },
+
+    start = function(fun, args = list(), promise_result_name, promise_history_entry,
+                     in_background = TRUE, ResultsState = NULL) {
+      # NOTE: ResultsState is required to store the results when no background process is used.
+      # Therefore, default is NULL
+      if (!in_background) {
+        req(!is.null(ResultsState), "`ResultsState` must be provided when not running in background.")
+        self$start_direct(fun, args, promise_result_name, promise_history_entry, ResultsState)
         return()
       }
       req(is.null(self$process) || !self$process$is_alive())
@@ -186,9 +185,9 @@ backend_data_wrangling_state_V1_2 <- R6::R6Class(
     total_pages = 1,
     counter_id = 0,
     intermediate_vars = list(),
-    initialize = function(backend_data_model_state_V1_2) {
-      self$df_name <- create_df_name(self$df_name, names(backend_data_model_state_V1_2$df))
-      self$df <- backend_data_model_state_V1_2$df
+    initialize = function(DataModelState) {
+      self$df_name <- create_df_name(self$df_name, names(DataModelState$df))
+      self$df <- DataModelState$df
     }
   )
 )
@@ -274,7 +273,8 @@ correlation_V1_2 <- R6::R6Class(
               conflevel = self$conflevel
             ),
             promise_result_name = new_name,
-            promise_history_entry = promise_history_entry
+            promise_history_entry = promise_history_entry,
+            in_background = FALSE, ResultsState
           )
         },
         warning = function(warn) {
@@ -322,7 +322,6 @@ visualisation_V1_2 <- R6::R6Class(
     height = NULL,
     resolution = NULL,
     col_names = NULL,
-    fit_method = "none", # NOTE: currently this is not offered to the user
 
     initialize = function(df, x, y, method, xlabel, type_of_x, ylabel,
                           colour_var, colour_legend_title, colour_theme,
@@ -397,6 +396,8 @@ visualisation_V1_2 <- R6::R6Class(
                        facet_mode, facet_var, facet_y_scaling,
                        xrange_min, xrange_max, yrange_min, yrange_max,
                        width, height, resolution) {
+          print(xrange_min)
+          print(xrange_max)
           withCallingHandlers(
             {
               if (method == "box") {
@@ -407,16 +408,7 @@ visualisation_V1_2 <- R6::R6Class(
                   facet_mode, facet_var, facet_y_scaling,
                   xrange_min, xrange_max, yrange_min, yrange_max
                 )
-              } else if (method == "dot") {
-                p <- bs:::DotplotFct(
-                  df, x, y, xlabel, ylabel,
-                  fit_method,
-                  colour_var, colour_legend_title, colour_theme,
-                  facet_mode, facet_var, facet_y_scaling,
-                  k = NULL, # TODO: remove the fitting stuff not needed anymore
-                  xrange_min, xrange_max, yrange_min, yrange_max
-                )
-              } else if (method == "line") {
+              } else if (method %in% c("dot", "line")) {
                 p <- bs:::LineplotFct(
                   df, x, y, xlabel, ylabel,
                   colour_var, colour_legend_title, colour_theme,
@@ -437,7 +429,7 @@ visualisation_V1_2 <- R6::R6Class(
           self$fill_var, self$fill_legend_title, self$fill_theme,
           self$colour_var, self$colour_legend_title, self$colour_theme,
           self$facet_mode, self$facet_var, self$facet_y_scaling,
-          self$xrange_min, self$xrange_max, self$yrange_min, self$yrange_max,
+          self$xrange[[1]], self$xrange[[2]], self$yrange[[1]], self$yrange[[2]],
           self$width, self$height, self$resolution
         ),
         promise_result_name = new_result_name,
@@ -644,10 +636,10 @@ create_intermediate_var_V1_2 <- R6::R6Class(
 
     eval = function(ResultsState, DataWranglingState) {
       e <- try({
-        eval_env <- new.env() # parent = emptyenv()
+        eval_env <- new.env()
         list2env(self$intermediate_vars, envir = eval_env)
         list2env(self$df, envir = eval_env) # NOTE: this adds each column as own variable
-        new <- eval(parse(text =self$operation), envir = eval_env)
+        new <- eval(parse(text = self$operation), envir = eval_env)
         check_type_res(new)
         check_rls(ResultsState$all_data, new)
       })
@@ -890,7 +882,8 @@ summarise_model_V1_2 <- R6::R6Class(
               },
               args = list(df = self$df, formula = self$formula),
               promise_result_name = new_name,
-              promise_history_entry = promise_history_entry
+              promise_history_entry = promise_history_entry,
+              in_background = FALSE, ResultsState
             )
           }
         },
@@ -920,7 +913,8 @@ summarise_model_V1_2 <- R6::R6Class(
               },
               args = list(df = self$df, formula = self$formula),
               promise_result_name = new_name,
-              promise_history_entry = promise_history_entry
+              promise_history_entry = promise_history_entry,
+              in_background = FALSE, ResultsState
             )
           }
         },
@@ -991,7 +985,8 @@ shapiro_on_data_V1_2 <- R6::R6Class(
             },
             args = list(df = self$df, formula = self$formula),
             promise_result_name = new_name,
-            promise_history_entry = promise_history_entry
+            promise_history_entry = promise_history_entry,
+            in_background = FALSE, ResultsState = ResultsState
           )
         },
         warning = function(warn) {
@@ -1042,7 +1037,8 @@ shapiro_on_residuals_V1_2 <- R6::R6Class(
             },
             args = list(df = self$df, formula = self$formula),
             promise_result_name = new_name,
-            promise_history_entry = promise_history_entry
+            promise_history_entry = promise_history_entry,
+            in_background = FALSE, ResultsState = ResultsState
           )
         },
         warning = function(warn) {
@@ -1095,7 +1091,8 @@ levene_V1_2 <- R6::R6Class(
             },
             args = list(df = self$df, formula = self$formula@formula, center = self$center),
             promise_result_name = new_name,
-            promise_history_entry = promise_history_entry
+            promise_history_entry = promise_history_entry,
+            in_background = FALSE, ResultsState = ResultsState
           )
         },
         warning = function(warn) {
@@ -1445,7 +1442,7 @@ statistical_tests_V1_2 <- R6::R6Class(
                   # FIX: I think kruskal does not have a p adjustment method
                   # It is silently ignored
                   bs:::check_formula(formula@formula)
-                  fit <- with(df, kruskal(df[, dep], df[, indep]),
+                  fit <- with(df, agricolae::kruskal(df[, dep], df[, indep]),
                     alpha = p_val, p.adj = p_val_adj_method, group = TRUE
                   )$groups
                   names(fit)[1] <- dep
@@ -1525,7 +1522,7 @@ statistical_tests_V1_2 <- R6::R6Class(
                 }
                 model <- glm(formula@formula, data = df_temp, family = eval(family))
                 emm <- emmeans::emmeans(model, rhs_vars)
-                fit <- emmeans::pairs(emm, adjust = method)
+                fit <- pairs(emm, adjust = method)
                 fit <- as.data.frame(fit)
               }
               fit
@@ -1645,12 +1642,10 @@ statistical_tests_V1_2 <- R6::R6Class(
           )
         }
       )
-      if (is.null(fit)) { # This covers all the emmeans post hoc tests
-        history_data <- list(type = paste0("GLM PostHoc adjusted by: ", method),
-          formula = deparse(self$formula@formula), family = self$formula@family,
-          link_fct = self$formula@link_fct, "Result name" = new_name
-        )
-      }
+      history_data <- list(type = paste0("GLM PostHoc adjusted by: ", method),
+        formula = deparse(self$formula@formula), family = self$formula@family,
+        link_fct = self$formula@link_fct, "Result name" = new_name
+      )
     },
     create_history = function(new_name, method) {
       if (inherits(self$formula, "LinearFormula")) {

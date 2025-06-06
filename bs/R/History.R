@@ -26,7 +26,6 @@ eval_entry_V1_2 <- function(entry, DataModelState, DataWranglingState, ResultsSt
       )
       res$validate()
       res$eval(ResultsState)
-      get_result(ResultsState)
     },
     Visualisation = {
       res <- visualisation_V1_2$new(
@@ -40,7 +39,7 @@ eval_entry_V1_2 <- function(entry, DataModelState, DataWranglingState, ResultsSt
         com = backend_communicator_V1_2
       )
       res$validate()
-      res$eval(ResultsState)
+      res <- res$eval(ResultsState)
       get_result(ResultsState)
     },
     VisualizationModel = {
@@ -107,7 +106,6 @@ eval_entry_V1_2 <- function(entry, DataModelState, DataWranglingState, ResultsSt
         backend_communicator_V1_2)
       res$validate()
       res$eval(ResultsState)
-      get_result(ResultsState)
     },
     ShapiroOnData = {
       res <- shapiro_on_data_V1_2$new(
@@ -116,7 +114,6 @@ eval_entry_V1_2 <- function(entry, DataModelState, DataWranglingState, ResultsSt
       )
       res$validate()
       res$eval(ResultsState)
-      get_result(ResultsState)
     },
     ShapiroOnResiduals = {
       res <- shapiro_on_residuals_V1_2$new(
@@ -125,7 +122,6 @@ eval_entry_V1_2 <- function(entry, DataModelState, DataWranglingState, ResultsSt
       )
       res$validate()
       res$eval(ResultsState)
-      get_result(ResultsState)
     },
     LeveneTest = {
       res <- levene_V1_2$new(
@@ -135,7 +131,6 @@ eval_entry_V1_2 <- function(entry, DataModelState, DataWranglingState, ResultsSt
       )
       res$validate()
       res$eval(ResultsState)
-      get_result(ResultsState)
     },
     DiagnosticPlots = {
       res <- diagnostic_plots_V1_2$new(
@@ -157,7 +152,7 @@ eval_entry_V1_2 <- function(entry, DataModelState, DataWranglingState, ResultsSt
         backend_communicator_V1_2
       )
       res$validate()
-      res$eval(ResultsState)
+      res$eval(ResultsState, entry[["Result name"]])
       get_result(ResultsState)
     },
     TTest = {

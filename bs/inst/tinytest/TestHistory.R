@@ -6,90 +6,10 @@ load_and_eval_history <- function(file, df) {
   bs:::eval_history(json, df, TRUE)
 }
 
-tinytest::expect_null(
-  load_and_eval_history(files[1], CO2),
-  info = "Invalid text BlaBla"
-)
-tinytest::expect_null(
-  load_and_eval_history(files[2], CO2),
-  info = "Invalid type (RocketLaunch)"
-)
+# TODO: add history for glm
 
-dose_response_V1_2 <- read.csv(paste0(test_data_dir, "/DoseResponse.csv"))
-result <- load_and_eval_history(files[3], dose_response_V1_2)
-result <- result$ResultsState$all_data
-tinytest::expect_true(
-  inherits(result[[1]], "summaryModel"),
-  info = "summary of a model"
-)
-tinytest::expect_equal(
-  broom::tidy(lm(abs ~ conc, data = dose_response_V1_2)),
-  result[[1]]@summary,
-  info = "Result summary"
-)
-tinytest::expect_true(
-  inherits(result[[2]], "doseResponse"),
-  info = "Dose response result"
-)
-tinytest::expect_true(
-  inherits(result[[3]], "doseResponse"),
-  info = "Dose response result"
-)
-tinytest::expect_true(
-  inherits(result[[4]], "doseResponse"),
-  info = "Dose response result"
-)
-tinytest::expect_equal(
-  result[[4]]@outlier_info, "S1: 10, 15",
-  info = "Dose response result"
-)
-
-CO2 <- read.csv(paste0(test_data_dir, "/CO2.csv"))
-result <- load_and_eval_history(files[4], CO2)
-result <- result$ResultsState$all_data
-tinytest::expect_true(
-  length(result) == 2,
-  info = "Apply filter"
-)
-tinytest::expect_true(
-  inherits(result[[1]], "plot"),
-  info = "Apply filter"
-)
-tinytest::expect_true(
-  inherits(result[[2]], "plot"),
-  info = "Apply filter"
-)
-
-
-CO2 <- read.csv(paste0(test_data_dir, "/CO2.csv"))
-result <- load_and_eval_history(files[5], CO2)
-result <- result$ResultsState$all_data
-tinytest::expect_true(
-  length(result) == 2,
-  info = "Formula editor"
-)
-tinytest::expect_true(
-  inherits(result[[1]]@p, "plot"),
-  info = "Formula plot 1"
-)
-tinytest::expect_true(
-  identical(
-    broom::tidy(lm(uptake ~ conc, data = CO2)), result[[1]]@summary
-  ),
-  "Summary model 1"
-)
-tinytest::expect_true(
-  inherits(result[[1]]@p, "plot"),
-  info = "Formula plot 2"
-)
-tinytest::expect_true(
-  identical(
-    broom::tidy(lm(uptake ~ conc*Type, data = CO2)), result[[2]]@summary
-  ),
-  "Summary model 2"
-)
-
-
+# Test entire analysis
+# ========================================================================================
 CO2 <- read.csv(paste0(test_data_dir, "/CO2.csv"))
 result <- load_and_eval_history(files[6], CO2)
 result <- result$ResultsState$all_data
@@ -371,4 +291,95 @@ tinytest::expect_equal(
   },
   result[[24]],
   info = "REGW"
+)
+
+# Applying and removing filters
+# ========================================================================================
+CO2 <- read.csv(paste0(test_data_dir, "/CO2.csv"))
+result <- load_and_eval_history(files[4], CO2)
+result <- result$ResultsState$all_data
+
+tinytest::expect_true(
+  length(result) == 2,
+  info = "Apply filter"
+)
+tinytest::expect_true(
+  inherits(result[[1]], "plot"),
+  info = "Apply filter"
+)
+tinytest::expect_true(
+  inherits(result[[2]], "plot"),
+  info = "Apply filter"
+)
+
+# Wrong stuff
+# ========================================================================================
+tinytest::expect_null(
+  load_and_eval_history(files[1], CO2),
+  info = "Invalid text BlaBla"
+)
+tinytest::expect_null(
+  load_and_eval_history(files[2], CO2),
+  info = "Invalid type (RocketLaunch)"
+)
+
+# Dose response
+# ========================================================================================
+dose_response_V1_2 <- read.csv(paste0(test_data_dir, "/DoseResponse.csv"))
+result <- load_and_eval_history(files[3], dose_response_V1_2)
+result <- result$ResultsState$all_data
+tinytest::expect_true(
+  inherits(result[[1]], "summaryModel"),
+  info = "summary of a model"
+)
+tinytest::expect_equal(
+  broom::tidy(lm(abs ~ conc, data = dose_response_V1_2)),
+  result[[1]]@summary,
+  info = "Result summary"
+)
+tinytest::expect_true(
+  inherits(result[[2]], "doseResponse"),
+  info = "Dose response result"
+)
+tinytest::expect_true(
+  inherits(result[[3]], "doseResponse"),
+  info = "Dose response result"
+)
+tinytest::expect_true(
+  inherits(result[[4]], "doseResponse"),
+  info = "Dose response result"
+)
+tinytest::expect_equal(
+  result[[4]]@outlier_info, "S1: 10, 15",
+  info = "Dose response result"
+)
+
+# Test formula
+# ========================================================================================
+CO2 <- read.csv(paste0(test_data_dir, "/CO2.csv"))
+result <- load_and_eval_history(files[5], CO2)
+result <- result$ResultsState$all_data
+tinytest::expect_true(
+  length(result) == 2,
+  info = "Formula editor"
+)
+tinytest::expect_true(
+  inherits(result[[1]]@p, "plot"),
+  info = "Formula plot 1"
+)
+tinytest::expect_true(
+  identical(
+    broom::tidy(lm(uptake ~ conc, data = CO2)), result[[1]]@summary
+  ),
+  "Summary model 1"
+)
+tinytest::expect_true(
+  inherits(result[[1]]@p, "plot"),
+  info = "Formula plot 2"
+)
+tinytest::expect_true(
+  identical(
+    broom::tidy(lm(uptake ~ conc*Type, data = CO2)), result[[2]]@summary
+  ),
+  "Summary model 2"
 )

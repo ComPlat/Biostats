@@ -1,14 +1,12 @@
-# TODO: add missing tests for plot_pred and plot_model
 library(bs)
 library(tinytest)
 
 # Test create formula
 # =======================================================================================
-test_create_formula_V1_2 <- function() {
+test_create_formula <- function() {
   df <- CO2
-
-  DataModelState <- new.env()
-  DataModelState$formula <- NULL
+  ResultsState <- bs:::backend_result_state_V1_2$new()
+  DataModelState <- bs:::backend_data_model_state_V1_2$new(df)
 
   cf <- bs:::create_formula_V1_2$new(
     response_var = "uptake",
@@ -16,36 +14,64 @@ test_create_formula_V1_2 <- function() {
     df = df,
     com = bs:::backend_communicator_V1_2
   )
-
-  eq <- cf$eval(DataModelState)
-
-  expect_equal(DataModelState$formula, as.formula("uptake ~ conc"))
-  expect_true(is.character(eq)) # extract_eq() returns a LaTeX-like string
+  eq <- cf$eval(ResultsState, DataModelState, "Linear")
+  check1 <- expect_equal(DataModelState$formula@formula, as.formula("uptake ~ conc"))
+  check2 <- expect_true(is.character(eq)) # extract_eq() returns a LaTeX-like string
+  checks <- c(check1, check2)
+  expect_true(all(checks))
 }
-test_create_formula_V1_2()
+test_create_formula()
 
+test_summary_model <- function() {
+  df <- CO2
+  ResultsState <- bs:::backend_result_state_V1_2$new()
+  DataModelState <- bs:::backend_data_model_state_V1_2$new(df)
+  formula <- as.formula("uptake ~ conc")
+  formula <- new("LinearFormula", formula = formula)
+
+  sum_model <- bs:::summarise_model_V1_2$new(
+     df, formula, com = bs:::backend_communicator_V1_2
+  )
+  sum_model$validate()
+  sum_model$eval(ResultsState)
+  res <- ResultsState$all_data[[length(ResultsState$all_data)]]
+  res
+  check1 <- expect_true(inherits(res, "summaryModel"))
+  model <- lm(uptake ~ conc, data = CO2)
+  check2 <- expect_equal(
+    res@summary, broom::tidy(model)
+  )
+  check3 <- expect_equal(
+    res@information_criterions, data.frame(AIC = AIC(model), BIC = BIC(model))
+  )
+  check4 <- expect_true(inherits(res@p, "plot"))
+  checks <- c(check1, check2, check3, check4)
+  expect_true(all(checks))
+}
+test_summary_model()
 
 # Test correlation_V1_2
 # =======================================================================================
 test_corr <- function() {
+  df <- CO2
+  ResultsState <- bs:::backend_result_state_V1_2$new()
+  DataModelState <- bs:::backend_data_model_state_V1_2$new(df)
+
   formula <- as.formula("uptake ~ conc")
+  formula <- new("LinearFormula", formula = formula)
+
   corr <- bs:::correlation_V1_2$new(CO2, formula, "pearson", "two.sided",
     0.95, bs:::backend_communicator_V1_2)
   trash <- corr$validate()
-  ResultsState <- new.env()
-  ResultsState$all_data <- list()
-  ResultsState$history <- list()
-  ResultsState$counter <- 0
   corr$eval(ResultsState)
-  ResultsState |> ls()
-  ResultsState$all_data
-  expect_equal(
+
+  check1 <- expect_equal(
     ResultsState$all_data[[1]],
     broom::tidy(
       cor.test(
-        CO2$uptake,
-        CO2$conc,
-        data = CO2,
+        df$uptake,
+        df$conc,
+        data = df,
         method = "pearson",
         alternative = "two.sided",
         conf.level = 0.95
@@ -55,7 +81,7 @@ test_corr <- function() {
 
   corr$method <- "kendall"
   corr$eval(ResultsState)
-  expect_equal(
+  check2 <- expect_equal(
     ResultsState$all_data[[2]],
     broom::tidy(
       cor.test(
@@ -71,7 +97,7 @@ test_corr <- function() {
 
   corr$method <- "spearman"
   corr$eval(ResultsState)
-  expect_equal(
+  check3 <- expect_equal(
     ResultsState$all_data[[3]],
     broom::tidy(
       cor.test(
@@ -88,7 +114,7 @@ test_corr <- function() {
   corr$method <- "spearman"
   corr$conflevel <- 0.5
   corr$eval(ResultsState)
-  expect_equal(
+  check4 <- expect_equal(
     ResultsState$all_data[[4]],
     broom::tidy(
       cor.test(
@@ -106,7 +132,7 @@ test_corr <- function() {
   corr$conflevel <- 0.5
   corr$alternative <- "less"
   corr$eval(ResultsState)
-  expect_equal(
+  check5 <- expect_equal(
     ResultsState$all_data[[5]],
     broom::tidy(
       cor.test(
@@ -119,15 +145,22 @@ test_corr <- function() {
       )
     )
   )
+  checks <- c(check1, check2, check3, check4, check5)
+  expect_true(all(checks))
 }
 test_corr()
 
 # Test visualisation_V1_2
 # =======================================================================================
 test_vis_all <- function() {
+  df <- CO2
+  outer_checks <- c()
   for (method in c("box", "dot", "line")) {
+    ResultsState <- bs:::backend_result_state_V1_2$new()
+    DataModelState <- bs:::backend_data_model_state_V1_2$new(df)
+    checks <- c()
     vis <- bs:::visualisation_V1_2$new(
-      df = CO2,
+      df = df,
       x = "conc",
       y = "uptake",
       method = method,
@@ -150,33 +183,35 @@ test_vis_all <- function() {
       com = bs:::backend_communicator_V1_2
     )
 
-    ResultsState <- new.env()
-    ResultsState$all_data <- list()
-    ResultsState$counter <- 0
-    ResultsState$history <- list()
-
     p <- vis$eval(ResultsState)
-
+    bs:::backend_get_result_V1_2(ResultsState)
+    p <- ResultsState$all_data[[length(ResultsState$all_data)]]
     # Basic checks
-    expect_true(inherits(p, "gg"))
-    expect_equal(length(ResultsState$all_data), 1)
-    expect_equal(length(ResultsState$history), 1)
+    checks <- c(checks, expect_true(inherits(p, "plot")))
+    checks <- c(checks, expect_equal(length(ResultsState$all_data), 1))
+    checks <- c(checks, expect_equal(length(ResultsState$history), 1))
 
     # History correctness
     h <- ResultsState$history[[1]]
-    expect_equal(h$type, "Visualisation")
-    expect_equal(h$`Plot-type`, method)
-    expect_equal(h$`X axis label`, paste("xlabel", method))
-    expect_equal(h$`Y axis label`, paste("ylabel", method))
+    checks <- c(checks, expect_equal(h$type, "Visualisation"))
+    checks <- c(checks, expect_equal(h$`Plot-type`, method))
+    checks <- c(checks, expect_equal(h$`X axis label`, paste("xlabel", method)))
+    checks <- c(checks, expect_equal(h$`Y axis label`, paste("ylabel", method)))
 
     # Result name check
-    expect_match(names(ResultsState$all_data)[1], paste0("1 Visualization ", 
-      c(box = "Boxplot", dot = "Scatterplot", line = "Lineplot")[method]))
+    checks <- c(checks, expect_match(names(ResultsState$all_data)[1], paste0("1 Visualization ", 
+      c(box = "Boxplot", dot = "Scatterplot", line = "Lineplot")[method])))
+
+    outer_checks <- c(outer_checks, all(checks))
   }
+  expect_true(all(outer_checks))
 }
 test_vis_all()
 
 test_vis_warn_size <- function() {
+  df <- CO2
+  ResultsState <- bs:::backend_result_state_V1_2$new()
+  DataModelState <- bs:::backend_data_model_state_V1_2$new(df)
   vis <- bs:::visualisation_V1_2$new(
     df = CO2, x = "conc", y = "uptake", method = "box",
     xlabel = "x", type_of_x = "factor", ylabel = "y",
@@ -188,63 +223,78 @@ test_vis_warn_size <- function() {
     com = bs:::backend_communicator_V1_2
   )
   vis$validate()
-  expect_equal(vis$width, 10)
-  expect_equal(vis$height, 100)
+  checks1 <- expect_equal(vis$width, 10)
+  checks2 <- expect_equal(vis$height, 100)
+  expect_true(all(c(checks1, checks2)))
 }
 test_vis_warn_size()
 
+# Plot model
+# =======================================================================================
+test_plot_model <- function() {
+  df <- CO2
+  ResultsState <- bs:::backend_result_state_V1_2$new()
+  DataModelState <- bs:::backend_data_model_state_V1_2$new(df)
+  formula <- uptake ~ conc*Treatment
+  formula <- new("LinearFormula", formula = formula)
+  plot_model <- bs:::visualisation_model_V1_2$new(df, formula, "box")
+  plot_model$validate()
+  plot_model$eval(ResultsState)
+  bs:::backend_get_result_V1_2(ResultsState)
+  p <- ResultsState$all_data[[length(ResultsState$all_data)]]
+  check <- expect_true(inherits(p, "plot"))
+  expect_true(check)
+}
+test_plot_model()
 
 # Filter data
 # =======================================================================================
-test_apply_filter_V1_2 <- function() {
+test_apply_filter <- function() {
   df <- CO2
-  ResultsState <- new.env()
-  ResultsState$history <- list()
-
-  DataModelState <- new.env()
-  DataModelState$df <- df
+  ResultsState <- bs:::backend_result_state_V1_2$new()
+  DataModelState <- bs:::backend_data_model_state_V1_2$new(df)
 
   af <- bs:::apply_filter_V1_2$new("Plant", c("Qn1", "Qn2"), bs:::backend_communicator_V1_2)
   af$validate()
   af$eval(DataModelState, ResultsState)
 
-  expect_true("Qn1" %in% unique(DataModelState$df$Plant))
-  expect_true("Qn2" %in% unique(DataModelState$df$Plant))
-  expect_equal(DataModelState$filter_col, "Plant")
-  expect_equal(DataModelState$filter_group, c("Qn1", "Qn2"))
-  expect_equal(ResultsState$history[[1]]$type, "ApplyFilter")
+  check1 <- expect_true("Qn1" %in% unique(DataModelState$df$Plant))
+  check2 <- expect_true("Qn2" %in% unique(DataModelState$df$Plant))
+  check3 <- expect_equal(DataModelState$filter_col, "Plant")
+  check4 <- expect_equal(DataModelState$filter_group, c("Qn1", "Qn2"))
+  check5 <- expect_equal(ResultsState$history[[1]]$type, "ApplyFilter")
+  checks <- c(check1, check2, check3, check4, check5)
+  expect_true(all(checks))
 }
-test_apply_filter_V1_2()
-test_remove_filter_V1_2 <- function() {
+test_apply_filter()
+
+test_remove_filter <- function() {
   df <- CO2
-  DataModelState <- new.env()
+  ResultsState <- bs:::backend_result_state_V1_2$new()
+  DataModelState <- bs:::backend_data_model_state_V1_2$new(df)
   DataModelState$df <- df[CO2$Plant %in% c("Qn1", "Qn2"), ]
   DataModelState$backup_df <- df
   DataModelState$filter_col <- "Plant"
   DataModelState$filter_group <- c("Qn1", "Qn2")
 
-  ResultsState <- new.env()
-  ResultsState$history <- list()
-
   rf <- bs:::remove_filter_V1_2$new()
   rf$eval(ResultsState, DataModelState)
 
-  expect_equal(nrow(DataModelState$df), nrow(CO2))
-  expect_null(DataModelState$backup_df)
-  expect_equal(ResultsState$history[[1]]$type, "RemoveFilter")
+  check1 <- expect_equal(nrow(DataModelState$df), nrow(CO2))
+  check2 <- expect_null(DataModelState$backup_df)
+  check3 <- expect_equal(ResultsState$history[[1]]$type, "RemoveFilter")
+  checks <- c(check1, check2, check3)
+  expect_true(all(checks))
 }
-test_remove_filter_V1_2()
+test_remove_filter()
 
 # Data wrangling
 # =======================================================================================
-test_create_intermediate_var_V1_2 <- function() {
-  ResultsState <- new.env()
-  ResultsState$all_data <- list()
-  ResultsState$history <- list()
-  ResultsState$counter <- 0
-
-  DataWranglingState <- new.env()
-  DataWranglingState$intermediate_vars <- list()
+test_create_intermediate_var <- function() {
+  df <- CO2
+  ResultsState <- bs:::backend_result_state_V1_2$new()
+  DataModelState <- bs:::backend_data_model_state_V1_2$new(df)
+  DataWranglingState <- bs:::backend_data_wrangling_state_V1_2$new(DataModelState)
 
   ci <- bs:::create_intermediate_var_V1_2$new(
     df = CO2,
@@ -258,29 +308,22 @@ test_create_intermediate_var_V1_2 <- function() {
   ci$validate()
   ci$eval(ResultsState, DataWranglingState)
 
-  expect_true("myVar" %in% names(DataWranglingState$intermediate_vars))
-  expect_equal(ResultsState$counter, 1)
-  expect_equal(ResultsState$history[[1]]$type, "CreateIntermediateVariable")
+  check1 <- expect_true("myVar" %in% names(DataWranglingState$intermediate_vars))
+  check2 <- expect_equal(ResultsState$counter, 1)
+  check3 <- expect_equal(ResultsState$history[[1]]$type, "CreateIntermediateVariable")
+  checks <- c(check1, check2, check3)
+  expect_true(all(checks))
 }
-test_create_intermediate_var_V1_2()
+test_create_intermediate_var()
 
-test_create_new_col_V1_2 <- function() {
-  ResultsState <- new.env()
-  ResultsState$all_data <- list()
-  ResultsState$history <- list()
-  ResultsState$counter <- 0
-
-  DataWranglingState <- new.env()
-  DataWranglingState$df <- CO2
-  DataWranglingState$intermediate_vars <- list()
-  DataWranglingState$counter_id <- 0
-
-  DataModelState <- new.env()
-  DataModelState$df <- CO2
-  DataModelState$backup_df <- CO2
+test_create_new_col <- function() {
+  df <- CO2
+  ResultsState <- bs:::backend_result_state_V1_2$new()
+  DataModelState <- bs:::backend_data_model_state_V1_2$new(df)
+  DataWranglingState <- bs:::backend_data_wrangling_state_V1_2$new(DataModelState)
 
   cc <- bs:::create_new_col_V1_2$new(
-    df = CO2,
+    df = df,
     df_name = "CO2",
     intermediate_vars = list(),
     operation = "uptake / conc",
@@ -291,41 +334,42 @@ test_create_new_col_V1_2 <- function() {
   cc$validate()
   cc$eval(ResultsState, DataWranglingState, DataModelState)
 
-  expect_true("ratio" %in% colnames(DataModelState$df))
-  expect_equal(ResultsState$counter, 1)
-  expect_equal(ResultsState$history[[1]]$type, "CreateNewColumn")
+  check1 <- expect_true("ratio" %in% colnames(DataModelState$df))
+  check2 <- expect_equal(ResultsState$counter, 1)
+  check3 <- expect_equal(ResultsState$history[[1]]$type, "CreateNewColumn")
+  checks <- c(check1, check2, check3)
+  expect_true(all(checks))
 }
-test_create_new_col_V1_2()
+test_create_new_col()
 
-test_remove_intermediate_var_V1_2 <- function() {
-  ResultsState <- new.env()
-  ResultsState$history <- list()
-
-  DataWranglingState <- new.env()
+test_remove_intermediate_var <- function() {
+  df <- CO2
+  ResultsState <- bs:::backend_result_state_V1_2$new()
+  DataModelState <- bs:::backend_data_model_state_V1_2$new(df)
+  DataWranglingState <- bs:::backend_data_wrangling_state_V1_2$new(DataModelState)
   DataWranglingState$intermediate_vars <- list(foo = 1:3)
 
   riv <- bs:::remove_intermediate_var_V1_2$new("foo", com = bs:::backend_communicator_V1_2)
   riv$eval(ResultsState, DataWranglingState)
 
-  expect_null(DataWranglingState$intermediate_vars$foo)
-  expect_equal(ResultsState$history[[1]]$type, "RemoveIntermediateVariable")
+  check1 <- expect_null(DataWranglingState$intermediate_vars$foo)
+  check2 <- expect_equal(ResultsState$history[[1]]$type, "RemoveIntermediateVariable")
+  checks <- c(check1, check2)
+  expect_true(all(checks))
 }
-test_remove_intermediate_var_V1_2()
+test_remove_intermediate_var()
 
 # Statistical tests
 # =======================================================================================
-test_t_test_V1_2 <- function() {
+test_t_test <- function() {
   df <- CO2
-  df$group <- rep(c("A", "B"), length.out = nrow(df))
-  formula <- as.formula("uptake ~ group")
-
-  ResultsState <- new.env()
-  ResultsState$all_data <- list()
-  ResultsState$history <- list()
-  ResultsState$counter <- 0
+  ResultsState <- bs:::backend_result_state_V1_2$new()
+  DataModelState <- bs:::backend_data_model_state_V1_2$new(df)
+  formula <- as.formula("uptake ~ Treatment")
+  formula <- new("LinearFormula", formula = formula)
 
   tt <- bs:::t_test_V1_2$new(
-    df = df,
+   r df = df,
     formula = formula,
     variances_equal = "eq",
     conf_level = 0.95,
@@ -334,30 +378,28 @@ test_t_test_V1_2 <- function() {
   )
 
   result <- tt$eval(ResultsState)
+  bs:::backend_get_result_V1_2(ResultsState)
+  result <- ResultsState$all_data[[length(ResultsState$all_data)]]
 
-  expect_true("estimate" %in% colnames(result))
-  expect_equal(ResultsState$counter, 1)
-  expect_equal(ResultsState$history[[1]]$type, "TTest")
+  check1 <- expect_true("estimate" %in% colnames(result))
+  check2 <- expect_equal(ResultsState$counter, 1)
+  check3 <- expect_equal(ResultsState$history[[1]]$type, "TTest")
+  checks <- c(check1, check2, check3)
+  expect_true(all(checks))
 }
-test_t_test_V1_2()
+test_t_test()
 
 test_statistical_methods <- function() {
   df <- CO2
   df$group <- rep(c("A", "B", "C", "D"), length.out = nrow(df))
+  DataModelState <- bs:::backend_data_model_state_V1_2$new(df)
   formula <- as.formula("uptake ~ group")
+  formula <- new("LinearFormula", formula = formula)
 
-  ResultsState <- new.env()
-  ResultsState$all_data <- list()
-  ResultsState$history <- list()
-  ResultsState$counter <- 0
-
+  outer_checks <- c()
   methods <- c("aov", "kruskal", "HSD", "kruskalTest", "LSD", "scheffe", "REGW")
-
   for (method in methods) {
-    ResultsState$all_data <- list()
-    ResultsState$history <- list()
-    ResultsState$counter <- 0
-
+    ResultsState <- bs:::backend_result_state_V1_2$new()
     st <- bs:::statistical_tests_V1_2$new(
       df = df,
       formula = formula,
@@ -368,108 +410,164 @@ test_statistical_methods <- function() {
     )
 
     result <- st$eval(ResultsState, method = method)
-
-    expect_true(is.data.frame(result) || is.matrix(result))
-    expect_equal(ResultsState$counter, 1)
-    expect_match(ResultsState$history[[1]]$type, "ANOVA|Test|Tukey|post hoc|Least|Scheffe|REGW")
-    expect_true(length(ResultsState$all_data) == 1)
+    bs:::backend_get_result_V1_2(ResultsState)
+    result <- ResultsState$all_data[[length(ResultsState$all_data)]]
+    check1 <- expect_true(is.data.frame(result) || is.matrix(result))
+    check2 <- expect_equal(ResultsState$counter, 1)
+    check3 <- expect_match(ResultsState$history[[1]]$type, "ANOVA|Test|Tukey|post hoc|Least|Scheffe|REGW")
+    check4 <- expect_true(length(ResultsState$all_data) == 1)
+    checks <- c(check1, check2, check3, check4)
+    outer_checks <- c(outer_checks, all(checks))
   }
+  expect_true(all(outer_checks))
 }
 test_statistical_methods()
 
+test_statistical_methods_glm <- function() {
+  df <- CO2
+  df$group <- rep(c("A", "B", "C", "D"), length.out = nrow(df))
+  df$Treatment <- factor(df$Treatment)
+
+  formula <- as.formula("Treatment ~ group")
+  formula <- methods::new(
+    "GeneralisedLinearFormula",
+    formula = formula,
+    family = "binomial",
+    link_fct = "logit"
+  )
+
+  outer_checks <- c()
+  methods <- c(
+    "aov", "kruskal",  # native GLM tests
+    "tukey", "sidak", "bonferroni", "scheffe", "none",
+    "fdr", "holm", "hochberg", "hommel"  # emmeans
+  )
+
+  for (method in methods) {
+    ResultsState <- bs:::backend_result_state_V1_2$new()
+    st <- bs:::statistical_tests_V1_2$new(
+      df = df,
+      formula = formula,
+      balanced_design = "Balanced",
+      p_val = 0.05,
+      p_val_adj_method = method,
+      com = bs:::backend_communicator_V1_2
+    )
+
+    result <- st$eval(ResultsState, method = method)
+
+   bs:::backend_get_result_V1_2(ResultsState)
+    result <- ResultsState$all_data[[length(ResultsState$all_data)]]
+    check1 <- expect_true(is.data.frame(result) || is.matrix(result))
+    check2 <- expect_equal(ResultsState$counter, 1)
+    check3 <- expect_match(ResultsState$history[[1]]$type, "ANOVA|Chisq|PostHoc|Test")
+    check4 <- expect_true(length(ResultsState$all_data) == 1)
+    checks <- c(check1, check2, check3, check4)
+    outer_checks <- c(outer_checks, all(checks))
+  }
+
+  expect_true(all(outer_checks))
+}
+test_statistical_methods_glm()
+
+
 # Assumptions
 # =======================================================================================
-test_shapiro_on_data_V1_2 <- function() {
+test_shapiro_on_data <- function() {
   df <- CO2
   df$group <- rep(c("A", "B"), length.out = nrow(df))
   formula <- as.formula("uptake ~ group")
-
-  ResultsState <- new.env()
-  ResultsState$all_data <- list()
-  ResultsState$history <- list()
-  ResultsState$counter <- 0
+  DataModelState <- bs:::backend_data_model_state_V1_2$new(df)
+  formula <- new("LinearFormula", formula = formula)
+  ResultsState <- bs:::backend_result_state_V1_2$new()
 
   sh <- bs:::shapiro_on_data_V1_2$new(df = df, formula = formula, com = bs:::backend_communicator_V1_2)
-  result <- sh$eval(ResultsState)
-
-  expect_true(is.data.frame(result))
-  expect_true("Normal distributed" %in% colnames(result))
-  expect_equal(ResultsState$counter, 1)
-  expect_equal(ResultsState$history[[1]]$type, "ShapiroOnData")
+  sh$eval(ResultsState)
+  result <- ResultsState$all_data[[1]]
+  check1 <- expect_true(is.data.frame(result))
+  check2 <- expect_true("Normal distributed" %in% colnames(result))
+  check3 <- expect_equal(ResultsState$counter, 1)
+  check4 <- expect_equal(ResultsState$history[[1]]$type, "ShapiroOnData")
+  checks <- c(check1, check2, check3, check4)
+  expect_true(all(checks))
 }
-test_shapiro_on_data_V1_2()
-test_shapiro_on_residuals_V1_2 <- function() {
+test_shapiro_on_data()
+
+test_shapiro_on_residuals <- function() {
   df <- CO2
   df$group <- rep(c("A", "B"), length.out = nrow(df))
   formula <- as.formula("uptake ~ group")
-
-  ResultsState <- new.env()
-  ResultsState$all_data <- list()
-  ResultsState$history <- list()
-  ResultsState$counter <- 0
+  DataModelState <- bs:::backend_data_model_state_V1_2$new(df)
+  formula <- new("LinearFormula", formula = formula)
+  ResultsState <- bs:::backend_result_state_V1_2$new()
 
   sh <- bs:::shapiro_on_residuals_V1_2$new(df = df, formula = formula, com = bs:::backend_communicator_V1_2)
-  result <- sh$eval(ResultsState)
+  sh$eval(ResultsState)
+  result <- ResultsState$all_data[[1]]
 
-  expect_true(is.data.frame(result))
-  expect_true("Residuals normal distributed" %in% colnames(result))
-  expect_equal(ResultsState$counter, 1)
-  expect_equal(ResultsState$history[[1]]$type, "ShapiroOnResiduals")
+  check1 <- expect_true(is.data.frame(result))
+  check2 <- expect_true("Residuals normal distributed" %in% colnames(result))
+  check3 <- expect_equal(ResultsState$counter, 1)
+  check4 <- expect_equal(ResultsState$history[[1]]$type, "ShapiroOnResiduals")
+  checks <- c(check1, check2, check3, check4)
+  expect_true(all(checks))
 }
-test_shapiro_on_residuals_V1_2()
-test_levene_V1_2 <- function() {
+test_shapiro_on_residuals()
+
+test_levene <- function() {
   df <- CO2
   df$group <- rep(c("A", "B"), length.out = nrow(df))
   formula <- as.formula("uptake ~ group")
-
-  ResultsState <- new.env()
-  ResultsState$all_data <- list()
-  ResultsState$history <- list()
-  ResultsState$counter <- 0
+  DataModelState <- bs:::backend_data_model_state_V1_2$new(df)
+  formula <- new("LinearFormula", formula = formula)
+  ResultsState <- bs:::backend_result_state_V1_2$new()
 
   lv <- bs:::levene_V1_2$new(df = df, formula = formula, center = "mean", com = bs:::backend_communicator_V1_2)
-  result <- lv$eval(ResultsState)
+  lv$eval(ResultsState)
+  result <- ResultsState$all_data[[1]]
 
-  expect_true(is.data.frame(result))
-  expect_true("Variance homogenity" %in% colnames(result))
-  expect_equal(ResultsState$counter, 1)
-  expect_equal(ResultsState$history[[1]]$type, "LeveneTest")
+  check1 <- expect_true(is.data.frame(result))
+  check2 <- expect_true("Variance homogenity" %in% colnames(result))
+  check3 <- expect_equal(ResultsState$counter, 1)
+  check4 <- expect_equal(ResultsState$history[[1]]$type, "LeveneTest")
+  checks <- c(check1, check2, check3, check4)
+  expect_true(all(checks))
 }
-test_levene_V1_2()
-test_diagnostic_plots_V1_2 <- function() {
+test_levene()
+
+test_diagnostic_plots <- function() {
   df <- CO2
   df$group <- rep(c("A", "B"), length.out = nrow(df))
   formula <- as.formula("uptake ~ group")
-
-  ResultsState <- new.env()
-  ResultsState$all_data <- list()
-  ResultsState$history <- list()
-  ResultsState$counter <- 0
+  DataModelState <- bs:::backend_data_model_state_V1_2$new(df)
+  formula <- new("LinearFormula", formula = formula)
+  ResultsState <- bs:::backend_result_state_V1_2$new()
 
   dp <- bs:::diagnostic_plots_V1_2$new(df = df, formula = formula, com = bs:::backend_communicator_V1_2)
-  p <- dp$eval(ResultsState)
+  dp$eval(ResultsState)
+  bs:::backend_get_result_V1_2(ResultsState)
+  p <- ResultsState$all_data[[length(ResultsState$all_data)]]
 
-  expect_true(inherits(p, "gg"))
-  expect_match(names(ResultsState$all_data), "DiagnosticPlotNr1")
-  expect_equal(ResultsState$history[[1]]$type, "DiagnosticPlots")
+  check1 <- expect_true(inherits(p, "plot"))
+  check2 <- expect_match(names(ResultsState$all_data), "1 Diagnostic plot")
+  check3 <- expect_equal(ResultsState$history[[1]]$type, "DiagnosticPlots")
+  checks <- c(check1, check2, check3)
+  expect_true(all(checks))
 }
-test_diagnostic_plots_V1_2()
+test_diagnostic_plots()
 
 # Dose response
 # =======================================================================================
-test_dose_response_V1_2 <- function() {
+test_dose_response <- function() {
   df <- data.frame(
     dose = rep(c(0.1, 1, 10, 100), each = 5),
     response = c(100, 90, 80, 60, 50, 98, 85, 75, 58, 48, 95, 80, 70, 55, 45, 92, 78, 65, 50, 40),
     name = rep(c("A", "B"), length.out = 20)
   )
+  DataModelState <- bs:::backend_data_model_state_V1_2$new(df)
   formula <- response ~ dose
-
-  ResultsState <- new.env()
-  ResultsState$all_data <- list()
-  ResultsState$history <- list()
-  ResultsState$counter <- 0
-  ResultsState$all_names <- list()
+  formula <- new("LinearFormula", formula = formula)
+  ResultsState <- bs:::backend_result_state_V1_2$new()
 
   dr <- bs:::dose_response_V1_2$new(
     df = df,
@@ -481,25 +579,33 @@ test_dose_response_V1_2 <- function() {
     com = bs:::backend_communicator_V1_2
   )
 
-  res <- dr$eval(ResultsState)
+  new_name <- "Mock"
+  dr$eval(ResultsState, new_name)
+  bs:::backend_get_result_V1_2(ResultsState)
+  res <- ResultsState$all_data[[length(ResultsState$all_data)]]
 
-  expect_true(is.list(res))
-  expect_equal(ResultsState$counter, 1)
-  expect_equal(ResultsState$history[[1]]$type, "DoseResponse")
+  check1 <- expect_true(inherits(res, "doseResponse"))
+  check2 <- expect_equal(ResultsState$counter, 1)
+  check3 <- expect_equal(ResultsState$history[[1]]$type, "DoseResponse")
+  checks <- c(check1, check2, check3)
+  expect_true(all(checks))
 }
-test_dose_response_V1_2()
+test_dose_response()
 
 # Remove result from ResultList
 # =======================================================================================
-test_remove_result_V1_2 <- function() {
-  ResultsState <- new.env()
+test_remove_result <- function() {
+  ResultsState <- bs:::backend_result_state_V1_2$new()
   ResultsState$all_data <- list("MyResult" = 42)
   ResultsState$history <- list()
 
   rr <- bs:::remove_result_V1_2$new("MyResult")
   rr$eval(ResultsState)
 
-  expect_null(ResultsState$all_data$MyResult)
-  expect_equal(ResultsState$history[[1]]$type, "RemoveResult")
+  check1 <- expect_null(ResultsState$all_data$MyResult)
+  check2 <- expect_equal(ResultsState$history[[1]]$type, "RemoveResult")
+
+  checks <- c(check1, check2)
+  expect_true(all(checks))
 }
-test_remove_result_V1_2()
+test_remove_result()
