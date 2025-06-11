@@ -1,26 +1,20 @@
 library(ggplot2)
 library(shinytest2)
 library(tinytest)
+wait <- function(app) {
+  try(app$wait_for_idle(), silent = TRUE)
+}
 app <- bs::app()
 app <- shiny::shinyApp(app$ui, app$server)
 app <- AppDriver$new(app)
-app$wait_for_idle()
-app$set_window_size(width = 2259, height = 1326)
-app$wait_for_idle()
+wait(app)
 app$upload_file(
   file = system.file("/test_data/CO2.csv", package = "bs")
 )
-app$wait_for_idle()
-app$set_inputs(conditionedPanels = "Visualisation")
-app$wait_for_idle()
-app$set_inputs(`VIS-yVar` = "uptake")
-app$wait_for_idle()
-app$set_inputs(`VIS-xVar` = "conc")
-app$wait_for_idle()
-app$click("VIS-CreatePlotBox")
-app$wait_for_idle()
+wait(app)
 
-# Test basic plot
+# Parameters for expected plot
+# =============================================================================
 x <- "conc"
 y <- "uptake"
 df <- CO2
@@ -32,16 +26,46 @@ y_min <- min(df[[y]], na.rm = TRUE)
 padded_min_y <- y_min * 0.95
 y_max <- max(df[[y]], na.rm = TRUE)
 padded_max_y <- y_max * 1.05
-ep <- ggplot() +
-  geom_boxplot(
-    data = CO2,
-    aes(x = .data[[x]], y = .data[[y]], group = interaction(.data[[x]]))
-  ) +
-  scale_x_continuous(limits = c(padded_min_x, padded_max_x)) +
-  scale_y_continuous(limits = c(padded_min_y, padded_max_y)) +
-  labs(x = "x label", y = "y label")
-p <- app$get_values()$export$`VIS-plot`
-app$wait_for_idle()
+fillTheme <- "BuGn"
+fillVar <- "Treatment"
+legendTitleFill <- "Treatment"
+colourTheme <- "Accent"
+colVar <- "Treatment"
+legendTitleColour <- "Treatment"
+facetVar <- "Type"
+aesFill <- aes(fill = .data[[fillVar]])
+CO2$Treatment <- as.character(CO2$Treatment)
+CO2$Type <- as.character(CO2$Type)
+aesColour <- aes(colour = .data[[colVar]])
+aesFill <- aes(fill = .data[[fillVar]])
+
+# Test basic plot
+# =============================================================================
+create_basic_plot <- function(app) {
+  app$set_inputs(conditionedPanels = "Visualisation")
+  wait(app)
+  app$set_inputs(`VIS-yVar` = "uptake")
+  wait(app)
+  app$set_inputs(`VIS-xVar` = "conc")
+  wait(app)
+  app$click("VIS-CreatePlotBox")
+  Sys.sleep(10)
+  res <- app$get_values()$export
+  res <- res$result_list
+  res[[1]]@p
+}
+create_expected_plot <- function() {
+  ggplot() +
+    geom_boxplot(
+      data = CO2,
+      aes(x = .data[[x]], y = .data[[y]], group = interaction(.data[[x]]))
+    ) +
+    scale_x_continuous(limits = c(padded_min_x, padded_max_x)) +
+    scale_y_continuous(limits = c(padded_min_y, padded_max_y)) +
+    labs(x = "x label", y = "y label")
+}
+p <- create_basic_plot(app)
+ep <- create_expected_plot()
 p_data_extracted <- ggplot_build(p)$data[[1]]
 ep_data_extracted <- ggplot_build(ep)$data[[1]]
 expect_equal(p_data_extracted, ep_data_extracted)
@@ -54,36 +78,38 @@ Map(function(a, b) {
 }, pl$mapping, epl$mapping)
 
 # plot with fill
-fillTheme <- "BuGn"
-fillVar <- "Treatment"
-legendTitleFill <- "Treatment"
-colourTheme <- "Accent"
-legendTitleColour <- ""
-app$set_inputs(`VIS-fill` = "Treatment")
-app$wait_for_idle()
-app$click("VIS-CreatePlotBox")
-app$wait_for_idle()
-aesColour <- aes()
-aesFill <- aes(fill = .data[[fillVar]])
-CO2$Treatment <- as.character(CO2$Treatment)
-ep <- ggplot() +
-  geom_boxplot(
-    data = CO2,
-    aes(
-      x = .data[[x]], y = .data[[y]],
-      !!!aesColour, !!!aesFill,
-      group = interaction(.data[[x]], !!!aesColour, !!!aesFill),
-    )
-  ) +
-  scale_x_continuous(limits = c(padded_min_x, padded_max_x)) +
-  scale_y_continuous(limits = c(padded_min_y, padded_max_y)) +
-  labs(x = "x label", y = "y label") +
-  guides(fill = guide_legend(title = legendTitleFill)) +
-  guides(colour = guide_legend(title = legendTitleColour)) +
-  scale_fill_brewer(palette = fillTheme) +
-  scale_color_brewer(palette = colourTheme)
-p <- app$get_values()$export$`VIS-plot`
-app$wait_for_idle()
+# =============================================================================
+create_fill_plot <- function(app) {
+  app$set_inputs(`VIS-fill` = "Treatment")
+  wait(app)
+  app$click("VIS-CreatePlotBox")
+  Sys.sleep(10)
+  res <- app$get_values()$export
+  res <- res$result_list
+  res[[2]]@p
+}
+create_expected_plot <- function() {
+  legendTitleColour <- ""
+  aesColour <- aes()
+  ggplot() +
+    geom_boxplot(
+      data = CO2,
+      aes(
+        x = .data[[x]], y = .data[[y]],
+        !!!aesColour, !!!aesFill,
+        group = interaction(.data[[x]], !!!aesColour, !!!aesFill),
+      )
+    ) +
+    scale_x_continuous(limits = c(padded_min_x, padded_max_x)) +
+    scale_y_continuous(limits = c(padded_min_y, padded_max_y)) +
+    labs(x = "x label", y = "y label") +
+    guides(fill = guide_legend(title = legendTitleFill)) +
+    guides(colour = guide_legend(title = legendTitleColour)) +
+    scale_fill_brewer(palette = fillTheme) +
+    scale_color_brewer(palette = colourTheme)
+}
+p <- create_fill_plot(app)
+ep <- create_expected_plot()
 pd <- ggplot_build(p)$data[[1]]
 epd <- ggplot_build(ep)$data[[1]]
 tinytest::expect_equal(pd, epd)
@@ -96,41 +122,38 @@ Map(function(a, b) {
 }, pl$mapping, epl$mapping)
 
 # Adding colour to plot
-app$set_inputs(`VIS-col` = "Treatment")
-app$wait_for_idle()
-app$click("VIS-CreatePlotBox")
-app$wait_for_idle()
-fillTheme <- "BuGn"
-fillVar <- "Treatment"
-legendTitleFill <- "Treatment"
-colourTheme <- "Accent"
-colVar <- "Treatment"
-legendTitleColour <- ""
-app$set_inputs(`VIS-fill` = "Treatment")
-app$wait_for_idle()
-app$click("VIS-CreatePlotBox")
-app$wait_for_idle()
-aesColour <- aes(colour = .data[[colVar]])
-aesFill <- aes(fill = .data[[fillVar]])
-CO2$Treatment <- as.character(CO2$Treatment)
-ep <- ggplot() +
-  geom_boxplot(
-    data = CO2,
-    aes(
-      x = .data[[x]], y = .data[[y]],
-      !!!aesColour, !!!aesFill,
-      group = interaction(.data[[x]], !!!aesColour, !!!aesFill),
-    )
-  ) +
-  scale_x_continuous(limits = c(padded_min_x, padded_max_x)) +
-  scale_y_continuous(limits = c(padded_min_y, padded_max_y)) +
-  labs(x = "x label", y = "y label") +
-  guides(fill = guide_legend(title = legendTitleFill)) +
-  guides(colour = guide_legend(title = legendTitleColour)) +
-  scale_fill_brewer(palette = fillTheme) +
-  scale_color_brewer(palette = colourTheme)
-p <- app$get_values()$export$`VIS-plot`
-app$wait_for_idle()
+# =============================================================================
+create_colour_plot <- function(app) {
+  app$set_inputs(`VIS-col` = "Treatment")
+  app$set_inputs(`VIS-fill` = "Treatment")
+  wait(app)
+  app$click("VIS-CreatePlotBox")
+  Sys.sleep(10)
+  res <- app$get_values()$export
+  res <- res$result_list
+  res[[3]]@p
+}
+create_expected_plot <- function() {
+  CO2$Treatment <- as.character(CO2$Treatment)
+  ggplot() +
+    geom_boxplot(
+      data = CO2,
+      aes(
+        x = .data[[x]], y = .data[[y]],
+        !!!aesColour, !!!aesFill,
+        group = interaction(.data[[x]], !!!aesColour, !!!aesFill),
+      )
+    ) +
+    scale_x_continuous(limits = c(padded_min_x, padded_max_x)) +
+    scale_y_continuous(limits = c(padded_min_y, padded_max_y)) +
+    labs(x = "x label", y = "y label") +
+    guides(fill = guide_legend(title = legendTitleFill)) +
+    guides(colour = guide_legend(title = legendTitleColour)) +
+    scale_fill_brewer(palette = fillTheme) +
+    scale_color_brewer(palette = colourTheme)
+}
+p <- create_colour_plot(app)
+ep <- create_expected_plot()
 pd <- ggplot_build(p)$data[[1]]
 epd <- ggplot_build(ep)$data[[1]]
 tinytest::expect_equal(pd, epd)
@@ -144,43 +167,44 @@ Map(function(a, b) {
 
 
 # Set scales for y
-padded_min_y <- 7.315
-padded_max_y <- 26.3
-app$set_inputs(`VIS-YRange` = c(7.315, 26.3))
-app$wait_for_idle()
-app$click("VIS-CreatePlotBox")
-app$wait_for_idle()
-fillTheme <- "BuGn"
-fillVar <- "Treatment"
-legendTitleFill <- "Treatment"
-colourTheme <- "Accent"
-colVar <- "Treatment"
-legendTitleColour <- ""
-app$set_inputs(`VIS-fill` = "Treatment")
-app$wait_for_idle()
-app$click("VIS-CreatePlotBox")
-app$wait_for_idle()
-aesColour <- aes(colour = .data[[colVar]])
-aesFill <- aes(fill = .data[[fillVar]])
-CO2$Treatment <- as.character(CO2$Treatment)
-ep <- ggplot() +
-  geom_boxplot(
-    data = CO2,
-    aes(
-      x = .data[[x]], y = .data[[y]],
-      !!!aesColour, !!!aesFill,
-      group = interaction(.data[[x]], !!!aesColour, !!!aesFill),
-    )
-  ) +
-  scale_x_continuous(limits = c(padded_min_x, padded_max_x)) +
-  scale_y_continuous(limits = c(padded_min_y, padded_max_y)) +
-  labs(x = "x label", y = "y label") +
-  guides(fill = guide_legend(title = legendTitleFill)) +
-  guides(colour = guide_legend(title = legendTitleColour)) +
-  scale_fill_brewer(palette = fillTheme) +
-  scale_color_brewer(palette = colourTheme)
-p <- app$get_values()$export$`VIS-plot`
-app$wait_for_idle()
+# =============================================================================
+create_specified_yaxis <- function(app) {
+  app$set_inputs(`VIS-YRange` = c(7.315, 26.3))
+  wait(app)
+  app$set_inputs(`VIS-col` = "Treatment")
+  wait(app)
+  app$set_inputs(`VIS-fill` = "Treatment")
+  wait(app)
+  app$click("VIS-CreatePlotBox")
+  Sys.sleep(10)
+  res <- app$get_values()$export
+  res <- res$result_list
+  res[[4]]@p
+}
+create_expected_plot <- function() {
+  padded_min_y <- 7.315
+  padded_max_y <- 26.3
+  aesColour <- aes(colour = .data[[colVar]])
+  aesFill <- aes(fill = .data[[fillVar]])
+  ggplot() +
+    geom_boxplot(
+      data = CO2,
+      aes(
+        x = .data[[x]], y = .data[[y]],
+        !!!aesColour, !!!aesFill,
+        group = interaction(.data[[x]], !!!aesColour, !!!aesFill),
+      )
+    ) +
+    scale_x_continuous(limits = c(padded_min_x, padded_max_x)) +
+    scale_y_continuous(limits = c(padded_min_y, padded_max_y)) +
+    labs(x = "x label", y = "y label") +
+    guides(fill = guide_legend(title = legendTitleFill)) +
+    guides(colour = guide_legend(title = legendTitleColour)) +
+    scale_fill_brewer(palette = fillTheme) +
+    scale_color_brewer(palette = colourTheme)
+}
+p <- create_specified_yaxis(app)
+ep <- create_expected_plot()
 pd <- ggplot_build(p)$data[[1]]
 epd <- ggplot_build(ep)$data[[1]]
 tinytest::expect_equal(pd, epd)
@@ -194,43 +218,42 @@ Map(function(a, b) {
 
 
 # Set additional the x axis
-padded_min_x <- 47.5
-padded_max_x <- 637
-app$set_inputs(`VIS-XRange` = c(47.5, 637))
-app$wait_for_idle()
-app$click("VIS-CreatePlotBox")
-app$wait_for_idle()
-fillTheme <- "BuGn"
-fillVar <- "Treatment"
-legendTitleFill <- "Treatment"
-colourTheme <- "Accent"
-colVar <- "Treatment"
-legendTitleColour <- ""
-app$set_inputs(`VIS-fill` = "Treatment")
-app$wait_for_idle()
-app$click("VIS-CreatePlotBox")
-app$wait_for_idle()
-aesColour <- aes(colour = .data[[colVar]])
-aesFill <- aes(fill = .data[[fillVar]])
-CO2$Treatment <- as.character(CO2$Treatment)
-ep <- ggplot() +
-  geom_boxplot(
-    data = CO2,
-    aes(
-      x = .data[[x]], y = .data[[y]],
-      !!!aesColour, !!!aesFill,
-      group = interaction(.data[[x]], !!!aesColour, !!!aesFill),
-    )
-  ) +
-  scale_x_continuous(limits = c(padded_min_x, padded_max_x)) +
-  scale_y_continuous(limits = c(padded_min_y, padded_max_y)) +
-  labs(x = "x label", y = "y label") +
-  guides(fill = guide_legend(title = legendTitleFill)) +
-  guides(colour = guide_legend(title = legendTitleColour)) +
-  scale_fill_brewer(palette = fillTheme) +
-  scale_color_brewer(palette = colourTheme)
-p <- app$get_values()$export$`VIS-plot`
-app$wait_for_idle()
+# =============================================================================
+create_specified_xaxis <- function(app) {
+  app$set_inputs(`VIS-XRange` = c(47.5, 637))
+  wait(app)
+  app$click("VIS-CreatePlotBox")
+  Sys.sleep(10)
+  res <- app$get_values()$export
+  res <- res$result_list
+  res[[5]]@p
+}
+create_expected_plot <- function() {
+  padded_min_y <- 7.315
+  padded_max_y <- 26.3
+  padded_min_x <- 47.5
+  padded_max_x <- 637
+  aesColour <- aes(colour = .data[[colVar]])
+  aesFill <- aes(fill = .data[[fillVar]])
+  ggplot() +
+    geom_boxplot(
+      data = CO2,
+      aes(
+        x = .data[[x]], y = .data[[y]],
+        !!!aesColour, !!!aesFill,
+        group = interaction(.data[[x]], !!!aesColour, !!!aesFill),
+      )
+    ) +
+    scale_x_continuous(limits = c(padded_min_x, padded_max_x)) +
+    scale_y_continuous(limits = c(padded_min_y, padded_max_y)) +
+    labs(x = "x label", y = "y label") +
+    guides(fill = guide_legend(title = legendTitleFill)) +
+    guides(colour = guide_legend(title = legendTitleColour)) +
+    scale_fill_brewer(palette = fillTheme) +
+    scale_color_brewer(palette = colourTheme)
+}
+p <- create_specified_xaxis(app)
+ep <- create_expected_plot()
 pd <- ggplot_build(p)$data[[1]]
 epd <- ggplot_build(ep)$data[[1]]
 tinytest::expect_equal(pd, epd)
@@ -243,46 +266,43 @@ Map(function(a, b) {
 }, pl$mapping, epl$mapping)
 
 # Test facet
-app$set_inputs(`VIS-XRange` = c(47.5, 1250))
-app$wait_for_idle()
-app$set_inputs(`VIS-YRange` = c(7.315, 47.775))
-app$wait_for_idle()
-app$set_inputs(`VIS-facetBy` = "Type")
-app$wait_for_idle()
-app$click("VIS-CreatePlotBox")
-app$wait_for_idle()
-fillTheme <- "BuGn"
-fillVar <- "Treatment"
-legendTitleFill <- "Treatment"
-colourTheme <- "Accent"
-colVar <- "Treatment"
-legendTitleColour <- ""
-app$set_inputs(`VIS-fill` = "Treatment")
-app$wait_for_idle()
-app$click("VIS-CreatePlotBox")
-app$wait_for_idle()
-aesColour <- aes(colour = .data[[colVar]])
-aesFill <- aes(fill = .data[[fillVar]])
-CO2$Treatment <- as.character(CO2$Treatment)
-CO2$Type <- as.character(CO2$Type)
-facetVar <- "Type"
-ep <- ggplot() +
-  geom_boxplot(
-    data = CO2,
-    aes(
-      x = .data[[x]], y = .data[[y]],
-      !!!aesColour, !!!aesFill,
-      group = interaction(.data[[x]], !!!aesColour, !!!aesFill),
-    )
-  ) +
-  labs(x = "x label", y = "y label") +
-  guides(fill = guide_legend(title = legendTitleFill)) +
-  guides(colour = guide_legend(title = legendTitleColour)) +
-  scale_fill_brewer(palette = fillTheme) +
-  scale_color_brewer(palette = colourTheme) +
-  facet_wrap(~ .data[[facetVar]], scales = "free")
-p <- app$get_values()$export$`VIS-plot`
-app$wait_for_idle()
+# =============================================================================
+create_facet_plot <- function(app) {
+  app$set_inputs(`VIS-XRange` = c(47.5, 1250))
+  wait(app)
+  app$set_inputs(`VIS-YRange` = c(7.315, 47.775))
+  wait(app)
+  app$set_inputs(`VIS-facetBy` = "Type")
+  wait(app)
+  app$click("VIS-CreatePlotBox")
+  Sys.sleep(10)
+  res <- app$get_values()$export
+  res <- res$result_list
+  res[[6]]@p
+}
+create_expected_plot <- function() {
+  padded_min_y <- 7.315
+  padded_max_y <- 47.775
+  padded_min_x <- 47.5
+  padded_max_x <- 1250
+  ep <- ggplot() +
+    geom_boxplot(
+      data = CO2,
+      aes(
+        x = .data[[x]], y = .data[[y]],
+        !!!aesColour, !!!aesFill,
+        group = interaction(.data[[x]], !!!aesColour, !!!aesFill),
+      )
+    ) +
+    labs(x = "x label", y = "y label") +
+    guides(fill = guide_legend(title = legendTitleFill)) +
+    guides(colour = guide_legend(title = legendTitleColour)) +
+    scale_fill_brewer(palette = fillTheme) +
+    scale_color_brewer(palette = colourTheme) +
+    facet_wrap(~ .data[[facetVar]], scales = "free")
+}
+p <- create_facet_plot(app)
+ep <- create_expected_plot()
 pd <- ggplot_build(p)$data[[1]]
 epd <- ggplot_build(ep)$data[[1]]
 tinytest::expect_equal(pd, epd)
@@ -296,44 +316,45 @@ Map(function(a, b) {
 
 
 # Change themes
-app$set_inputs(`VIS-themeFill` = "Greys")
-app$wait_for_idle()
-app$set_inputs(`VIS-theme` = "Dark2")
-app$wait_for_idle()
-app$click("VIS-CreatePlotBox")
-app$wait_for_idle()
-fillTheme <- "Greys"
-fillVar <- "Treatment"
-legendTitleFill <- "Treatment"
-colourTheme <- "Dark2"
-colVar <- "Treatment"
-legendTitleColour <- ""
-app$set_inputs(`VIS-fill` = "Treatment")
-app$wait_for_idle()
-app$click("VIS-CreatePlotBox")
-app$wait_for_idle()
-aesColour <- aes(colour = .data[[colVar]])
-aesFill <- aes(fill = .data[[fillVar]])
-CO2$Treatment <- as.character(CO2$Treatment)
-CO2$Type <- as.character(CO2$Type)
-facetVar <- "Type"
-ep <- ggplot() +
-  geom_boxplot(
-    data = CO2,
-    aes(
-      x = .data[[x]], y = .data[[y]],
-      !!!aesColour, !!!aesFill,
-      group = interaction(.data[[x]], !!!aesColour, !!!aesFill),
-    )
-  ) +
-  labs(x = "x label", y = "y label") +
-  guides(fill = guide_legend(title = legendTitleFill)) +
-  guides(colour = guide_legend(title = legendTitleColour)) +
-  scale_fill_brewer(palette = fillTheme) +
-  scale_color_brewer(palette = colourTheme) +
-  facet_wrap(~ .data[[facetVar]], scales = "free")
-p <- app$get_values()$export$`VIS-plot`
-app$wait_for_idle()
+# =============================================================================
+create_different_theme_plot <- function(app) {
+  app$set_inputs(`VIS-themeFill` = "Greys")
+  wait(app)
+  app$set_inputs(`VIS-theme` = "Dark2")
+  wait(app)
+  app$click("VIS-CreatePlotBox")
+  Sys.sleep(10)
+  res <- app$get_values()$export
+  res <- res$result_list
+  res[[7]]@p
+}
+create_expected_plot <- function() {
+  padded_min_y <- 7.315
+  padded_max_y <- 47.775
+  padded_min_x <- 47.5
+  padded_max_x <- 1250
+  fillTheme <- "Greys"
+  fillVar <- "Treatment"
+  colourTheme <- "Dark2"
+  colVar <- "Treatment"
+  ggplot() +
+    geom_boxplot(
+      data = CO2,
+      aes(
+        x = .data[[x]], y = .data[[y]],
+        !!!aesColour, !!!aesFill,
+        group = interaction(.data[[x]], !!!aesColour, !!!aesFill),
+      )
+    ) +
+    labs(x = "x label", y = "y label") +
+    guides(fill = guide_legend(title = legendTitleFill)) +
+    guides(colour = guide_legend(title = legendTitleColour)) +
+    scale_fill_brewer(palette = fillTheme) +
+    scale_color_brewer(palette = colourTheme) +
+    facet_wrap(~ .data[[facetVar]], scales = "free")
+}
+p <- create_different_theme_plot(app)
+ep <- create_expected_plot()
 pd <- ggplot_build(p)$data[[1]]
 epd <- ggplot_build(ep)$data[[1]]
 tinytest::expect_equal(pd, epd)
@@ -346,42 +367,46 @@ Map(function(a, b) {
 }, pl$mapping, epl$mapping)
 
 # Test scatterplots
+# =============================================================================
 app$set_inputs(VisConditionedPanels = "Scatterplot")
-app$wait_for_idle()
+wait(app)
+app$view()
 app$click("VIS-CreatePlotScatter")
-app$wait_for_idle()
+Sys.sleep(10)
+res <- app$get_values()$export
+res <- res$result_list
+p <- res[[8]]@p
 colourTheme <- "Dark2"
 colVar <- "Treatment"
 legendTitleColour <- "Title colour"
-aesColour <- aes(colour = .data[[colVar]])
 CO2$Treatment <- as.character(CO2$Treatment)
 CO2$Type <- as.character(CO2$Type)
-facetVar <- "Type"
-app$wait_for_idle()
 ep <- ggplot() +
   geom_point(
     data = CO2,
     aes(
       x = .data[[x]], y = .data[[y]],
-      !!!aesColour
+      !!!aesColour,
+      group = interaction(.data[[x]], !!!aesColour)
     )
   ) +
   labs(x = "x label", y = "y label") +
   guides(colour = guide_legend(title = legendTitleColour)) +
   scale_color_brewer(palette = colourTheme) +
   facet_wrap(~ .data[[facetVar]], scales = "free")
-p <- app$get_values()$export$`VIS-plot`
-app$wait_for_idle()
 pd <- ggplot_build(p)$data[[1]]
 epd <- ggplot_build(ep)$data[[1]]
 tinytest::expect_equal(pd, epd)
 
-
 # Test line plots
+# =============================================================================
 app$set_inputs(VisConditionedPanels = "Lineplot")
-app$wait_for_idle()
+wait(app)
 app$click("VIS-CreatePlotLine")
-app$wait_for_idle()
+Sys.sleep(10)
+res <- app$get_values()$export
+res <- res$result_list
+p <- res[[9]]@p
 colourTheme <- "Dark2"
 colVar <- "Treatment"
 legendTitleColour <- "Title colour"
@@ -402,8 +427,6 @@ ep <- ggplot() +
   guides(colour = guide_legend(title = legendTitleColour)) +
   scale_color_brewer(palette = colourTheme) +
   facet_wrap(~ .data[[facetVar]], scales = "free")
-p <- app$get_values()$export$`VIS-plot`
-app$wait_for_idle()
 pd <- ggplot_build(p)$data[[1]]
 epd <- ggplot_build(ep)$data[[1]]
 tinytest::expect_equal(pd, epd)

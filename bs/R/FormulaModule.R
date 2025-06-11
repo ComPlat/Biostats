@@ -175,7 +175,7 @@ FormulaEditorServer <- function(id, DataModelState, ResultsState) {
         NULL
       } else if (input$model_type == "Generalised Linear Model") {
         if (input[["Family"]] == "binomial") {
-          selectInput("FO-Link function", "The link function", # TODO: requires better description
+          selectInput("FO-Link_function", "The link function", # TODO: requires better description
             c(
               "logit" = "logit",
               "probit" = "probit",
@@ -184,7 +184,7 @@ FormulaEditorServer <- function(id, DataModelState, ResultsState) {
             selectize = FALSE
           )
         } else if (input[["Family"]] %in% c("gaussian", "Gamma")) {
-          selectInput("FO-Link function", "The link function", # TODO: requires better description
+          selectInput("FO-Link_function", "The link function", # TODO: requires better description
             c(
               "identity" = "identity",
               "log" = "log",
@@ -193,7 +193,7 @@ FormulaEditorServer <- function(id, DataModelState, ResultsState) {
             selectize = FALSE
           )
         } else if (input[["Family"]] == "inverse.gaussian") {
-          selectInput("FO-Link function", "The link function", # TODO: requires better description
+          selectInput("FO-Link_function", "The link function", # TODO: requires better description
             c(
               "identity" = "identity",
               "log" = "log",
@@ -203,7 +203,7 @@ FormulaEditorServer <- function(id, DataModelState, ResultsState) {
             selectize = FALSE
           )
         } else if (input[["Family"]] == "poisson") {
-          selectInput("FO-Link function", "The link function", # TODO: requires better description
+          selectInput("FO-Link_function", "The link function", # TODO: requires better description
             c(
               "identity" = "identity",
               "log" = "log",
@@ -212,7 +212,7 @@ FormulaEditorServer <- function(id, DataModelState, ResultsState) {
             selectize = FALSE
           )
         } else if (input[["Family"]] %in% c("quasi", "quasibinomial", "quasipoisson")) {
-          selectInput("FO-Link function", "The link function", # TODO: requires better description
+          selectInput("FO-Link_function", "The link function", # TODO: requires better description
             c(
               "identity" = "identity",
               "inverse" = "inverse",
@@ -304,7 +304,7 @@ FormulaEditorServer <- function(id, DataModelState, ResultsState) {
             if (input$model_type == "Linear") {
               model_latex <- cf$eval(ResultsState, DataModelState, input$model_type)
             } else if (input$model_type == "Generalised Linear Model") {
-              model_latex <- cf$eval(ResultsState, DataModelState, input$model_type, input$Family, input$`Link function`)
+              model_latex <- cf$eval(ResultsState, DataModelState, input$model_type, input$Family, input$`Link_function`)
             }
 
             output$model <- renderUI({

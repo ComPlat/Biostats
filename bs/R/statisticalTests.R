@@ -139,10 +139,6 @@ testsServer <- function(id, DataModelState, ResultsState) {
       if (inherits(res, "try-error")) {
         err <- conditionMessage(attr(res, "condition"))
         print_err(err)
-      } else {
-        exportTestValues(
-          tests_res = res
-        )
       }
     }
     observeEvent(input$tTest, {
@@ -167,10 +163,6 @@ testsServer <- function(id, DataModelState, ResultsState) {
       } else if (is.null(res)) {
         err <- "Test did not run successfully"
         print_err(err)
-      } else {
-        exportTestValues(
-          tests_res = res
-        )
       }
     }
 

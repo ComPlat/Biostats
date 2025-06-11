@@ -1,32 +1,37 @@
 library(shinytest2)
 library(tinytest)
+wait <- function(app) {
+  try(app$wait_for_idle(), silent = TRUE)
+}
 app <- bs::app()
 app <- shiny::shinyApp(app$ui, app$server)
 app <- AppDriver$new(app)
-app$wait_for_idle()
+wait(app)
 app$upload_file(
   file = system.file("/test_data/CO2.csv", package = "bs")
 )
-app$wait_for_idle()
+wait(app)
 app$set_window_size(width = 2259, height = 1326)
-app$wait_for_idle()
+wait(app)
 app$set_inputs(conditionedPanels = "Tests")
-app$wait_for_idle()
+wait(app)
 app$click("open_formula_editor")
-app$wait_for_idle()
+wait(app)
 app$set_inputs(`FO-colnames-dropdown_0` = "uptake")
-app$wait_for_idle()
+wait(app)
 app$click("FO-colnames_Treatment_0")
-app$wait_for_idle()
+wait(app)
 app$click("FO-create_formula_V1_2")
-app$wait_for_idle()
+wait(app)
 app$run_js("$('.modal-footer button:contains(\"Close\")').click();")
-app$wait_for_idle()
+wait(app)
 
 app$click("TESTS-tTest")
-app$wait_for_idle()
+Sys.sleep(10)
+wait(app)
 res <- app$get_values()$export
-app$wait_for_idle()
+res <- res[["FO-result_list"]]
+wait(app)
 CO2$Treatment <- as.character(CO2$Treatment)
 expected <- broom::tidy(
   t.test(
@@ -36,13 +41,16 @@ expected <- broom::tidy(
     alternative = "two.sided"
   )
 )
-tinytest::expect_equal(res[[1]], expected)
+tinytest::expect_equal(res[[2]], expected)
+
 # Update output value
 app$set_inputs(`TESTS-altHyp` = "less")
-app$wait_for_idle()
+wait(app)
 app$click("TESTS-tTest")
-app$wait_for_idle()
+Sys.sleep(10)
+wait(app)
 res <- app$get_values()$export
+res <- res[["FO-result_list"]]
 expected <- broom::tidy(
   t.test(
     uptake ~ Treatment,
@@ -51,14 +59,16 @@ expected <- broom::tidy(
     alternative = "less"
   )
 )
-tinytest::expect_equal(res[[1]], expected)
-app$wait_for_idle()
+tinytest::expect_equal(res[[3]], expected)
+wait(app)
 # Update output value
 app$set_inputs(`TESTS-altHyp` = "greater")
-app$wait_for_idle()
+wait(app)
 app$click("TESTS-tTest")
-app$wait_for_idle()
+Sys.sleep(10)
+wait(app)
 res <- app$get_values()$export
+res <- res[["FO-result_list"]]
 expected <- broom::tidy(
   t.test(
     uptake ~ Treatment,
@@ -67,13 +77,15 @@ expected <- broom::tidy(
     alternative = "greater"
   )
 )
-tinytest::expect_equal(res[[1]], expected)
+tinytest::expect_equal(res[[4]], expected)
 # Update output value
 app$set_inputs(`TESTS-varEq` = "noeq")
-app$wait_for_idle()
+wait(app)
 app$click("TESTS-tTest")
-app$wait_for_idle()
+Sys.sleep(10)
+wait(app)
 res <- app$get_values()$export
+res <- res[["FO-result_list"]]
 expected <- broom::tidy(
   t.test(
     uptake ~ Treatment,
@@ -82,5 +94,5 @@ expected <- broom::tidy(
     alternative = "greater"
   )
 )
-tinytest::expect_equal(res[[1]], expected)
+tinytest::expect_equal(res[[5]], expected)
 app$stop()

@@ -329,13 +329,7 @@ visServer <- function(id, DataModelState, ResultsState) {
       p <- try({
         vis$validate()
         pl <- vis$eval(ResultsState)
-        exportTestValues(
-          plot = pl
-        )
       })
-      if (inherits(p, "try-error")) {
-        return()
-      }
     }
 
     observeEvent(input$CreatePlotBox, {

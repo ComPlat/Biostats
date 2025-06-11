@@ -69,6 +69,9 @@ bg_process_V1_2 <- R6::R6Class("bg_process_V1_2",
         ResultsState$all_data[[promise_result_name]] <- res
         ResultsState$counter <- ResultsState$counter + 1
         ResultsState$history[[length(ResultsState$history) + 1]] <- promise_history_entry
+        exportTestValues(
+          result_list = ResultsState$all_data
+        )
       } else {
         self$com$print_err(conditionMessage(res))
       }
@@ -408,7 +411,14 @@ visualisation_V1_2 <- R6::R6Class(
                   facet_mode, facet_var, facet_y_scaling,
                   xrange_min, xrange_max, yrange_min, yrange_max
                 )
-              } else if (method %in% c("dot", "line")) {
+              } else if (method == "dot") {
+                p <- bs:::DotplotFct(
+                  df, x, y, xlabel, ylabel,
+                  colour_var, colour_legend_title, colour_theme,
+                  facet_mode, facet_var, facet_y_scaling,
+                  xrange_min, xrange_max, yrange_min, yrange_max
+                )
+              } else if (method == "line") {
                 p <- bs:::LineplotFct(
                   df, x, y, xlabel, ylabel,
                   colour_var, colour_legend_title, colour_theme,
@@ -843,7 +853,7 @@ create_formula_V1_2 <- R6::R6Class(
           type = "CreateFormula",
           formula = deparse(formula),
           "Model Type" = "Generalised Linear Model",
-          family = family,
+          family = details[[1]],
           "Link function" = link_fct
         )
       }
@@ -1628,6 +1638,7 @@ statistical_tests_V1_2 <- R6::R6Class(
       )
     },
     create_history_glm = function(new_name, method) {
+      history_data <- NULL
       switch(method,
         aov = {
           history_data <- list(
@@ -1642,10 +1653,13 @@ statistical_tests_V1_2 <- R6::R6Class(
           )
         }
       )
-      history_data <- list(type = paste0("GLM PostHoc adjusted by: ", method),
-        formula = deparse(self$formula@formula), family = self$formula@family,
-        link_fct = self$formula@link_fct, "Result name" = new_name
-      )
+      if (is.null(history_data)) {
+        history_data <- list(type = paste0("GLM PostHoc adjusted by: ", method),
+          formula = deparse(self$formula@formula), family = self$formula@family,
+          link_fct = self$formula@link_fct, "Result name" = new_name
+        )
+      }
+      history_data
     },
     create_history = function(new_name, method) {
       if (inherits(self$formula, "LinearFormula")) {

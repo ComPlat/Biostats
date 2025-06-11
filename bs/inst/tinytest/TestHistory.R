@@ -6,7 +6,73 @@ load_and_eval_history <- function(file, df) {
   bs:::eval_history(json, df, TRUE)
 }
 
-# TODO: add history for glm
+# Test glm history
+# ========================================================================================
+CO2 <- read.csv(paste0(test_data_dir, "/CO2.csv"))
+result <- load_and_eval_history(files[7], CO2)
+result <- result$ResultsState$all_data
+tinytest::expect_true(
+  inherits(result[[1]]@p, "plot"),
+  "Summary model 1"
+)
+tinytest::expect_true(
+  identical(
+    broom::tidy(glm(uptake ~ Treatment, data = CO2)), result[[1]]@summary
+  ),
+  "Summary model 1"
+)
+
+tinytest::expect_true(
+  identical(
+    {
+      family <- "gaussian"
+      link_fct <- "identity"
+      family <- str2lang(paste0("stats::", family, "(\"", link_fct, "\")"))
+      model <- glm(uptake ~ Treatment, data = CO2, family = eval(family))
+      fit <- broom::tidy(anova(model, test = "Chisq"))
+    },
+    result[[2]]
+  ),
+  "anova"
+)
+
+length(result)
+adjustment_methods <- c(
+  "tukey", "sidak", "bonferroni", "scheffe", "none", "fdr", "holm", "hochberg", "hommel"
+)
+
+run_posthoc_glm <- function(method) {
+  family <- "gaussian"
+  link_fct <- "identity"
+  family <- str2lang(paste0("stats::", family, "(\"", link_fct, "\")"))
+  formula <- uptake ~ Treatment
+  f_split <- bs:::split_formula(formula)
+  rhs_vars <- bs:::vars_rhs(f_split$right_site)
+  df_temp <- bs:::num_to_factor(CO2, rhs_vars)
+  if (any(apply(CO2, 2, is.numeric))) {
+    warning(paste0("Found numeric predictors and converted them to factors"))
+  }
+  model <- glm(formula, data = CO2, family = eval(family))
+  emm <- emmeans::emmeans(model, rhs_vars)
+  fit <- pairs(emm, adjust = method)
+  as.data.frame(fit)
+}
+
+checks <- c()
+for (i in seq_along(adjustment_methods)) {
+  checks <- c(checks,
+    tinytest::expect_true(
+      identical(
+        {
+          run_posthoc_glm(adjustment_methods[i])
+        },
+        result[[i + 2]]
+      ),
+      adjustment_methods[i]
+    )
+  )
+}
+tinytest::expect_true(all(checks), "All PostHoc tests GLM")
 
 # Test entire analysis
 # ========================================================================================

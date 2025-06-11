@@ -2,69 +2,79 @@ library(shinytest2)
 library(tinytest)
 library(bs)
 
-# Sys.setenv(RUN_MODE = "BROWSER") # SERVER
+trim <- function(s) {
+  gsub("\t|\n| ", "", s)
+}
+
+wait <- function(app) {
+  try(app$wait_for_idle(), silent = TRUE)
+}
+
+reset <- function(app) {
+  app$set_inputs(`OP-editable_code` = "")
+  wait(app)
+}
+
 app <- bs::app()
 # Create app
 app <- shiny::shinyApp(app$ui, app$server)
 app <- AppDriver$new(app)
-app$wait_for_idle()
-app$set_window_size(1500, 1000)
-app$wait_for_idle()
-
-# Upload test file
+wait(app)
 app$upload_file(
   file = system.file("/test_data/CO2.csv", package = "bs")
 )
-app$wait_for_idle()
-
-# Switch to data wrangling
+wait(app)
 app$set_inputs(`conditionedPanels` = "DataWrangling")
-app$wait_for_idle()
+wait(app)
 
 # Seq tests
+# =================================================================
 app$click("OP-seq")
-app$wait_for_idle()
+wait(app)
 content <- app$get_values()$input[["OP-editable_code"]]
 app$set_inputs(
-  `OP-editable_code` = 
-  paste0(
-    content, "1, 100, 1"
-  )
+  `OP-editable_code` = paste0( content, "1, 100, 1")
 )
 app$click("OP-bracket_close")
-app$wait_for_idle()
+wait(app)
 app$set_inputs(`OP-iv` = "Seq")
-app$wait_for_idle()
+wait(app)
 app$click("OP-run_op_intermediate")
-app$wait_for_idle()
-content <- app$get_values()$input[["OP-editable_code"]]
-expect_equal(content, " Seq(1, 100, 1 )")
+wait(app)
+content <- app$get_values()$input[["OP-editable_code"]] |> trim()
+expect_equal(content, "Seq(1,100,1)")
 iv_list <- app$get_values()$export[["OP-iv_list"]]
 expect_equal(iv_list$Seq, seq(1, 100, 1))
 
 # dataframe tests
-app$set_inputs(`OP-editable_code` = "")
+# =================================================================
+reset(app)
 app$click("OP-df")
-app$wait_for_idle()
+wait(app)
 app$click("OP-colnames_conc_0")
+wait(app)
 app$click("OP-comma")
+wait(app)
 app$click("OP-colnames_conc_0")
+wait(app)
 app$click("OP-bracket_close")
-content <- app$get_values()$input[["OP-editable_code"]]
-app$wait_for_idle()
+wait(app)
+content <- app$get_values()$input[["OP-editable_code"]] |> trim()
+wait(app)
 app$set_inputs(`OP-iv` = "df_new")
-app$wait_for_idle()
+wait(app)
 app$click("OP-run_op_intermediate")
-app$wait_for_idle()
-content <- app$get_values()$input[["OP-editable_code"]]
-expect_equal(content, " DataFrame( conc , conc )")
+wait(app)
+content <- app$get_values()$input[["OP-editable_code"]] |> trim()
+expect_equal(content, "DataFrame(conc,conc)")
 iv_list <- app$get_values()$export[["OP-iv_list"]]
 df_new <- data.frame(CO2$conc, CO2$conc)
 names(df_new) <- c("conc", "conc")
 expect_equal(iv_list$df_new, df_new)
-app$set_inputs(`OP-editable_code` = "")
+reset(app)
 
 # random tests
+# =================================================================
 random_funcs <- c(
   "dnorm", "pnorm", "qnorm",
   "dbinom", "pbinom", "qbinom",
@@ -77,52 +87,57 @@ args <- list(
   "0, 2", "0, 2",
   "0, 0, 2", "0.2, 0, 3", "0.2, 0, 3"
 )
+
+checks <- c()
 for (i in seq_along(random_funcs)) {
   expr <- paste0(random_funcs[i], "(", args[[i]], ")")
-  # print(expr)
   res <- eval(parse(text = expr))
   func <- paste0("OP-", random_funcs[i])
   app$set_inputs(`OP-editable_code` = "")
-  app$wait_for_idle()
+  wait(app)
   app$click(paste0(func))
-  app$wait_for_idle()
+  wait(app)
   app$set_inputs(
-    `OP-editable_code` =
-      paste0(app$get_values()$input[["OP-editable_code"]], args[[i]])
+    `OP-editable_code` = paste0(app$get_values()$input[["OP-editable_code"]], args[[i]])
   )
-  app$wait_for_idle()
+  wait(app)
   app$click("OP-bracket_close")
-  app$wait_for_idle()
+  wait(app)
   app$set_inputs(`OP-iv` = func)
-  app$wait_for_idle()
+  wait(app)
   app$click("OP-run_op_intermediate")
-  app$wait_for_idle()
+  wait(app)
   iv_list <- app$get_values()$export[["OP-iv_list"]]
   output <- iv_list[[make.names(func)]]
-  expect_equal(output, res) |> print()
+  checks <- c(checks, expect_equal(output, res))
 }
+expect_true(all(checks))
 
 # NOTE: this is necessary as no seed can be set
 validate_distribution <- function(values, dist, ...) {
   if (dist == "normal") {
-    expect_true(abs(mean(values) - 0) < 0.1, info = "Normal mean should be close to 0")
-    expect_true(abs(sd(values) - 1) < 0.1, info = "Normal sd should be close to 1")
+    one <- expect_true(abs(mean(values) - 0) < 0.1, info = "Normal mean should be close to 0")
+    two <- expect_true(abs(sd(values) - 1) < 0.1, info = "Normal sd should be close to 1")
+    return(all(one, two))
   } else if (dist == "uniform") {
-    expect_true(all(values >= 0 & values <= 1), info = "Uniform values should be in [0,1]")
-    expect_true(abs(mean(values) - 0.5) < 0.1, info = "Uniform mean should be close to 0.5")
+    one <- expect_true(all(values >= 0 & values <= 1), info = "Uniform values should be in [0,1]")
+    two <- expect_true(abs(mean(values) - 0.5) < 0.1, info = "Uniform mean should be close to 0.5")
+    return(all(one, two))
   } else if (dist == "pois") {
-    expect_true(abs(mean(values) - 2) < 0.1, info = "Uniform mean should be close to 0.5")
+    one <- expect_true(abs(mean(values) - 2) < 0.1, info = "Uniform mean should be close to 0.5")
+    return(one)
     # NOTE: set lambda to 2
   } else if (dist == "binom") {
     # Assuming size = 10 trials, and probability of success = 0.5
     n_trials <- 10
     prob_success <- 0.5
-    expect_true(abs(mean(values) - (n_trials * prob_success)) < 0.5,
+    one <- expect_true(abs(mean(values) - (n_trials * prob_success)) < 0.5,
       info = "Binomial mean should be close to n * p"
-    ) |> print()
-    expect_true(abs(var(values) - (n_trials * prob_success * (1 - prob_success))) < 0.5,
+    )
+    two <- expect_true(abs(var(values) - (n_trials * prob_success * (1 - prob_success))) < 0.5,
       info = "Binomial variance should be close to n * p * (1 - p)"
-    ) |> print()
+    )
+    return(all(one, two))
   }
 }
 random_funcs <- c(
@@ -131,304 +146,391 @@ random_funcs <- c(
 args <- list(
   "10000", "10001", "10002, 2", "10000, 10, 0.5"
 )
+checks <- c()
 for (i in seq_along(random_funcs)) {
   func <- paste0("OP-r", random_funcs[i])
-  app$set_inputs(`OP-editable_code` = "")
-  app$wait_for_idle()
+  reset(app)
+  wait(app)
   app$click(paste0(func))
-  app$wait_for_idle()
+  wait(app)
   app$set_inputs(
     `OP-editable_code` =
       paste0(app$get_values()$input[["OP-editable_code"]], args[[i]])
   )
-  app$wait_for_idle()
+  wait(app)
   app$click("OP-bracket_close")
-  app$wait_for_idle()
+  wait(app)
   app$set_inputs(`OP-iv` = func)
-  app$wait_for_idle()
+  wait(app)
   app$click("OP-run_op_intermediate")
-  app$wait_for_idle()
+  wait(app)
   iv_list <- app$get_values()$export[["OP-iv_list"]]
-  app$wait_for_idle()
+  wait(app)
   output <- iv_list[[make.names(func)]]
-  print(func)
-  str(output)
-  validate_distribution(output, random_funcs[i])
+  checks <- c(checks, validate_distribution(output, random_funcs[i]))
 }
-app$set_inputs(`OP-editable_code` = "")
-app$wait_for_idle()
+expect_true(all(checks))
+reset(app)
 
 # Test arithmetic operations
+# =================================================================
 app$click("OP-colnames_conc_0")
-app$wait_for_idle()
+wait(app)
 app$click("OP-add")
-app$wait_for_idle()
+wait(app)
 app$click("OP-colnames_conc_0")
-app$wait_for_idle()
+wait(app)
 app$set_inputs(`OP-iv` = "Plus")
-app$wait_for_idle()
+wait(app)
 app$click("OP-run_op_intermediate")
-app$wait_for_idle()
-content <- app$get_values()$input[["OP-editable_code"]]
-expect_equal(content, " conc + conc")
+wait(app)
+content <- app$get_values()$input[["OP-editable_code"]] |> trim()
+expect_equal(content, "conc+conc")
 iv_list <- app$get_values()$export[["OP-iv_list"]]
 expect_equal(iv_list$Plus, CO2$conc + CO2$conc)
 
-app$set_inputs(`OP-editable_code` = "")
+reset(app)
 app$click("OP-colnames_conc_0")
+wait(app)
 app$click("OP-sub")
+wait(app)
 app$click("OP-colnames_conc_0")
+wait(app)
 app$set_inputs(`OP-iv` = "MINUS")
-app$wait_for_idle()
+wait(app)
 app$click("OP-run_op_intermediate")
-app$wait_for_idle()
-content <- app$get_values()$input[["OP-editable_code"]]
-expect_equal(content, " conc - conc")
+wait(app)
+content <- app$get_values()$input[["OP-editable_code"]] |> trim()
+expect_equal(content, "conc-conc")
 iv_list <- app$get_values()$export[["OP-iv_list"]]
 expect_equal(iv_list$MINUS, CO2$conc - CO2$conc)
 
-app$set_inputs(`OP-editable_code` = "")
+reset(app)
 app$click("OP-colnames_conc_0")
+wait(app)
 app$click("OP-div")
+wait(app)
 app$click("OP-colnames_conc_0")
+wait(app)
 app$set_inputs(`OP-iv` = "DIVIDE")
-app$wait_for_idle()
+wait(app)
 app$click("OP-run_op_intermediate")
-app$wait_for_idle()
-content <- app$get_values()$input[["OP-editable_code"]]
-expect_equal(content, " conc / conc")
+wait(app)
+content <- app$get_values()$input[["OP-editable_code"]] |> trim()
+expect_equal(content, "conc/conc")
 iv_list <- app$get_values()$export[["OP-iv_list"]]
 expect_equal(iv_list$DIVIDE, CO2$conc / CO2$conc)
 
-app$set_inputs(`OP-editable_code` = "")
+reset(app)
 app$click("OP-colnames_conc_0")
+wait(app)
 app$click("OP-mul")
+wait(app)
 app$click("OP-colnames_conc_0")
+wait(app)
 app$set_inputs(`OP-iv` = "MULTIPLY")
-app$wait_for_idle()
+wait(app)
 app$click("OP-run_op_intermediate")
-app$wait_for_idle()
-content <- app$get_values()$input[["OP-editable_code"]]
-expect_equal(content, " conc * conc")
+wait(app)
+content <- app$get_values()$input[["OP-editable_code"]] |> trim()
+expect_equal(content, "conc*conc")
 iv_list <- app$get_values()$export[["OP-iv_list"]]
 expect_equal(iv_list$MULTIPLY, CO2$conc * CO2$conc)
 
-app$set_inputs(`OP-editable_code` = "")
+reset(app)
 app$click("OP-colnames_conc_0")
+wait(app)
 app$click("OP-add")
+wait(app)
 app$click("OP-bracket_open")
+wait(app)
 app$click("OP-colnames_conc_0")
+wait(app)
 app$click("OP-mul")
+wait(app)
 app$click("OP-colnames_conc_0")
+wait(app)
 app$click("OP-bracket_close")
+wait(app)
 app$set_inputs(`OP-iv` = "ARITHMETIC")
-app$wait_for_idle()
+wait(app)
 app$click("OP-run_op_intermediate")
-app$wait_for_idle()
-content <- app$get_values()$input[["OP-editable_code"]]
-expect_equal(content, " conc + ( conc * conc )")
+wait(app)
+content <- app$get_values()$input[["OP-editable_code"]] |> trim()
+expect_equal(content, "conc+(conc*conc)")
 iv_list <- app$get_values()$export[["OP-iv_list"]]
 expect_equal(iv_list$ARITHMETIC, CO2$conc + (CO2$conc * CO2$conc))
 
-app$set_inputs(`OP-editable_code` = "")
+reset(app)
 app$click("OP-get_elem")
+wait(app)
 app$click("OP-colnames_conc_0")
+wait(app)
 app$click("OP-comma")
+wait(app)
 app$set_inputs(`OP-editable_code` = paste0(app$get_values()$input[["OP-editable_code"]], " 1"))
 app$click("OP-bracket_close")
 app$set_inputs(`OP-iv` = "GET_ELEM_AND_COMMA")
-app$wait_for_idle()
+wait(app)
 app$click("OP-run_op_intermediate")
-app$wait_for_idle()
-content <- app$get_values()$input[["OP-editable_code"]]
-expect_equal(content, " get_elem( conc , 1 )")
+wait(app)
+content <- app$get_values()$input[["OP-editable_code"]] |> trim()
+expect_equal(content, "get_elem(conc,1)")
 iv_list <- app$get_values()$export[["OP-iv_list"]]
 expect_equal(iv_list$GET_ELEM_AND_COMMA, CO2$conc[1])
 
 # Test math functions
-app$set_inputs(`OP-editable_code` = "")
+# =================================================================
+reset(app)
 app$click("OP-log")
+wait(app)
 app$click("OP-colnames_conc_0")
+wait(app)
 app$click("OP-bracket_close")
+wait(app)
 app$click("OP-add")
+wait(app)
 app$click("OP-log10")
+wait(app)
 app$click("OP-colnames_conc_0")
+wait(app)
 app$click("OP-bracket_close")
+wait(app)
 app$click("OP-add")
+wait(app)
 app$click("OP-sqrt")
+wait(app)
 app$click("OP-colnames_conc_0")
+wait(app)
 app$click("OP-bracket_close")
+wait(app)
 app$click("OP-add")
+wait(app)
 app$click("OP-exp")
+wait(app)
 app$click("OP-colnames_conc_0")
+wait(app)
 app$click("OP-bracket_close")
 app$set_inputs(`OP-iv` = "MATH1")
-app$wait_for_idle()
+wait(app)
 app$click("OP-run_op_intermediate")
-app$wait_for_idle()
-content <- app$get_values()$input[["OP-editable_code"]]
-expect_equal(content, " log( conc ) + log10( conc ) + sqrt( conc ) + exp( conc )")
+wait(app)
+content <- app$get_values()$input[["OP-editable_code"]] |> trim()
+expect_equal(content, "log(conc)+log10(conc)+sqrt(conc)+exp(conc)")
 iv_list <- app$get_values()$export[["OP-iv_list"]]
 conc <- CO2$conc
 expect_equal(iv_list$MATH1, log(conc) + log10(conc) + sqrt(conc) + exp(conc))
 
-app$set_inputs(`OP-editable_code` = "")
+reset(app)
 app$click("OP-colnames_conc_0")
+wait(app)
 app$click("OP-exponent")
+wait(app)
 app$set_inputs(
-  `OP-editable_code` =
-    paste0(app$get_values()$input[["OP-editable_code"]], " 2")
+  `OP-editable_code` = paste0(app$get_values()$input[["OP-editable_code"]], " 2")
 )
 app$click("OP-bracket_close")
+wait(app)
 app$click("OP-add")
+wait(app)
 app$click("OP-sin")
+wait(app)
 app$click("OP-colnames_conc_0")
+wait(app)
 app$click("OP-bracket_close")
+wait(app)
 app$click("OP-add")
+wait(app)
 app$click("OP-cos")
+wait(app)
 app$click("OP-colnames_conc_0")
+wait(app)
 app$click("OP-bracket_close")
+wait(app)
 app$click("OP-add")
+wait(app)
 app$click("OP-tan")
+wait(app)
 app$click("OP-colnames_conc_0")
+wait(app)
 app$click("OP-bracket_close")
+wait(app)
 app$click("OP-add")
+wait(app)
 app$click("OP-sinh")
+wait(app)
 app$click("OP-colnames_conc_0")
+wait(app)
 app$click("OP-bracket_close")
+wait(app)
 app$click("OP-add")
+wait(app)
 app$click("OP-cosh")
+wait(app)
 app$click("OP-colnames_conc_0")
+wait(app)
 app$click("OP-bracket_close")
+wait(app)
 app$click("OP-add")
+wait(app)
 app$click("OP-tanh")
+wait(app)
 app$click("OP-colnames_conc_0")
+wait(app)
 app$click("OP-bracket_close")
-app$wait_for_idle()
+wait(app)
 app$set_inputs(`OP-iv` = "MATH2")
-app$wait_for_idle()
+wait(app)
 app$click("OP-run_op_intermediate")
-content <- app$get_values()$input[["OP-editable_code"]]
+content <- app$get_values()$input[["OP-editable_code"]] |> trim()
 expect_equal(
-  gsub(" ", "", content),
+  content,
   "conc^(2)+sin(conc)+cos(conc)+tan(conc)+sinh(conc)+cosh(conc)+tanh(conc)"
 )
 iv_list <- app$get_values()$export[["OP-iv_list"]]
 expect_equal(iv_list$MATH2, eval(parse(text = content)))
 
+
 app$set_inputs(`OP-editable_code` = "1")
 app$set_inputs(`OP-iv` = "One")
+wait(app)
 app$click("OP-run_op_intermediate")
-app$set_inputs(`OP-editable_code` = "")
+wait(app)
+reset(app)
 app$click("OP-asin")
-app$wait_for_idle()
+wait(app)
 app$click("OP-intermediate_vars_One_0")
+wait(app)
 app$click("OP-bracket_close")
-app$wait_for_idle()
+wait(app)
 app$click("OP-add")
+wait(app)
 app$click("OP-acos")
+wait(app)
 app$click("OP-intermediate_vars_One_0")
+wait(app)
 app$click("OP-bracket_close")
-app$wait_for_idle()
+wait(app)
 app$click("OP-add")
+wait(app)
 app$click("OP-atan")
+wait(app)
 app$click("OP-intermediate_vars_One_0")
+wait(app)
 app$click("OP-bracket_close")
-app$wait_for_idle()
+wait(app)
 app$set_inputs(`OP-iv` = "MATH3")
-app$wait_for_idle()
-content <- app$get_values()$input[["OP-editable_code"]]
+wait(app)
+content <- app$get_values()$input[["OP-editable_code"]] |> trim()
 app$click("OP-run_op_intermediate")
 expect_equal(
   content,
-  " asin( One ) + acos( One ) + atan( One )"
+  "asin(One)+acos(One)+atan(One)"
 )
 iv_list <- app$get_values()$export[["OP-iv_list"]]
 One <- 1
-print(content)
 expect_equal(iv_list$MATH3, eval(parse(text = content)))
 
 
 app$set_inputs(`OP-editable_code` = "-1.5")
+wait(app)
 app$set_inputs(`OP-iv` = "Num")
+wait(app)
 app$click("OP-run_op_intermediate")
-app$wait_for_idle()
-app$set_inputs(`OP-editable_code` = "")
+wait(app)
+reset(app)
 app$click("OP-abs")
-app$wait_for_idle()
+wait(app)
 app$click("OP-intermediate_vars_Num_0")
-app$wait_for_idle()
+wait(app)
 app$click("OP-bracket_close")
-app$wait_for_idle()
+wait(app)
 app$click("OP-add")
 app$click("OP-ceil")
+wait(app)
 app$click("OP-intermediate_vars_Num_0")
+wait(app)
 app$click("OP-bracket_close")
-app$wait_for_idle()
+wait(app)
 app$click("OP-add")
 app$click("OP-floor")
+wait(app)
 app$click("OP-intermediate_vars_Num_0")
+wait(app)
 app$click("OP-bracket_close")
-app$wait_for_idle()
+wait(app)
 app$click("OP-add")
+wait(app)
 app$click("OP-trunc")
+wait(app)
 app$click("OP-intermediate_vars_Num_0")
+wait(app)
 app$click("OP-bracket_close")
-app$wait_for_idle()
+wait(app)
 app$click("OP-add")
+wait(app)
 app$click("OP-round")
+wait(app)
 app$click("OP-intermediate_vars_Num_0")
+wait(app)
 app$click("OP-bracket_close")
-app$wait_for_idle()
+wait(app)
 app$set_inputs(`OP-iv` = "MATH4")
-app$wait_for_idle()
-content <- app$get_values()$input[["OP-editable_code"]]
-app$wait_for_idle()
+wait(app)
+content <- app$get_values()$input[["OP-editable_code"]] |> trim()
+wait(app)
 app$click("OP-run_op_intermediate")
 expect_equal(
-  content, " abs( Num ) + ceiling( Num ) + floor( Num ) + trunc( Num ) + round( Num )"
+  content, "abs(Num)+ceiling(Num)+floor(Num)+trunc(Num)+round(Num)"
 )
 iv_list <- app$get_values()$export[["OP-iv_list"]]
 Num <- -1.5
 expect_equal(iv_list$MATH4, eval(parse(text = content)))
 
 # Test comparison operations
+# =================================================================
+reset(app)
 app$set_inputs(`OP-editable_code` = "C(1, 2, 2, 2)")
+wait(app)
 app$set_inputs(`OP-iv` = "Vec1")
-app$wait_for_idle()
+wait(app)
 app$click("OP-run_op_intermediate")
-app$wait_for_idle()
+wait(app)
 app$set_inputs(`OP-editable_code` = "C(1, 2, 3, 4)")
+wait(app)
 app$set_inputs(`OP-iv` = "Vec2")
-app$wait_for_idle()
+wait(app)
 app$click("OP-run_op_intermediate")
-app$wait_for_idle()
+wait(app)
 Vec1 <- c(1, 2, 2, 2)
 Vec2 <- c(1, 2, 3, 4)
 operations <- c(
   "OP-eq", "OP-not_eq", "OP-larger",
   "OP-smaller", "OP-larger_eq", "OP-smaller_eq"
 )
+checks <- c()
 for (i in operations) {
   app$set_inputs(`OP-editable_code` = "")
+  wait(app)
   app$click("OP-intermediate_vars_Vec1_0")
-  app$wait_for_idle()
+  wait(app)
   app$click(i)
-  app$wait_for_idle()
+  wait(app)
   app$click("OP-intermediate_vars_Vec2_0")
-  app$wait_for_idle()
+  wait(app)
   app$set_inputs(`OP-iv` = i)
-  app$wait_for_idle()
+  wait(app)
   content <- app$get_values()$input[["OP-editable_code"]]
-  app$wait_for_idle()
+  wait(app)
   app$click("OP-run_op_intermediate")
-  app$wait_for_idle()
+  wait(app)
   iv_list <- app$get_values()$export[["OP-iv_list"]]
-  # print(iv_list[[make.names(i)]])
-  expect_equal(iv_list[[make.names(i)]], eval(parse(text = content))) |> print()
+  checks <- c(checks, expect_equal(iv_list[[make.names(i)]], eval(parse(text = content))))
 }
+expect_true(all(checks))
 
 # Test statistical operations and utilities
+# =================================================================
 operations <- c(
   "OP-mean", "OP-median", "OP-min",
   "OP-max", "OP-sum", "OP-sd"
@@ -440,133 +542,148 @@ Max <- bs:::Max
 Sum <- bs:::Sum
 SD <- bs:::SD
 conc <- CO2$conc
+checks <- c()
 for (i in operations) {
-  app$set_inputs(`OP-editable_code` = "")
+  reset(app)
   app$click(i)
+  wait(app)
   app$set_inputs(`OP-iv` = i)
+  wait(app)
   app$click("OP-colnames_conc_0")
+  wait(app)
   app$click("OP-bracket_close")
-  app$wait_for_idle()
-  content <- app$get_values()$input[["OP-editable_code"]]
+  wait(app)
+  content <- app$get_values()$input[["OP-editable_code"]] |> trim()
+  wait(app)
   app$click("OP-run_op_intermediate")
-  app$wait_for_idle()
+  wait(app)
   iv_list <- app$get_values()$export[["OP-iv_list"]]
-  # print(iv_list[[make.names(i)]])
-  expect_equal(iv_list[[make.names(i)]], eval(parse(text = content))) |> print()
+  checks <- c(checks, expect_equal(iv_list[[make.names(i)]], eval(parse(text = content))))
 }
+expect_true(all(checks))
 
-app$set_inputs(`OP-editable_code` = "")
+reset(app)
 app$click("OP-get_rows")
+wait(app)
 app$set_inputs(`OP-iv` = "get_rows")
+wait(app)
 app$click("OP-colnames_df_0")
+wait(app)
 app$click("OP-comma")
+wait(app)
 app$set_inputs(`OP-editable_code` = paste0(app$get_values()$input[["OP-editable_code"]], " conc == 95"))
+wait(app)
 app$click("OP-bracket_close")
-app$wait_for_idle()
+wait(app)
 app$click("OP-run_op_intermediate")
-app$wait_for_idle()
+wait(app)
 iv_list <- app$get_values()$export[["OP-iv_list"]]
-expect_equal(iv_list[["get_rows"]][, 6], CO2[conc == 95, 5]) # NOTE: 6 and 5 as row names are read in as own column
+expect_equal(iv_list[["get_rows"]]$uptake, CO2[conc == 95, "uptake"])
 
-
-app$set_inputs(`OP-editable_code` = "")
+reset(app)
 app$click("OP-get_cols")
-app$wait_for_idle()
+wait(app)
 app$set_inputs(`OP-iv` = "get_cols")
-app$wait_for_idle()
+wait(app)
 app$click("OP-colnames_df_0")
-app$wait_for_idle()
+wait(app)
 app$click("OP-comma")
-app$wait_for_idle()
+wait(app)
 app$click("OP-colnames_conc_0")
-app$wait_for_idle()
+wait(app)
 app$click("OP-comma")
-app$wait_for_idle()
+wait(app)
 app$click("OP-colnames_conc_0")
-app$wait_for_idle()
+wait(app)
 app$click("OP-comma")
-app$wait_for_idle()
+wait(app)
 app$click("OP-colnames_uptake_0")
-app$wait_for_idle()
+wait(app)
 app$click("OP-bracket_close")
-app$wait_for_idle()
+wait(app)
 app$click("OP-run_op_intermediate")
-app$wait_for_idle()
+wait(app)
 iv_list <- app$get_values()$export[["OP-iv_list"]]
+wait(app)
 expect_equal(iv_list[["get_cols"]], CO2[, c("conc", "conc", "uptake")])
 
 
 # Test string functions
+# =================================================================
 app$set_inputs(`OP-editable_code` = 'C("A", "B", "C")')
-app$wait_for_idle()
+wait(app)
 app$set_inputs(`OP-iv` = "S1")
-app$wait_for_idle()
+wait(app)
 app$click("OP-run_op_intermediate")
-app$wait_for_idle()
+wait(app)
 app$set_inputs(`OP-editable_code` = 'C("d", "e", "f")')
-app$wait_for_idle()
+wait(app)
 app$set_inputs(`OP-iv` = "S2")
-app$wait_for_idle()
+wait(app)
 app$click("OP-run_op_intermediate")
-app$wait_for_idle()
+wait(app)
 S1 <- c("A", "B", "C")
 S2 <- c("d", "e", "f")
 operations <- c(
   "OP-paste", "OP-paste0"
 )
+checks <- c()
 for (i in operations) {
   app$set_inputs(`OP-editable_code` = "")
-  app$wait_for_idle()
+  wait(app)
   app$click(i)
-  app$wait_for_idle()
+  wait(app)
   app$click("OP-intermediate_vars_S1_0")
-  app$wait_for_idle()
+  wait(app)
   app$click("OP-comma")
-  app$wait_for_idle()
+  wait(app)
   app$click("OP-intermediate_vars_S2_0")
-  app$wait_for_idle()
+  wait(app)
   app$click("OP-bracket_close")
-  app$wait_for_idle()
+  wait(app)
   app$set_inputs(`OP-iv` = i)
-  app$wait_for_idle()
+  wait(app)
   content <- app$get_values()$input[["OP-editable_code"]]
-  app$wait_for_idle()
+  wait(app)
   app$click("OP-run_op_intermediate")
-  app$wait_for_idle()
+  wait(app)
   iv_list <- app$get_values()$export[["OP-iv_list"]]
-  # print(iv_list[[make.names(i)]])
-  expect_equal(iv_list[[make.names(i)]], eval(parse(text = content))) |> print()
+  checks <- c(checks, expect_equal(iv_list[[make.names(i)]], eval(parse(text = content))))
 }
+expect_true(all(checks))
+
 operations <- c(
   "OP-tolower", "OP-toupper"
 )
+checks <- c()
 for (i in operations) {
-  app$set_inputs(`OP-editable_code` = "")
-  app$wait_for_idle()
+  reset(app)
+  wait(app)
   app$click(i)
-  app$wait_for_idle()
+  wait(app)
   app$click("OP-intermediate_vars_S1_0")
-  app$wait_for_idle()
+  wait(app)
   app$click("OP-bracket_close")
-  app$wait_for_idle()
+  wait(app)
   app$set_inputs(`OP-iv` = i)
-  app$wait_for_idle()
+  wait(app)
   content <- app$get_values()$input[["OP-editable_code"]]
-  app$wait_for_idle()
+  wait(app)
   app$click("OP-run_op_intermediate")
-  app$wait_for_idle()
+  wait(app)
   iv_list <- app$get_values()$export[["OP-iv_list"]]
-  # print(iv_list[[make.names(i)]])
-  expect_equal(iv_list[[make.names(i)]], eval(parse(text = content))) |> print()
+  checks <- c(checks, expect_equal(iv_list[[make.names(i)]], eval(parse(text = content))))
 }
+expect_true(all(checks))
 
 # Test casts
+# =================================================================
 app$set_inputs(`OP-editable_code` = 'C("10.5", "1.4", "1.3", 3.14)')
-app$wait_for_idle()
+wait(app)
 app$set_inputs(`OP-iv` = "S3")
-app$wait_for_idle()
+wait(app)
 app$click("OP-run_op_intermediate")
-app$wait_for_idle()
+wait(app)
 S3 <- c("10.5", "1.4", "1.3", 3.14)
 operations <- c(
   "OP-as_int", "OP-as_real", "OP-as_fact", "OP-as_char"
@@ -575,22 +692,26 @@ as.int <- as.integer
 as.real <- as.numeric
 as.fact <- as.factor
 as.char <- as.character
+checks <- c()
 for (i in operations) {
   app$set_inputs(`OP-editable_code` = "")
-  app$wait_for_idle()
+  wait(app)
   app$click(i)
-  app$wait_for_idle()
+  wait(app)
   app$click("OP-intermediate_vars_S3_0")
-  app$wait_for_idle()
+  wait(app)
   app$click("OP-bracket_close")
-  app$wait_for_idle()
+  wait(app)
   app$set_inputs(`OP-iv` = i)
-  app$wait_for_idle()
+  wait(app)
   content <- app$get_values()$input[["OP-editable_code"]]
-  app$wait_for_idle()
+  wait(app)
   app$click("OP-run_op_intermediate")
-  app$wait_for_idle()
+  wait(app)
   iv_list <- app$get_values()$export[["OP-iv_list"]]
-  expect_equal(iv_list[[make.names(i)]], eval(parse(text = content))) |> print()
+  checks <- c(checks, expect_equal(iv_list[[make.names(i)]], eval(parse(text = content))))
 }
+expect_true(all(checks))
+
+wait(app)
 app$stop()

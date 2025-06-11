@@ -91,11 +91,7 @@ assServer <- function(id, DataModelState, ResultsState) {
         sod$validate()
         sod$eval(ResultsState)
       })
-      if (!inherits(res, "try-error")) {
-        exportTestValues(
-          assumption_res = res
-        )
-      } else {
+      if (inherits(res, "try-error")) {
         err <- conditionMessage(attr(res, "condition"))
         print_req(FALSE, err)
       }
@@ -115,11 +111,7 @@ assServer <- function(id, DataModelState, ResultsState) {
         sor$eval(ResultsState)
       }, silent = TRUE)
 
-      if (!inherits(res, "try-error")) {
-        exportTestValues(
-          assumption_res = res
-        )
-      } else {
+      if (inherits(res, "try-error")) {
         err <- conditionMessage(attr(res, "condition"))
         print_err(err)
       }
@@ -140,10 +132,6 @@ assServer <- function(id, DataModelState, ResultsState) {
       if (inherits(res, "try-error")) {
         err <- conditionMessage(attr(res, "condition"))
         print_err(err)
-      } else {
-        exportTestValues(
-          assumption_res = res
-        )
       }
     }
     observeEvent(input$levene, {
@@ -162,9 +150,6 @@ assServer <- function(id, DataModelState, ResultsState) {
       if (inherits(p, "try-error")) {
         err <- conditionMessage(attr(p, "condition"))
         print_err(err)
-      } else {
-        output$DiagnosticPlotRes <- renderPlot(p)
-        exportTestValues(assumption_res = p)
       }
     }
     observeEvent(input$DiagnosticPlot, {
