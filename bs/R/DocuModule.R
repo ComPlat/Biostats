@@ -39,8 +39,14 @@ get_docu <- function(panel) {
   } else if (panel == "History") {
     path <- docu_path("history.html")
     title <- "History"
-  } else if (panel == "Formula") {
-    path <- docu_path("formula.html")
+  } else if (panel == "LinearFormula") {
+    path <- docu_path("linear_formula.html")
+    title <- "Defining the formula"
+  } else if (panel == "Generalised Linear ModelFormula") {
+    path <- docu_path("generalised_linear_formula.html")
+    title <- "Defining the formula"
+  } else if (panel == "Optimization ModelFormula") {
+    path <- docu_path("optim_formula.html")
     title <- "Defining the formula"
   } else if (panel == "Split") {
     path <- docu_path("SplitData.html")

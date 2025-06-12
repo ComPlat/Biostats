@@ -2,28 +2,13 @@ assSidebarUI <- function(id) {
   tabPanel(
     "Assumption",
     tags$hr(),
-    tags$div(
-      class = "header", checked = NA,
-      tags$h4(
-        style = "font-weight: bold;",
-        "Test of normal distribution"
-      )
-    ),
-    actionButton(NS(id, "shapiro"),
-      "Shapiro test for individual groups",
-      title =
-        "Use this test if you have a formula like 'response ~ pred1 * pred2' (two-way ANOVA) to check normality of residuals within each group."
-    ),
+    uiOutput(NS(id, "shapiro")),
     tags$hr(),
     uiOutput(NS(id, "shapiroResidualsUI")),
-    uiOutput(NS(id, "LeveneUI")),
-
     tags$hr(),
-    tags$div(
-      class = "header", checked = NA,
-      tags$h4(style = "font-weight: bold;", "Visual tests")
-    ),
-    actionButton(NS(id, "DiagnosticPlot"), "diagnostic plots")
+    uiOutput(NS(id, "LeveneUI")),
+    tags$hr(),
+    uiOutput(NS(id, "DiagnosticPlot"))
   )
 }
 
@@ -43,10 +28,38 @@ assServer <- function(id, DataModelState, ResultsState) {
   moduleServer(id, function(input, output, session) {
 
     # React to model type
+    output[["shapiro"]] <- renderUI({
+      if (is.null(DataModelState$formula)) {
+        return(
+          div(
+            class = "var-box-output",
+            h3(strong("You have to define a model in the formula editor to run any assumptions tests"))
+          )
+        )
+      }
+      req(!is.null(DataModelState$df))
+      req(is.data.frame(DataModelState$df))
+      if(inherits(DataModelState$formula, "LinearFormula") || inherits(DataModelState$formula, "GeneralisedLinearFormula")) {
+        div(
+          h4(strong("Test of normal distribution")),
+          hr(),
+          actionButton("ASS-shapiro",
+            "Shapiro test for individual groups",
+            title =
+            "Use this test if you have a formula like 'response ~ pred1 * pred2' (two-way ANOVA) to check normality of residuals within each group."
+          ),
+          br()
+        )
+      } else if (inherits(DataModelState$formula, "OptimFormula")) {
+        div(
+          class = "var-box-output",
+          h3(strong("There are no meaningful tests for an optimization"))
+        )
+      }
+    })
     output[["shapiroResidualsUI"]] <- renderUI({
       req(!is.null(DataModelState$df))
       req(is.data.frame(DataModelState$df))
-      colnames <- names(DataModelState$df)
       req(DataModelState$formula)
       if(inherits(DataModelState$formula, "LinearFormula")) {
         actionButton("ASS-shapiroResiduals", "Shapiro test for residuals of linear model",
@@ -58,14 +71,13 @@ assServer <- function(id, DataModelState, ResultsState) {
     output[["LeveneUI"]] <- renderUI({
       req(!is.null(DataModelState$df))
       req(is.data.frame(DataModelState$df))
-      colnames <- names(DataModelState$df)
       req(DataModelState$formula)
       if(inherits(DataModelState$formula, "LinearFormula")) {
         div(
-          tags$hr(),
-          tags$div(
+          hr(),
+          div(
             class = "header", checked = NA,
-            tags$h4(
+            h4(
               style = "font-weight: bold;",
               "Test of variance homogenity"
             )
@@ -78,6 +90,17 @@ assServer <- function(id, DataModelState, ResultsState) {
             ),
             selectize = FALSE
           )
+        )
+      }
+    })
+    output[["DiagnosticPlot"]] <- renderUI({
+      if(inherits(DataModelState$formula, "LinearFormula") || inherits(DataModelState$formula, "GeneralisedLinearFormula")) {
+        div(
+          div(
+            class = "header", checked = NA,
+            h4(style = "font-weight: bold;", "Visual tests")
+          ),
+          actionButton("ASS-DiagnosticPlot", "diagnostic plots")
         )
       }
     })

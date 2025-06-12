@@ -76,19 +76,19 @@ visUI <- function(id) {
         "Boxplot",
         br(),
         actionButton(NS(id, "CreatePlotBox"), "Create plot"),
-        actionButton(NS(id, "CreateModelBox"), "Plot model")
+        uiOutput(NS(id, "CreateModelBoxUI"))
       ),
       tabPanel(
         "Scatterplot",
         br(),
         actionButton(NS(id, "CreatePlotScatter"), "Create plot"),
-        actionButton(NS(id, "CreateModelScatter"), "Plot model")
+        uiOutput(NS(id, "CreateModelScatterUI"))
       ),
       tabPanel(
         "Lineplot",
         br(),
         actionButton(NS(id, "CreatePlotLine"), "Create plot"),
-        actionButton(NS(id, "CreateModelLine"), "Plot model")
+        uiOutput(NS(id, "CreateModelLineUI"))
       ),
       id = "VisConditionedPanels"
     ),
@@ -111,6 +111,22 @@ visUI <- function(id) {
 
 visServer <- function(id, DataModelState, ResultsState) {
   moduleServer(id, function(input, output, session) {
+    # Render model plots
+    output[["CreateModelBoxUI"]] <- renderUI({
+      if (inherits(DataModelState$formula, "LinearFormula") || inherits(DataModelState$formula, "GeneralisedLinearFormula")) {
+        actionButton("VIS-CreateModelBox", "Plot model")
+      }
+    })
+    output[["CreateModelScatterUI"]] <- renderUI({
+      if (inherits(DataModelState$formula, "LinearFormula") || inherits(DataModelState$formula, "GeneralisedLinearFormula")) {
+        actionButton("VIS-CreateModelScatter", "Plot model")
+      }
+    })
+    output[["CreateModelLineUI"]] <- renderUI({
+      if (inherits(DataModelState$formula, "LinearFormula") || inherits(DataModelState$formula, "GeneralisedLinearFormula")) {
+        actionButton("VIS-CreateModelLine", "Plot model")
+      }
+    })
     # Render axis limits
     output[["XRangeUI"]] <- renderUI({
       req(!is.null(DataModelState$df))
@@ -144,7 +160,6 @@ visServer <- function(id, DataModelState, ResultsState) {
         )
       }
     })
-
     output[["YRangeUI"]] <- renderUI({
       req(!is.null(DataModelState$df))
       req(is.data.frame(DataModelState$df))
@@ -177,7 +192,6 @@ visServer <- function(id, DataModelState, ResultsState) {
         )
       }
     })
-
     # Render x and y selectInput
     output[["yVarUI"]] <- renderUI({
       req(!is.null(DataModelState$df))
@@ -199,7 +213,6 @@ visServer <- function(id, DataModelState, ResultsState) {
         )
       )
     })
-
     output[["xVarUI"]] <- renderUI({
       req(!is.null(DataModelState$df))
       req(is.data.frame(DataModelState$df))
@@ -220,7 +233,6 @@ visServer <- function(id, DataModelState, ResultsState) {
         )
       )
     })
-
     output[["colUI"]] <- renderUI({
       req(!is.null(DataModelState$df))
       req(is.data.frame(DataModelState$df))
@@ -241,7 +253,6 @@ visServer <- function(id, DataModelState, ResultsState) {
         )
       )
     })
-
     output[["fillUI"]] <- renderUI({
       req(!is.null(DataModelState$df))
       req(is.data.frame(DataModelState$df))
@@ -262,7 +273,6 @@ visServer <- function(id, DataModelState, ResultsState) {
         )
       )
     })
-
     output[["facetByUI"]] <- renderUI({
       req(!is.null(DataModelState$df))
       req(is.data.frame(DataModelState$df))
@@ -283,7 +293,6 @@ visServer <- function(id, DataModelState, ResultsState) {
         )
       )
     })
-
     # TODO: Why is this defined as renderUI?
     output[["facetScalesUI"]] <- renderUI({
       req(!is.null(DataModelState$df))

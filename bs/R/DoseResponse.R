@@ -1,22 +1,8 @@
 DoseResponseSidebarUI <- function(id) {
   tabPanel(
     "Dose Response analysis",
-    div(
-      style = "position: relative;",
-      br(),
-      uiOutput(NS(id, "substanceNamesUI")),
-      checkboxInput(
-        NS(id, "xTransform"),
-        label = "Log transform x-axis",
-        value = FALSE
-      ),
-      checkboxInput(
-        NS(id, "yTransform"),
-        label = "Log transform y-axis",
-        value = FALSE
-      ),
-      actionButton(NS(id, "ic50"), "Conduct analysis")
-    )
+    uiOutput(NS(id, "substanceNamesUI")),
+    uiOutput(NS(id, "DoseResponseUI"))
   )
 }
 
@@ -62,10 +48,40 @@ DoseResponseServer <- function(id, DataModelState, ResultsState) {
       promise_result_name = NULL
     )
 
+    # Render sidebar
+    output[["DoseResponseUI"]] <- renderUI({
+      if (is.null(DataModelState$formula)) {
+        return(
+          div(
+            class = "var-box-output",
+            h3(strong("You have to define a linear model in the formula editor to run a dose response analysis"))
+          )
+        )
+      }
+      req(!is.null(DataModelState$df))
+      req(is.data.frame(DataModelState$df))
+      req(inherits(DataModelState$formula, "LinearFormula"))
+      div(
+        style = "position: relative;",
+        br(),
+        checkboxInput(
+          "DOSERESPONSE-xTransform",
+          label = "Log transform x-axis",
+          value = FALSE
+        ),
+        checkboxInput(
+          NS(id, "DOSERESPONSE-yTransform"),
+          label = "Log transform y-axis",
+          value = FALSE
+        ),
+        actionButton("DOSERESPONSE-ic50", "Conduct analysis")
+      )
+    })
     # Render names of substances
     output[["substanceNamesUI"]] <- renderUI({
       req(!is.null(DataModelState$df))
       req(is.data.frame(DataModelState$df))
+      req(inherits(DataModelState$formula, "LinearFormula"))
       colnames <- names(DataModelState$df)
       tooltip <- "Select the column which contains the names of the different substances"
       div(

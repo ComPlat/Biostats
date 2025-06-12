@@ -1,3 +1,6 @@
+# TODO: conditionMessage(error) has to be changed everywhere to  conditionMessage(attr(error, "condition"))
+# Or instead of extracting the message directly pass the try-error to print_err
+
 bg_process_V1_2 <- R6::R6Class("bg_process_V1_2",
   public = list(
     process = NULL,
@@ -64,7 +67,7 @@ bg_process_V1_2 <- R6::R6Class("bg_process_V1_2",
     },
 
     start_direct = function(fun, args = list(), promise_result_name, promise_history_entry, ResultsState) {
-      res <- try(do.call(fun, args))
+      res <- try(do.call(fun, args), silent = TRUE)
       if (!inherits(res, "try-error")) {
         ResultsState$all_data[[promise_result_name]] <- res
         ResultsState$counter <- ResultsState$counter + 1
@@ -73,7 +76,7 @@ bg_process_V1_2 <- R6::R6Class("bg_process_V1_2",
           result_list = ResultsState$all_data
         )
       } else {
-        self$com$print_err(conditionMessage(res))
+        self$com$print_err(res)
       }
     },
 
@@ -856,6 +859,21 @@ create_formula_V1_2 <- R6::R6Class(
           family = details[[1]],
           "Link function" = link_fct
         )
+      } else if (model_type == "Optimization Model") {
+        details <- c(...)
+        lower <- details[[1]]
+        upper <- details[[2]]
+        seed <- details[[3]]
+        formula <- paste0(self$response_var, " ~ ", self$right_site)
+        formula <- as.formula(formula)
+        DataModelState$formula <- create_formula_optim(formula, self$df, lower, upper, seed)
+        eq <- paste0(self$response_var, " = ", self$right_site)
+        ResultsState$history[[length(ResultsState$history) + 1]] <- list(
+          type = "CreateFormula",
+          formula = deparse(formula),
+          lower = lower, upper = upper, seed = seed,
+          "Model Type" = "Optimization Model"
+        )
       }
 
       return(eq)
@@ -935,6 +953,33 @@ summarise_model_V1_2 <- R6::R6Class(
       )
     },
 
+    eval_optim = function(ResultsState, new_name, promise_history_entry) {
+      withCallingHandlers(
+        {
+          expr = {
+            ResultsState$bgp$start(
+              fun = function(df, formula) {
+                res <- bs:::optimize(formula, df)
+                p <- bs:::plot_model_optim(formula, res)
+                summary <- bs:::summary_model_optim(formula, res)
+                ic <- bs:::information_criterion_optim(res)
+                new("summaryModel", p = p, summary = summary, information_criterions = ic)
+              },
+              args = list(df = self$df, formula = self$formula),
+              promise_result_name = new_name,
+              promise_history_entry = promise_history_entry,
+              in_background = FALSE, ResultsState
+            )
+          }
+        },
+        warning = function(warn) {
+          self$com$print_warn(warn$message)
+          invokeRestart("muffleWarning")
+        }
+      )
+
+    },
+
     eval = function(ResultsState) {
       new_name <- paste0(ResultsState$counter + 1, " Model summary")
       promise_history_entry <- self$create_history(new_name)
@@ -942,6 +987,8 @@ summarise_model_V1_2 <- R6::R6Class(
         res <- self$eval_lm(ResultsState, new_name, promise_history_entry)
       } else if (inherits(self$formula, "GeneralisedLinearFormula")) {
         res <- self$eval_glm(ResultsState, new_name, promise_history_entry)
+      } else if (inherits(self$formula, "OptimFormula")) {
+        res <- self$eval_optim(ResultsState, new_name, promise_history_entry)
       }
     },
     create_history = function(new_name) {

@@ -31,6 +31,21 @@ testsServer <- function(id, DataModelState, ResultsState) {
     # Render Sidebar
     output$SidebarTests <- renderUI({
       req(input$TestsConditionedPanels)
+      if (is.null(DataModelState$formula)) {
+        return(
+          div(
+            class = "var-box-output",
+            h3(strong("You have to define a model in the formula editor to run a statistical test"))
+          )
+        )
+      }
+
+      if (inherits(DataModelState$formula, "OptimFormula")) {
+        return(div(
+          class = "var-box-output",
+          h3(strong("There are no meaningful tests for an optimization"))
+        ))
+      }
 
       if (input$TestsConditionedPanels == "Two groups" && (is.null(DataModelState$formula) || inherits(DataModelState$formula, "LinearFormula"))) {
         div(

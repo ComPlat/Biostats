@@ -1,30 +1,7 @@
 corrSidebarUI <- function(id) {
   tabPanel(
     "Correlation",
-    br(),
-    sliderInput(NS(id, "conflevel"), "Confidence level of the interval",
-      min = 0, max = 1, value = 0.95
-    ),
-    selectInput(
-      NS(id, "alt"), "Alternative hypothesis",
-      c(
-        "Two sided" = "two.sided",
-        "Less" = "less",
-        "Greater" = "greater"
-      )
-    ),
-    actionButton(NS(id, "pear"), "Pearson correlation",
-      title =
-        "Measures the linear relationship between two continuous variables. Assumes normal distribution and equal variance."
-    ),
-    actionButton(NS(id, "spear"), "Spearman correlation",
-      title =
-        "Measures the monotonic relationship between two variables using ranks. Suitable for ordinal data or non-linear relationships."
-    ),
-    actionButton(NS(id, "kendall"), "Kendall correlation",
-      title =
-        "Measures the strength of dependence between two variables based on rank concordance. Works well with small samples or tied ranks."
-    )
+    uiOutput(NS(id, "CorrelationUI"))
   )
 }
 
@@ -34,6 +11,46 @@ corrUI <- function(id) {
 
 corrServer <- function(id, DataModelState, ResultsState) {
   moduleServer(id, function(input, output, session) {
+
+    output[["CorrelationUI"]] <- renderUI({
+      if (is.null(DataModelState$formula)) {
+        return(
+          div(
+            class = "var-box-output",
+            h3(strong("You have to define a linear model in the formula editor to run any correlation tests"))
+          )
+        )
+      }
+      req(!is.null(DataModelState$df))
+      req(is.data.frame(DataModelState$df))
+      req(inherits(DataModelState$formula, "LinearFormula"))
+      div(
+        br(),
+        sliderInput("CORR-conflevel", "Confidence level of the interval",
+          min = 0, max = 1, value = 0.95
+        ),
+        selectInput(
+          "CORR-alt", "Alternative hypothesis",
+          c(
+            "Two sided" = "two.sided",
+            "Less" = "less",
+            "Greater" = "greater"
+          )
+        ),
+        actionButton("CORR-pear", "Pearson correlation",
+          title =
+          "Measures the linear relationship between two continuous variables. Assumes normal distribution and equal variance."
+        ),
+        actionButton("CORR-spear", "Spearman correlation",
+          title =
+          "Measures the monotonic relationship between two variables using ranks. Suitable for ordinal data or non-linear relationships."
+        ),
+        actionButton("CORR-kendall", "Kendall correlation",
+          title =
+          "Measures the strength of dependence between two variables based on rank concordance. Works well with small samples or tied ranks."
+        )
+      )
+    })
 
     corr_fct <- function(method) {
       print_req(is.data.frame(DataModelState$df), "The dataset is missing")

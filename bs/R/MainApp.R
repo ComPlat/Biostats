@@ -166,7 +166,6 @@ app <- function() {
         div(
           conditionalPanel(
             condition = "input.conditionedPanels == 'Data'",
-            # uiOutput("conditional_data_ui"),
             uploadUIField,
             tags$hr()
           ),
@@ -346,7 +345,8 @@ app <- function() {
     })
     # docu formula editor
     observeEvent(input[["FO-formula_docu"]], {
-      path_list <- get_docu("Formula")
+      type <- input[["FO-model_type"]]
+      path_list <- get_docu(paste0(type, "Formula"))
       showModal(modalDialog(
         title = path_list[[2]],
         includeHTML(path_list[[1]]),
@@ -603,8 +603,7 @@ app <- function() {
     })
     # display current formula
     output[["formulaUI"]] <- renderUI({
-      if (input$conditionedPanels == "DataWrangling" ||
-        input$conditionedPanels == "Visualisation") {
+      if (input$conditionedPanels == "DataWrangling") {
         return()
       } else {
         renderUI({
@@ -624,6 +623,17 @@ app <- function() {
               br(),
               paste0("Link fct.: ", deparse(DataModelState$formula@link_fct))
             )
+          } else if (inherits(DataModelState$formula, "OptimFormula")) {
+            div(
+              class = "var-box-output",
+              p("Optimization Model"),
+              deparse(DataModelState$formula@formula),
+              br(),
+              paste0("Lower boundary: ", deparse(DataModelState$formula@lower)),
+              paste0("Upper boundary: ", deparse(DataModelState$formula@upper)),
+              br(),
+              paste0("Seed: ", deparse(DataModelState$formula@seed))
+            )
           } else {
             ""
           }
@@ -636,18 +646,24 @@ app <- function() {
       if (input$conditionedPanels == "DataWrangling") {
         return()
       }
-      div(
-        class = "boxed-output",
-        actionButton("open_split_by_group",
-          "Open the split by group functionality",
-          title = "Open the split by group helper window"
-        ),
-        actionButton("remove_filter_V1_2",
-          "Remove the filter from the dataset",
-          title = "remove the filter of the dataset",
-          disabled = is.null(DataModelState$backup_df) || !is.data.frame(DataModelState$backup_df)
+      if (is.null(DataModelState$backup_df)) {
+        return(
+          div(
+            class = "boxed-output",
+            actionButton("open_split_by_group",
+              "Open the split by group functionality",
+              title = "Open the split by group helper window"
+            ))
         )
-      )
+      } else {
+        return(
+          actionButton("remove_filter_V1_2",
+            "Remove the filter from the dataset",
+            title = "remove the filter of the dataset",
+            disabled = is.null(DataModelState$backup_df) || !is.data.frame(DataModelState$backup_df)
+          )
+        )
+      }
     })
     observeEvent(input[["open_split_by_group"]], {
       print_req(is.data.frame(DataModelState$df), "The dataset is missing")

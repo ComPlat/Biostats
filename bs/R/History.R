@@ -98,7 +98,15 @@ eval_entry_V1_2 <- function(entry, DataModelState, DataWranglingState, ResultsSt
         backend_communicator_V1_2
       )
       res$validate()
-      res$eval(ResultsState, DataModelState, entry[["Model Type"]], entry[["family"]], entry[["Link function"]])
+      if (entry[["Model Type"]] == "Linear") {
+        res$eval(ResultsState, DataModelState, entry[["Model Type"]])
+      } else if (entry[["Model Type"]] == "Generalised Linear Model") {
+        res$eval(ResultsState, DataModelState, entry[["Model Type"]],
+          entry[["family"]], entry[["Link function"]])
+      } else if (entry[["Model Type"]] == "Optimization Model") {
+        res$eval(ResultsState, DataModelState, entry[["Model Type"]],
+          entry[["lower"]], entry[["upper"]], entry[["seed"]])
+      }
     },
     ModelSummary = {
       res <- summarise_model_V1_2$new(
