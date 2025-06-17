@@ -150,9 +150,11 @@ eval_entry_V1_2 <- function(entry, DataModelState, DataWranglingState, ResultsSt
       get_result(ResultsState)
     },
     DoseResponse = {
+      outliers <- entry[["outliers"]]
+      if (outliers == "") outliers <- NULL # correct falsy json parsing
       res <- dose_response_V1_2$new(
         DataModelState$df,
-        parse_outlier_info(entry[["outliers"]]),
+        outliers,
         entry[["Log transform x-axis"]],
         entry[["Log transform y-axis"]],
         entry[["Column containing the names"]],

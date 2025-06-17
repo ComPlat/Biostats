@@ -52,10 +52,7 @@ DoseResponseServer <- function(id, DataModelState, ResultsState) {
     output[["DoseResponseUI"]] <- renderUI({
       if (is.null(DataModelState$formula)) {
         return(
-          div(
-            class = "var-box-output",
-            h3(strong("You have to define a linear model in the formula editor to run a dose response analysis"))
-          )
+          info_div("You have to define a linear model in the formula editor to run a dose response analysis")
         )
       }
       req(!is.null(DataModelState$df))
@@ -70,7 +67,7 @@ DoseResponseServer <- function(id, DataModelState, ResultsState) {
           value = FALSE
         ),
         checkboxInput(
-          NS(id, "DOSERESPONSE-yTransform"),
+          "DOSERESPONSE-yTransform",
           label = "Log transform y-axis",
           value = FALSE
         ),

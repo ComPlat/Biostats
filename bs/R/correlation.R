@@ -15,10 +15,7 @@ corrServer <- function(id, DataModelState, ResultsState) {
     output[["CorrelationUI"]] <- renderUI({
       if (is.null(DataModelState$formula)) {
         return(
-          div(
-            class = "var-box-output",
-            h3(strong("You have to define a linear model in the formula editor to run any correlation tests"))
-          )
+          info_div("You have to define a linear model in the formula editor to run any correlation tests")
         )
       }
       req(!is.null(DataModelState$df))

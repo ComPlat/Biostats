@@ -127,11 +127,18 @@ app <- function() {
         margin-top: 4px;
         }
         .info-box {
-        background-color: #e0f2fe;
-        color: #0369a1;
-        padding: 12px 16px;
-        border-radius: 4px;
-        margin-top: 16px;
+        background-color: #e6f2ff; /* light blue */
+        border: 1px solid #99ccff; /* soft blue border */
+        border-radius: 8px;
+        padding: 16px;
+        margin-top: 12px;
+        font-size: 16px;
+        color: #003366; /* dark blue text for contrast */
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        .info-box h3 {
+        margin: 0;
+        font-weight: bold;
         }
         .nav-tabs > li > a {
           text-decoration: none;
@@ -369,10 +376,9 @@ app <- function() {
 
     download_file <- reactive({
       file <- download(session, "/home/shiny/results") # NOTE: from COMELN
-      df <- NULL
-      df <- readData(file)
+      readData(file, DataModelState, ResultsState)
       print_req(
-        is.data.frame(df),
+        is.data.frame(DataModelState$df),
         "File can not be used. Upload into R failed!"
       )
       tryCatch(
@@ -386,8 +392,7 @@ app <- function() {
           print_err(paste("An error occurred: ", conditionMessage(err)))
         }
       )
-      req(is.data.frame(df))
-      return(df)
+      req(is.data.frame(DataModelState$df))
     })
 
     output$df <- renderDT({
@@ -396,22 +401,17 @@ app <- function() {
           download_file()
         })
         if (inherits(res, "try-error")) {
-          stop(attributes(res)$condition)
-        } else {
-          res <- create_r_names(res)
-          DataModelState$df <- res
+          return(NULL)
         }
         datatable(DataModelState$df, options = list(pageLength = 10))
       } else {
         req(input$file)
-        df <- try(readData(input$file$datapath))
+        df <- try(readData(input$file$datapath, DataModelState, ResultsState))
         if (inherits(df, "try-error")) {
           err <- conditionMessage(attr(df, "condition"))
           print_err(err)
           return(NULL)
         }
-        df <- create_r_names(df)
-        DataModelState$df <- df
         req(!is.na(DataModelState$df))
         datatable(DataModelState$df, options = list(pageLength = 10))
       }
@@ -426,6 +426,16 @@ app <- function() {
       output$df <- renderDT(
         datatable(DataModelState$df, options = list(pageLength = 10))
       )
+    })
+
+    # Observe tables
+    # TODO: proceed from here
+    observe({
+      req(!is.null(DataModelState$df))
+      req(is.data.frame(DataModelState$df))
+      # Scan ResultsState to find all possible dataframes
+      # Display possible dataframes in dropdown menu
+      # define class to handle setting the active table
     })
 
     OperationEditorServer("OP", DataModelState, ResultsState, DataWranglingState)

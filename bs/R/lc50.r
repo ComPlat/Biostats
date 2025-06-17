@@ -347,11 +347,3 @@ ic50 <- function(df, abs_col, conc_col,
   }
   return(res)
 }
-
-# library(ggplot2)
-# library(drc)
-# path <- system.file("data", package = "MTT")
-# df <- read.csv(paste0(path, "/ExampleData.txt"))
-# l1 <- ic50(df, "abs", "conc", "names", NULL, FALSE, FALSE)
-# l2 <- ic50(df, "abs", "conc", "names", list(X19611 = c(1, 2, 3, 4)), FALSE, FALSE)
-# cowplot::plot_grid(l1[[1]][[2]], l2[[1]][[2]])

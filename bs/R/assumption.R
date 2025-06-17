@@ -31,10 +31,7 @@ assServer <- function(id, DataModelState, ResultsState) {
     output[["shapiro"]] <- renderUI({
       if (is.null(DataModelState$formula)) {
         return(
-          div(
-            class = "var-box-output",
-            h3(strong("You have to define a model in the formula editor to run any assumptions tests"))
-          )
+          info_div("You have to define a model in the formula editor to run any assumptions tests")
         )
       }
       req(!is.null(DataModelState$df))

@@ -1,0 +1,75 @@
+[
+  {
+    "type": "Version",
+    "Nr": "1_2"
+  },
+  {
+    "type": "CreateIntermediateVariable",
+    "operation": "Mean(get_cols(get_rows(df, substance == \"pos\"), abs))",
+    "name": "mean_pos"
+  },
+  {
+    "type": "CreateIntermediateVariable",
+    "operation": "Mean(get_cols(get_rows(df, substance == \"neg\"), abs))",
+    "name": "mean_neg"
+  },
+  {
+    "type": "CreateNewColumn",
+    "operation": "(abs - mean_pos) / mean_neg",
+    "column name": "norm_abs"
+  },
+  {
+    "type": "ApplyFilter",
+    "Variable": "substance",
+    "Variable levels": ["Substance1", "Substance2", "Substance3", "Substance4", "Substance5", "Substance6", "Substance7", "Substance8", "Substance9", "Substance10", "Substance11", "Substance12"]
+  },
+  {
+    "type": "Visualisation",
+    "x": "conc",
+    "y": "norm_abs",
+    "Plot-type": "box",
+    "X axis label": "conc [µM]",
+    "Y axis label": "viability [%]",
+    "Type of x": "factor",
+    "Colour variable": "",
+    "Legend title for colour": "Title colour",
+    "Colour theme": "Accent",
+    "Fill variable": "",
+    "Legend title for fill": "Title fill",
+    "Fill theme": "BuGn",
+    "Split in subplots": "facet_wrap",
+    "Split by": "substance",
+    "How to scale y in subplots": "free",
+    "X-Range": ["0.25", "31.25"],
+    "Y-Range": ["-0.0969449388746772", "1.07194048524492"],
+    "Width": 10,
+    "Height": 10,
+    "Resolution": 300,
+    "Result name": "4 Visualization Boxplot"
+  },
+  {
+    "type": "CreateFormula",
+    "formula": "norm_abs ~ conc",
+    "Model Type": "Linear",
+    "details": ""
+  },
+  {
+    "type": "ModelSummary",
+    "formula": "norm_abs ~ conc",
+    "Result name": "5 Model summary"
+  },
+  {
+    "type": "RemoveFilter",
+    "Variable": "",
+    "Variable levels": ""
+  },
+  {
+    "type": "DoseResponse",
+    "Column containing the names": "substance",
+    "Log transform x-axis": false,
+    "Log transform y-axis": false,
+    "formula": "norm_abs ~ conc",
+    "outliers": "",
+    "Result name": "6 DoseResponse"
+  }
+]

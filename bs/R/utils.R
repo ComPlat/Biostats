@@ -1,3 +1,11 @@
+# divs
+info_div <- function(message) {
+  div(
+    class = "info-box",
+    h3(strong(message))
+  )
+}
+
 num_to_factor <- function(df, cols) {
   for (i in seq_along(cols)) {
     if (is.numeric(df[, cols[i]])) {
@@ -38,73 +46,6 @@ char_to_orig_type <- function(vec) {
 firstup <- function(x) {
   substr(x, 1, 1) <- toupper(substr(x, 1, 1))
   x
-}
-
-# Upload data into R
-readData <- function(path) {
-  stopifnot(is.character(path))
-  if (!file.exists(path)) stop("File does not exists")
-  max_file_size <- 50 * 1024^2 # 50 MB in bytes
-  file_size <- file.info(path)$size
-  if (is.na(file_size) || file_size > max_file_size) {
-    stop("File size exceeds the 50 MB limit. Please upload a smaller file.")
-  }
-  df <- NULL
-  df <- try(as.data.frame(readxl::read_excel(
-    path,
-    col_names = TRUE
-  )), silent = TRUE)
-  if (class(df) == "try-error") {
-    # identify seperator
-    line <- readLines(path, n = 1)
-    semicolon <- grepl(";", line)
-    comma <- grepl(",", line)
-    tab <- grepl("\t", line)
-    seperator <- NULL
-    if (semicolon == TRUE) {
-      seperator <- ";"
-    } else if (comma == TRUE) {
-      seperator <- ","
-    } else if (tab == TRUE) {
-      seperator <- "\t"
-    } else {
-      stop("Could not identiy the seperator. Please upload a file with a known seperator.")
-    }
-    df <- try(read.csv(path, header = TRUE, sep = seperator))
-    if (class(df) == "try-error") {
-      stop(conditionMessage(df))
-    }
-  } else {
-    f <- function(x) {
-      options(warn = -1)
-      x <- as.numeric(x)
-      options(warn = 0)
-      x <- x[!is.na(x)]
-      length(x) > 0
-    }
-    check <- apply(df, 2, f)
-    conv <- function(a, b) {
-      if (a == TRUE) {
-        return(as.numeric(b))
-      }
-      return(b)
-    }
-    df <- Map(conv, check, df)
-    df <- data.frame(df)
-  }
-  # Check data frame dimensions
-  if (nrow(df) == 0) {
-    stop("The uploaded file is empty. Please upload a file with data.")
-  }
-  max_cols <- 1000
-  max_rows <- 1e6
-  if (nrow(df) > max_rows || ncol(df) > max_cols) {
-    stop(sprintf(
-      "Data exceeds the limit of %d rows or %d columns. Please upload a smaller dataset.",
-      max_rows, max_cols
-    ))
-  }
-  return(df)
 }
 
 DF2String <- function(df) {

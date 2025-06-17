@@ -28,7 +28,7 @@ get_docu <- function(panel) {
     path <- docu_path("assumptions.html")
     title <- "Testing assumptions"
   } else if (panel == "Correlation") {
-    path <- docu_path("correlation_V1_2.html")
+    path <- docu_path("correlation.html")
     title <- "Correlation"
   } else if (panel == "Tests") {
     path <- docu_path("tests.html")

@@ -7,11 +7,11 @@ trash <- lapply(files, source)
 set.seed(42)
 true_a <- 5
 true_b <- 2
-conc1 <- seq(0.1, 10, length.out = 30)
-conc2 <- seq(0.1, 10, length.out = 30)
-response <- true_a * conc1 / (true_b + conc2) + rnorm(length(conc1), sd = 0.2)
-df <- data.frame(conc1 = conc1, conc2 = conc2, response = response)
-formula <- response ~ a * conc1 / (b + conc2)
+conc <- seq(0.1, 10, length.out = 30)
+response <- true_a * conc / (true_b + conc) + rnorm(length(conc), sd = 0.2)
+df <- data.frame(conc = conc, response = response)
+write.csv(df, "./test_data/calibration.csv", quote = FALSE, row.names = FALSE)
+formula <- response ~ a * conc / (b + conc)
 formula_optim <- create_formula_optim(formula, df, 0, 100, 1234)
 res <- optimize(formula_optim, df)
 res@parameter

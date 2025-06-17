@@ -33,10 +33,7 @@ testsServer <- function(id, DataModelState, ResultsState) {
       req(input$TestsConditionedPanels)
       if (is.null(DataModelState$formula)) {
         return(
-          div(
-            class = "var-box-output",
-            h3(strong("You have to define a model in the formula editor to run a statistical test"))
-          )
+          info_div("You have to define a model in the formula editor to run a statistical test")
         )
       }
 

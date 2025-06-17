@@ -119,11 +119,12 @@ backend_get_result_V1_2 <- function(ResultsState) {
   while(!is.null(ResultsState$bgp$process) && ResultsState$bgp$process$is_alive()) {
     Sys.sleep(0.5)
   }
+
   # After the background process has finished check whether evrything was fine or not
   res <- tryCatch(ResultsState$bgp$process$get_result(), error = function(e) e)
   if (inherits(res, "error") && !ResultsState$bgp$cancel_clicked) {
     ResultsState$bgp$running_status <- sprintf("Error failed with: %s", res$message)
-    ResultsState$bgp$com$print_err(res$message)
+    ResultsState$bgp$com$print_err(res$parent$message) # TODO: the different error types have to be handled
     ResultsState$bgp$cancel_clicked <- FALSE
     ResultsState$bgp$is_running <- FALSE
   } else if (ResultsState$bgp$cancel_clicked) {
@@ -651,7 +652,8 @@ create_intermediate_var_V1_2 <- R6::R6Class(
       e <- try({
         eval_env <- new.env()
         list2env(self$intermediate_vars, envir = eval_env)
-        list2env(self$df, envir = eval_env) # NOTE: this adds each column as own variable
+        list2env(DataWranglingState$df, envir = eval_env) # NOTE: this adds each column as own variable
+        eval_env[[DataWranglingState$df_name]] <- self$df
         new <- eval(parse(text = self$operation), envir = eval_env)
         check_type_res(new)
         check_rls(ResultsState$all_data, new)
@@ -772,6 +774,7 @@ create_new_col_V1_2 <- R6::R6Class(
         eval_env <- new.env()
         list2env(self$intermediate_vars, envir = eval_env)
         list2env(self$df, envir = eval_env)  # NOTE: this adds each column as own variable
+        eval_env[[DataWranglingState$df_name]] <- self$df
         new <- eval(parse(text = self$operation), envir = eval_env)
         check_type_res(new)
         check_rls(ResultsState$all_data, new)
@@ -1309,34 +1312,34 @@ dose_response_V1_2 <- R6::R6Class(
                 bs:::check_ast(str2lang(indep), colnames(df))
                 bs:::check_ast(str2lang(dep), colnames(df))
 
-              res <- bs:::ic50(
-                df, dep,
-                indep, substance_names, outliers,
-                is_xlog, is_ylog
-              )
-              if (inherits(res, "errorClass")) {
-                stop(res$error_message)
-              }
-              res_df <- lapply(res, function(x) {
-                if (inherits(x, "errorClass")) {
-                  return(NULL)
+                res <- bs:::ic50(
+                  df, dep,
+                  indep, substance_names, outliers,
+                  is_xlog, is_ylog
+                )
+                if (inherits(res, "errorClass")) {
+                  stop(res$error_message)
                 }
-                return(x[[1]])
-              })
-              res_df <- res_df[!is.null(res_df)]
-              res_df <- res_df[!sapply(res_df, is.null)]
-              res_df <- Reduce(rbind, res_df)
-              res_p <- lapply(res, function(x) {
-                if (inherits(x, "errorClass")) {
-                  return(NULL)
-                }
-                return(x[[2]])
-              })
-              res_p <- res_p[!is.null(res_p)]
-              res_p <- res_p[!sapply(res_p, is.null)]
+                res_df <- lapply(res, function(x) {
+                  if (inherits(x, "errorClass")) {
+                    return(NULL)
+                  }
+                  return(x[[1]])
+                })
+                res_df <- res_df[!is.null(res_df)]
+                res_df <- res_df[!sapply(res_df, is.null)]
+                res_df <- Reduce(rbind, res_df)
+                res_p <- lapply(res, function(x) {
+                  if (inherits(x, "errorClass")) {
+                    return(NULL)
+                  }
+                  return(x[[2]])
+                })
+                res_p <- res_p[!is.null(res_p)]
+                res_p <- res_p[!sapply(res_p, is.null)]
               })
               if (inherits(err, "try-error")) {
-                stop(err$message)
+                stop(err)
               }
               new("doseResponse", df = res_df, p = res_p, outlier_info = bs:::create_outlier_info(outliers))
             },
@@ -1353,7 +1356,6 @@ dose_response_V1_2 <- R6::R6Class(
           invokeRestart("muffleWarning")
         }
       )
-
     },
 
     create_history = function(new_name) {
