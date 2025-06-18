@@ -6,11 +6,6 @@
 
 This application provides a user-friendly interface for conducting basic data wrangling, correlation tests, assumption tests (Shapiro-Wilk, Levene's test, QQ plots, etc.), various statistical tests (t-test, ANOVA, Kruskal-Wallis test, Tukey HSD, etc.), and visualizing data using ggplot2.
 
-## Usage
-
-Visit the app hosted as static website [Biostats](https://complat.github.io/Biostats/).
-If you want to run it locally follow the guide below.
-
 ## Features
 
 - Data Wrangling: Easily import, filter, transform, and clean your datasets.
