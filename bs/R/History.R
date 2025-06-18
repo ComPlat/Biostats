@@ -355,6 +355,10 @@ eval_entry_V1_2 <- function(entry, DataModelState, DataWranglingState, ResultsSt
       res <- remove_result_V1_2$new(entry[["Entry removed"]])
       res$validate()
       res$eval(ResultsState)
+    },
+    SetActiveTable = {
+      res <- set_active_table_V1_2$new(entry[["NewActiveTable"]])
+      res$eval(ResultsState, DataModelState)
     }
   )
   if (is.null(res)) {
@@ -390,7 +394,7 @@ get_correct_get_result_fct <- function(version) {
 }
 
 
-eval_history <- function(json_string, df, backend = FALSE) {
+eval_history <- function(json_string, df, all_data, backend = FALSE) {
   print_err_in_eval_history <- print_err
   if (backend) { # Make it testable
     print_err_in_eval_history <- print
@@ -402,7 +406,7 @@ eval_history <- function(json_string, df, backend = FALSE) {
     stopifnot(version$Nr %in% get_available_versions())
     l <- l[-1] # Remove version step as it is not evaluated
     eval_entry <- get_correct_eval(version$Nr)[[1]]
-    result_state <- get_correct_result_state(version$Nr)[[1]]$new()
+    result_state <- get_correct_result_state(version$Nr)[[1]]$new(all_data)
     data_model_state <- get_correct_data_model_state(version$Nr)[[1]]$new(df)
     data_wrangling_state <- get_correct_data_wrangling_state(version$Nr)[[1]]$new(data_model_state)
     get_result <- get_correct_get_result_fct(version$Nr)[[1]]

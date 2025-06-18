@@ -42,7 +42,7 @@ HistoryEditorServer <- function(id, DataModelState, ResultsState, DataWranglingS
     observeEvent(input$confirm_replay, {
       removeModal()
 
-      result <- eval_history(input$history_string, DataModelState$df)
+      result <- eval_history(input$history_string, DataModelState$df, ResultsState$all_data)
       if (is.null(result)) {
         print_err("History did not run Successfully.")
         return()

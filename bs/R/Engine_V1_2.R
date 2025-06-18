@@ -163,7 +163,9 @@ backend_result_state_V1_2 <- R6::R6Class(
     history = list(),
     counter = 0,
     bgp = NULL,
-    initialize = function() {
+    initialize = function(all_data) {
+      self$all_data <- all_data
+      self$all_names <- names(all_data)
       self$bgp <- bg_process_V1_2$new(500, backend_communicator_V1_2)
     }
   )
@@ -177,6 +179,7 @@ backend_data_model_state_V1_2 <- R6::R6Class(
     backup_df = NULL,
     filter_col = NULL,
     filter_group = NULL,
+    active_df_name = NULL,
     initialize = function(df) {
       self$df <- df
     }
@@ -1735,6 +1738,25 @@ remove_result_V1_2 <- R6::R6Class(
         type = "RemoveResult", "Entry removed" = self$name
       )
       ResultsState$all_data <- current_list
+    }
+  )
+)
+set_active_table_V1_2 <- R6::R6Class(
+  "set_active_table_V1_2",
+  public = list(
+    name = NULL,
+    initialize = function(name) {
+      self$name <- name
+    },
+    validate = function() {},
+    eval = function(ResultsState, DataModelState) {
+      df <- ResultsState$all_data[[self$name]]
+      DataModelState$df <- df
+      DataModelState$active_df_name <- self$name
+      ResultsState$history[[length(ResultsState$history) + 1]] <- list(
+        type = "SetActiveTable",
+        "NewActiveTable" = self$name
+      )
     }
   )
 )

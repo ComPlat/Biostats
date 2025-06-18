@@ -3,7 +3,7 @@ files <- list.files(test_data_dir, pattern = "\\.json$", full.names = TRUE)
 
 load_and_eval_history <- function(file, df) {
   json <- readLines(file, n = -1)
-  bs:::eval_history(json, df, TRUE)
+  bs:::eval_history(json, df, NULL, TRUE)
 }
 
 # Test glm history

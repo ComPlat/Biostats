@@ -3,7 +3,7 @@ simulate <- function(name, slope, true_ic50) {
   b  <- slope          # slope
   c  <- 0.05          # lower limit
   d  <- 1.1           # upper limit
-  e  <- true_ic50     # EC50 = IC50
+  e  <- true_ic50     # IC50
 
   set.seed(1)
   conc_levels <- c(0.5, seq(2.5, 26, by = 2.5))

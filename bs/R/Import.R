@@ -1,5 +1,4 @@
 # TODO: add this in readDF
-# add all detected dataframes into the result list
 # add a dropdown (maybe next to apply filter) where the user can specify the active table
 # add engine class set_active_df
 # TODO: allow to define seperator --> reload data and delete file after session end.
@@ -124,6 +123,7 @@ extract_tables <- function(df) {
   lapply(tables, cast_types_cols)
 }
 
+# FIX: does not work fix
 read_data_excel <- function(path) {
   sheets <- readxl::excel_sheets(path)
   res <- list()

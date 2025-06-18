@@ -161,7 +161,7 @@ app <- function() {
             label = NULL,
             icon = icon("question-circle")
           ),
-          uiOutput("running_status")
+          uiOutput("running_status") # TODO: when an error ocurred it does not vanish
         ),
         uiOutput("open_formula_editor_main"),
         uiOutput("formulaUI"),
@@ -169,6 +169,8 @@ app <- function() {
         uiOutput("open_split_by_group"),
         uiOutput("data_splitted"),
         verbatimTextOutput("applied_filter"),
+        br(),
+        uiOutput("active_df"),
         br(),
         div(
           conditionalPanel(
@@ -254,7 +256,8 @@ app <- function() {
     # States
     DataModelState <- reactiveValues(
       df = NULL, formula = NULL,
-      backup_df = NULL, filter_col = NULL, filter_group = NULL
+      backup_df = NULL, filter_col = NULL, filter_group = NULL,
+      active_df_name = NULL
     )
 
     ResultsState <- reactiveValues(
@@ -429,13 +432,38 @@ app <- function() {
     })
 
     # Observe tables
-    # TODO: proceed from here
-    observe({
+    output[["active_df"]] <- renderUI({
       req(!is.null(DataModelState$df))
       req(is.data.frame(DataModelState$df))
-      # Scan ResultsState to find all possible dataframes
-      # Display possible dataframes in dropdown menu
-      # define class to handle setting the active table
+      if (length(ResultsState$all_data) == 0) {
+        return(NULL)
+      }
+      table_indices <- which(sapply(ResultsState$all_data, is.data.frame))
+      names <- names(ResultsState$all_data)
+      names <- names[table_indices]
+      tooltip <- "Select the active dataset (the dataset with which you can work)"
+      div(
+        tags$label(
+          "active dataset",
+          class = "tooltip",
+          title = tooltip,
+          `data-toggle` = "tooltip"
+        ),
+        selectInput(
+          inputId = "tables-dropdown",
+          label = "active dataset",
+          choices = names,
+          selected = DataModelState$active_df_name
+        )
+      )
+    })
+
+    observeEvent(input[["tables-dropdown"]], {
+      req(!is.null(DataModelState$df))
+      req(is.data.frame(DataModelState$df))
+      req(input[["tables-dropdown"]])
+      sat <- set_active_table_V1_2$new(input[["tables-dropdown"]])
+      sat$eval(ResultsState, DataModelState)
     })
 
     OperationEditorServer("OP", DataModelState, ResultsState, DataWranglingState)
