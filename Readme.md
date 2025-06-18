@@ -8,12 +8,11 @@ This application provides a user-friendly interface for conducting basic data wr
 
 ## Features
 
-- Data Wrangling: Easily import, filter, transform, and clean your datasets.
-- Correlation Tests: Explore relationships between variables with correlation tests.
-- Assumption Tests: Assess the assumptions of normality, homogeneity of variances, and other assumptionsnecessary 	  for statistical tests.
- - Statistical Tests: Conduct a variety of statistical tests including t-tests, ANOVA, Kruskal-Wallis tests,     andmore.
-- Data Visualization: Visualize your data using ggplot2, including boxplots, point plots, line plots, andsmoothing  with annotations.
-
+- **Data Wrangling**: Import, filter, transform, and clean datasets.
+- **Correlation Tests**: Evaluate relationships between variables.
+- **Assumption Tests**: Run Shapiro-Wilk, Levene's test, QQ plots, etc.
+- **Statistical Tests**: t-test, ANOVA, Kruskal-Wallis, Tukey HSD, and more.
+- **Visualization**: Create boxplots, scatterplots, line plots, smoothers, and annotated plots using `ggplot2`.
 
 ## Local version
 
