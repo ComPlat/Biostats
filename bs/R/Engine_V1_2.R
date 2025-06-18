@@ -1741,6 +1741,7 @@ remove_result_V1_2 <- R6::R6Class(
     }
   )
 )
+# TODO: add tests for it
 set_active_table_V1_2 <- R6::R6Class(
   "set_active_table_V1_2",
   public = list(

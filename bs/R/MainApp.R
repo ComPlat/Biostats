@@ -24,7 +24,8 @@ upload_ui_field <- function() {
         accept = c(
           "text/csv",
           "text/comma-separated-values,text/plain",
-          ".csv"
+          ".csv",
+          ".xlsx"
         )
       )
     )

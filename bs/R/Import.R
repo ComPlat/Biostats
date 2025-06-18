@@ -82,7 +82,7 @@ trim_outer_quotes <- function(v) {
   })
 }
 
-cast_types_cols <- function(df) {
+cast_types_cols <- function(df, excel = FALSE) {
   f <- function(x) {
     options(warn = -1)
     x <- as.numeric(x)
@@ -95,14 +95,14 @@ cast_types_cols <- function(df) {
     if (a) {
       return(as.numeric(b))
     }
-    b <- trim_outer_quotes(b)
+    if (!excel) b <- trim_outer_quotes(b)
     return(as.factor(b))
   }
   df <- Map(conv, check, df)
   data.frame(df)
 }
 
-extract_tables <- function(df) {
+extract_tables <- function(df, excel = FALSE) {
   cols <- scan_cols(df)
   rows <- scan_rows(df)
   stopifnot(
@@ -115,22 +115,31 @@ extract_tables <- function(df) {
   tables[] <- lapply(tables, function(x) {
     if (nrow(x) > 2) {
       temp <- x[2:nrow(x), ]
-      names(temp) <- sapply(trim_outer_quotes(x[1, ]), make.names)
+      if (excel) {
+        names(temp) <- sapply(x[1, ], make.names)
+      } else {
+        names(temp) <- sapply(trim_outer_quotes(x[1, ]), make.names)
+      }
       x <- temp
     }
     x
   })
-  lapply(tables, cast_types_cols)
+  lapply(tables, function(x) {
+    cast_types_cols(x, excel)
+  })
 }
 
-# FIX: does not work fix
 read_data_excel <- function(path) {
   sheets <- readxl::excel_sheets(path)
   res <- list()
   for (s in sheets) {
-    tables <- readxl::read_excel(path, sheet = s, col_names = FALSE) |>
-      as.data.frame() |>
-      extract_tables()
+    tables <- suppressMessages(
+      suppressWarnings(
+        readxl::read_excel(path, sheet = s, col_names = FALSE)
+      )
+    )
+    tables <- as.data.frame(tables)
+    tables <-  extract_tables(tables, TRUE)
     res <- c(res, tables)
   }
   res
@@ -204,4 +213,3 @@ readData <- function(path, DataModelState, ResultsState) {
     ))
   }
 }
-
