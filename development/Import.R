@@ -1,16 +1,3 @@
-# TODO: allow to define seperator --> reload data and delete file after session end.
-# and warn that user shouldn't use comma separated numbers
-# Upload data into R
-# TODO: check that import works also for server version
-
-identify_seperator <- function(path) {
-  line <- readLines(path, n = 1)
-  if(grepl(";", line)) return(";")
-  if(grepl("\t", line)) return("\t")
-  if(grepl(",", line)) return(",")
-  stop("Could not identify the separator. Please upload a file with a known separator.")
-}
-
 trim_outer_quotes <- function(v) {
   sapply(v, function(x) {
     if (x == "") return("")
@@ -151,66 +138,8 @@ read_data_excel <- function(path) {
   res
 }
 
-read_raw <- function(path) {
-  sep <- identify_seperator(path)
-  raw_content <- readLines(path)
-  raw_content <- lapply(raw_content, function(r){
-    r <- strsplit(r, split = sep, fixed = TRUE)[[1]]
-    r[r == ""] <- NA
-    r
-  })
-  max_cols <- max(lengths(raw_content))
-  raw_content <- lapply(raw_content, function(r) {
-    length(r) <- max_cols  # pads with NA if too short
-    r
-  })
-  raw_df <- do.call(rbind, raw_content)
-  as.data.frame(raw_df, stringsAsFactors = FALSE)
-}
-
-read_data_csv <- function(path) {
-  tables <- read_raw(path)
-  env_tables <- new.env(parent = emptyenv())
-  env_tables$tables <- list()
-  extract_tables(env_tables, tables, FALSE)
-  convert_to_dfs(env_tables$tables, FALSE)
-}
-
-readData <- function(path, DataModelState, ResultsState) {
-  stopifnot(is.character(path))
-  if (!file.exists(path)) stop("File does not exists")
-  max_file_size <- 50 * 1024^2 # 50 MB in bytes
-  file_size <- file.info(path)$size
-  if (is.na(file_size) || file_size > max_file_size) {
-    stop("File size exceeds the 50 MB limit. Please upload a smaller file.")
-  }
-  tables <- try(read_data_excel(path), silent = TRUE)
-  if (class(tables) == "try-error") {
-    tables <- try(read_data_csv(path))
-    if (class(tables) == "try-error") {
-      stop(conditionMessage(tables))
-    }
-  }
-
-  DataModelState$df <- tables[[1]]
-  if (length(tables) >= 2) {
-    lapply(tables, function(t) {
-      name <- paste0("df", ResultsState$counter)
-      ResultsState$all_data[[name]] <- t
-      ResultsState$counter <- ResultsState$counter + 1
-    })
-  }
-
-  # Check data frame dimensions
-  if (nrow(DataModelState$df) == 0) {
-    stop("The uploaded file is empty. Please upload a file with data.")
-  }
-  max_cols <- 1000
-  max_rows <- 1e6
-  if (nrow(DataModelState$df) > max_rows || ncol(DataModelState$df) > max_cols) {
-    stop(sprintf(
-      "Data exceeds the limit of %d rows or %d columns. Please upload a smaller dataset.",
-      max_rows, max_cols
-    ))
-  }
-}
+path <- "./development/TestExcel1.xlsx"
+path <- "./development/TestExcel2.xlsx"
+path <- "./development/TestExcel3.xlsx"
+ts <- read_data_excel(path)
+ts
