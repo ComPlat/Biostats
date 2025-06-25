@@ -1,4 +1,4 @@
-export(app)
+export(biostats)
 
 import(shiny, except = c(renderDataTable, dataTableOutput, runExample))
 import(DT)

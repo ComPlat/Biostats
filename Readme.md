@@ -57,8 +57,6 @@ remotes::install_github("ComPlat/Biostats", subdir = "bs")
 3. Restart R/RStudio and start the app
 
 ```R
-Sys.setenv(RUN_MODE = "BROWSER")
-app <- bs::app()
-shiny::shinyApp(app$ui, app$server)
+bs::biostats()
 ```
 
