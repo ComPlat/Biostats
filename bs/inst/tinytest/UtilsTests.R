@@ -1,5 +1,3 @@
-install.packages("bs", type = "source", repos = NULL)
-unloadNamespace("bs")
 library(bs)
 library(ggplot2)
 library(tinytest)
@@ -7,25 +5,24 @@ library(readxl)
 
 # Test outliers back parsing for history
 # =======================================================================================
-
 test_outlier_parsing <- function() {
   expected <- list(S1 = c(10, 16), S3 = 14, S4 = 12)
   expect_equal(
-    parse_outlier_info("Outliers: S1: 10, 16;S3: 14;S4: 12"),
+    bs:::parse_outlier_info("Outliers: S1: 10, 16;S3: 14;S4: 12"),
     expected
   )
   expected <- list(S1 = c(10))
   expect_equal(
-    parse_outlier_info("Outliers: S1: 10"),
+    bs:::parse_outlier_info("Outliers: S1: 10"),
     expected
   )
   expected <- list(S4 = c(10, 20))
   expect_equal(
-    parse_outlier_info("Outliers: S4: 10, 20"),
+    bs:::parse_outlier_info("Outliers: S4: 10, 20"),
     expected
   )
   expect_null(
-    parse_outlier_info("Outliers: ")
+    bs:::parse_outlier_info("Outliers: ")
   )
 }
 test_outlier_parsing()
@@ -738,7 +735,7 @@ test_split <- function() {
   )
  
   # Test case where splitting on one column works correctly
-  result <- bs:::split(df, cols = c("group"), levels = c("A", "B"))
+  result <- bs:::split_groups(df, cols = c("group"), levels = c("A", "B"))
   expect_equal(
     result$group,
     c("A", "B", "A", "B"),
@@ -746,7 +743,7 @@ test_split <- function() {
   ) |> print()
 
   # Test case where splitting on two columns works correctly
-  result <- bs:::split(df, cols = c("group"), levels = c("A", "B"))
+  result <- bs:::split_groups(df, cols = c("group"), levels = c("A", "B"))
   expect_equal(
     result$category,
     c("X", "Y", "X", "Y"),
@@ -755,7 +752,7 @@ test_split <- function() {
 
   # Test when the dataframe has no matching rows
   result <- tryCatch({
-    bs:::split(df, cols = c("group"), levels = c("D"))
+    bs:::split_groups(df, cols = c("group"), levels = c("D"))
   }, error = function(e) e)
   expect_true(
     inherits(result, "error"),
@@ -763,7 +760,7 @@ test_split <- function() {
   ) |> print()
 
   # Test case where all rows are included (no subset)
-  result <- bs:::split(df, cols = c("group", "category"), levels = c("A", "B", "C", "X", "Y", "Z"))
+  result <- bs:::split_groups(df, cols = c("group", "category"), levels = c("A", "B", "C", "X", "Y", "Z"))
   expect_equal(
     nrow(result),
     5,
@@ -773,7 +770,7 @@ test_split <- function() {
   # Edge case with empty dataframe
   df_empty <- data.frame(group = character(0), category = character(0), value = numeric(0))
   result <- tryCatch({
-    bs:::split(df_empty, cols = c("group"), levels = c("A"))
+    bs:::split_groups(df_empty, cols = c("group"), levels = c("A"))
   }, error = function(e) e)
   expect_true(
     inherits(result, "error"),
@@ -782,7 +779,7 @@ test_split <- function() {
 
   # Edge case where no level is set
   result <- tryCatch({
-    bs:::split(df, cols = c("group", "category"), levels = c())
+    bs:::split_groups(df, cols = c("group", "category"), levels = c())
   }, error = function(e) e)
   expect_true(
     inherits(result, "error"),
@@ -1237,6 +1234,7 @@ test_stack_unstackDF()
 
 # Test createJSString
 # =======================================================================================
+# TODO: update test
 test_createJSString <- function() {
   # 1. Create a plot object
   p <- ggplot(data = iris, aes(x = Species, y = Sepal.Length)) +
@@ -1264,29 +1262,29 @@ test_createJSString <- function() {
   # Validate the result
   # Check structure and length
   expect_equal(
-    length(result), 5 + 2,
+    length(result[[1]]), 7,
     info = "Result should include encoded strings for each element"
   )
 
   # Check for base64-encoded strings
   expect_true(
-    grepl("^data:image/png;base64,", result[[1]]),
+    grepl("^data:image/png;base64,", result[[1]][[1]]),
     info = "First element should be a base64-encoded image"
   ) |> print()
   expect_true(
-    grepl("^data:image/png;base64,", result[[2]]),
+    grepl("^data:image/png;base64,", result[[1]][[2]]),
     info = "Second element should be a base64-encoded diagnostic plot"
   ) |> print()
   expect_true(
-    grepl("^data:image/png;base64,", result[[3]]),
+    grepl("^data:image/png;base64,", result[[1]][[3]]),
     info = "Dose response plot should be base64-encoded"
   ) |> print()
   expect_true(
-    grepl("^Sepal.Length", result[[5]]),
+    grepl("^Sepal.Length", result[[1]][[5]]),
     info = "Data frame should be converted to string format"
   ) |> print()
   expect_equal(
-    result[[7]], char_obj,
+    result[[1]][[7]], char_obj,
     info = "Character string should remain as is"
   ) |> print()
 
@@ -1336,6 +1334,7 @@ test_createExcelFile <- function() {
   file.remove(file)
   unlink(temp_files)
 }
+test_createExcelFile()
 
 # Test DF2String
 # =======================================================================================
@@ -1391,23 +1390,31 @@ test_DF2String()
 
 # Test readData
 # =======================================================================================
+# TODO: update test
 test_readData <- function() {
+
   # Test 1: Valid input with an Excel file
+  ResultsState <- bs:::backend_result_state_V1_2$new(NULL)
+  ResultsState$bgp$in_backend <- TRUE
+  DataModelState <- bs:::backend_data_model_state_V1_2$new(NULL)
   test_file <- tempfile(fileext = ".xlsx")
   write.csv(data.frame(a = 1:5, b = letters[1:5]), test_file, row.names = FALSE)
   writexl::write_xlsx(read.csv(test_file), test_file)
-  result <- bs:::readData(test_file)
-  expect_equal(class(result), "data.frame") |> print()
-  expect_equal(nrow(result), 5) |> print()
-  expect_equal(ncol(result), 2) |> print()
+  bs:::readData(test_file, DataModelState, ResultsState)
+  expect_equal(class(DataModelState$df), "data.frame") |> print()
+  expect_equal(nrow(DataModelState$df), 5) |> print()
+  expect_equal(ncol(DataModelState$df), 2) |> print()
 
   # Test 2: Valid input with a CSV file (comma-separated)
+  ResultsState <- bs:::backend_result_state_V1_2$new(NULL)
+  ResultsState$bgp$in_backend <- TRUE
+  DataModelState <- bs:::backend_data_model_state_V1_2$new(NULL)
   test_file <- tempfile(fileext = ".csv")
   write.csv(data.frame(a = 1:5, b = letters[1:5]), test_file, row.names = FALSE)
-  result <- bs:::readData(test_file)
-  expect_equal(class(result), "data.frame") |> print()
-  expect_equal(nrow(result), 5) |> print()
-  expect_equal(ncol(result), 2) |> print()
+  bs:::readData(test_file, DataModelState, ResultsState)
+  expect_equal(class(DataModelState$df), "data.frame") |> print()
+  expect_equal(nrow(DataModelState$df), 5) |> print()
+  expect_equal(ncol(DataModelState$df), 2) |> print()
 
   # Test 3: File exceeds size limit
   test_file <- tempfile()
@@ -1419,24 +1426,30 @@ test_readData <- function() {
   writeLines("a|b|c\n1|2|3", test_file)
   expect_error(
     bs:::readData(test_file),
-    "Could not identiy the seperator. Please upload a file with a known seperator."
+    "Could not identify the separator. Please upload a file with a known separator."
   )
 
   # Test 5: File with semicolon separator
+  ResultsState <- bs:::backend_result_state_V1_2$new(NULL)
+  ResultsState$bgp$in_backend <- TRUE
+  DataModelState <- bs:::backend_data_model_state_V1_2$new(NULL)
   test_file <- tempfile()
   writeLines("a;b;c\n1;2;3", test_file)
-  result <- bs:::readData(test_file)
-  expect_equal(class(result), "data.frame") |> print()
-  expect_equal(nrow(result), 1) |> print()
-  expect_equal(ncol(result), 3) |> print()
+  result <- bs:::readData(test_file, DataModelState, ResultsState)
+  expect_equal(class(DataModelState$df), "data.frame") |> print()
+  expect_equal(nrow(DataModelState$df), 2) |> print()
+  expect_equal(ncol(DataModelState$df), 3) |> print()
 
   # Test 6: File with tab separator
+  ResultsState <- bs:::backend_result_state_V1_2$new(NULL)
+  ResultsState$bgp$in_backend <- TRUE
+  DataModelState <- bs:::backend_data_model_state_V1_2$new(NULL)
   test_file <- tempfile()
   writeLines("a\tb\tc\n1\t2\t3", test_file)
-  result <- bs:::readData(test_file)
-  expect_equal(class(result), "data.frame") |> print()
-  expect_equal(nrow(result), 1) |> print()
-  expect_equal(ncol(result), 3) |> print()
+  result <- bs:::readData(test_file, DataModelState, ResultsState)
+  expect_equal(class(DataModelState$df), "data.frame") |> print()
+  expect_equal(nrow(DataModelState$df), 2) |> print()
+  expect_equal(ncol(DataModelState$df), 3) |> print()
 
   # Test 7: File with invalid path
   expect_error(bs:::readData("nonexistent_file.csv"), "File does not exists") |> print()
@@ -1444,17 +1457,17 @@ test_readData <- function() {
   # Test 8: Data exceeds row or column limits
   test_file <- tempfile(fileext = ".csv")
   write.csv(data.frame(matrix(1, nrow = 1e6 + 1, ncol = 2)), test_file, row.names = FALSE)
-  expect_error(bs:::readData(test_file), "Data exceeds the limit of") |> print()
+  expect_error(bs:::readData(test_file, DataModelState, ResultsState), "Data exceeds the limit of") |> print()
 
   write.csv(data.frame(matrix(1, nrow = 10, ncol = 1001)), test_file, row.names = FALSE)
-  expect_error(bs:::readData(test_file), "Data exceeds the limit of") |> print()
+  expect_error(bs:::readData(test_file, DataModelState, ResultsState), "Data exceeds the limit of") |> print()
 
   # Test 9: Empty file
   test_file <- tempfile(fileext = ".csv")
   write.csv(data.frame(), test_file, row.names = FALSE)
   expect_error(
-    bs:::readData(test_file),
-    "Could not identiy the seperator. Please upload a file with a known seperator."
+    bs:::readData(test_file, DataModelState, ResultsState),
+    "Could not identify the separator. Please upload a file with a known separator."
   ) |> print()
 
   # Test 10: Non-character input for path

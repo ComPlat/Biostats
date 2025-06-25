@@ -13,6 +13,7 @@ bg_process_V1_2 <- R6::R6Class("bg_process_V1_2",
     is_running = NULL,
     promise_result_name = NULL,
     promise_history_entry = NULL,
+    in_backend = FALSE,
 
     initialize = function(poll_interval = 250, com = communicator_V1_2) {
       self$com <- com$new()
@@ -52,9 +53,11 @@ bg_process_V1_2 <- R6::R6Class("bg_process_V1_2",
             ResultsState$bgp$result_val <- res
             ResultsState$bgp$running_status <- "Idle"
 
-            exportTestValues(
-              result_list = ResultsState$all_data
-            )
+            if (!self$in_backend) {
+              exportTestValues(
+                result_list = ResultsState$all_data
+              )
+            }
           }
           ResultsState$bgp$process <- NULL
           ResultsState$bgp$is_running <- FALSE
@@ -72,9 +75,11 @@ bg_process_V1_2 <- R6::R6Class("bg_process_V1_2",
         ResultsState$all_data[[promise_result_name]] <- res
         ResultsState$counter <- ResultsState$counter + 1
         ResultsState$history[[length(ResultsState$history) + 1]] <- promise_history_entry
-        exportTestValues(
-          result_list = ResultsState$all_data
-        )
+        if (!self$in_backend) {
+          exportTestValues(
+            result_list = ResultsState$all_data
+          )
+        }
       } else {
         self$com$print_err(res)
       }

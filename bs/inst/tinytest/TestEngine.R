@@ -5,7 +5,7 @@ library(tinytest)
 # =======================================================================================
 test_create_formula <- function() {
   df <- CO2
-  ResultsState <- bs:::backend_result_state_V1_2$new()
+  ResultsState <- bs:::backend_result_state_V1_2$new(df)
   DataModelState <- bs:::backend_data_model_state_V1_2$new(df)
 
   cf <- bs:::create_formula_V1_2$new(
@@ -24,13 +24,14 @@ test_create_formula()
 
 test_summary_model <- function() {
   df <- CO2
-  ResultsState <- bs:::backend_result_state_V1_2$new()
+  ResultsState <- bs:::backend_result_state_V1_2$new(list(df))
+  ResultsState$bgp$in_backend <- TRUE
   DataModelState <- bs:::backend_data_model_state_V1_2$new(df)
   formula <- as.formula("uptake ~ conc")
   formula <- new("LinearFormula", formula = formula)
 
   sum_model <- bs:::summarise_model_V1_2$new(
-     df, formula, com = bs:::backend_communicator_V1_2
+    df, formula, com = bs:::backend_communicator_V1_2
   )
   sum_model$validate()
   sum_model$eval(ResultsState)
@@ -54,7 +55,8 @@ test_summary_model()
 # =======================================================================================
 test_corr <- function() {
   df <- CO2
-  ResultsState <- bs:::backend_result_state_V1_2$new()
+  ResultsState <- bs:::backend_result_state_V1_2$new(list(df))
+  ResultsState$bgp$in_backend <- TRUE
   DataModelState <- bs:::backend_data_model_state_V1_2$new(df)
 
   formula <- as.formula("uptake ~ conc")
@@ -66,7 +68,7 @@ test_corr <- function() {
   corr$eval(ResultsState)
 
   check1 <- expect_equal(
-    ResultsState$all_data[[1]],
+    ResultsState$all_data[[2]],
     broom::tidy(
       cor.test(
         df$uptake,
@@ -82,7 +84,7 @@ test_corr <- function() {
   corr$method <- "kendall"
   corr$eval(ResultsState)
   check2 <- expect_equal(
-    ResultsState$all_data[[2]],
+    ResultsState$all_data[[3]],
     broom::tidy(
       cor.test(
         CO2$uptake,
@@ -98,7 +100,7 @@ test_corr <- function() {
   corr$method <- "spearman"
   corr$eval(ResultsState)
   check3 <- expect_equal(
-    ResultsState$all_data[[3]],
+    ResultsState$all_data[[4]],
     broom::tidy(
       cor.test(
         CO2$uptake,
@@ -115,7 +117,7 @@ test_corr <- function() {
   corr$conflevel <- 0.5
   corr$eval(ResultsState)
   check4 <- expect_equal(
-    ResultsState$all_data[[4]],
+    ResultsState$all_data[[5]],
     broom::tidy(
       cor.test(
         CO2$uptake,
@@ -133,7 +135,7 @@ test_corr <- function() {
   corr$alternative <- "less"
   corr$eval(ResultsState)
   check5 <- expect_equal(
-    ResultsState$all_data[[5]],
+    ResultsState$all_data[[6]],
     broom::tidy(
       cor.test(
         CO2$uptake,
@@ -156,7 +158,8 @@ test_vis_all <- function() {
   df <- CO2
   outer_checks <- c()
   for (method in c("box", "dot", "line")) {
-    ResultsState <- bs:::backend_result_state_V1_2$new()
+    ResultsState <- bs:::backend_result_state_V1_2$new(list(df))
+    ResultsState$bgp$in_backend <- TRUE
     DataModelState <- bs:::backend_data_model_state_V1_2$new(df)
     checks <- c()
     vis <- bs:::visualisation_V1_2$new(
@@ -188,7 +191,7 @@ test_vis_all <- function() {
     p <- ResultsState$all_data[[length(ResultsState$all_data)]]
     # Basic checks
     checks <- c(checks, expect_true(inherits(p, "plot")))
-    checks <- c(checks, expect_equal(length(ResultsState$all_data), 1))
+    checks <- c(checks, expect_equal(length(ResultsState$all_data), 2))
     checks <- c(checks, expect_equal(length(ResultsState$history), 1))
 
     # History correctness
@@ -199,7 +202,7 @@ test_vis_all <- function() {
     checks <- c(checks, expect_equal(h$`Y axis label`, paste("ylabel", method)))
 
     # Result name check
-    checks <- c(checks, expect_match(names(ResultsState$all_data)[1], paste0("1 Visualization ", 
+    checks <- c(checks, expect_match(names(ResultsState$all_data)[[2]], paste0("1 Visualization ", 
       c(box = "Boxplot", dot = "Scatterplot", line = "Lineplot")[method])))
 
     outer_checks <- c(outer_checks, all(checks))
@@ -210,7 +213,8 @@ test_vis_all()
 
 test_vis_warn_size <- function() {
   df <- CO2
-  ResultsState <- bs:::backend_result_state_V1_2$new()
+  ResultsState <- bs:::backend_result_state_V1_2$new(list(df))
+  ResultsState$bgp$in_backend <- TRUE
   DataModelState <- bs:::backend_data_model_state_V1_2$new(df)
   vis <- bs:::visualisation_V1_2$new(
     df = CO2, x = "conc", y = "uptake", method = "box",
@@ -233,7 +237,8 @@ test_vis_warn_size()
 # =======================================================================================
 test_plot_model <- function() {
   df <- CO2
-  ResultsState <- bs:::backend_result_state_V1_2$new()
+  ResultsState <- bs:::backend_result_state_V1_2$new(list(df))
+  ResultsState$bgp$in_backend <- TRUE
   DataModelState <- bs:::backend_data_model_state_V1_2$new(df)
   formula <- uptake ~ conc*Treatment
   formula <- new("LinearFormula", formula = formula)
@@ -251,7 +256,8 @@ test_plot_model()
 # =======================================================================================
 test_apply_filter <- function() {
   df <- CO2
-  ResultsState <- bs:::backend_result_state_V1_2$new()
+  ResultsState <- bs:::backend_result_state_V1_2$new(list(df))
+  ResultsState$bgp$in_backend <- TRUE
   DataModelState <- bs:::backend_data_model_state_V1_2$new(df)
 
   af <- bs:::apply_filter_V1_2$new("Plant", c("Qn1", "Qn2"), bs:::backend_communicator_V1_2)
@@ -270,7 +276,8 @@ test_apply_filter()
 
 test_remove_filter <- function() {
   df <- CO2
-  ResultsState <- bs:::backend_result_state_V1_2$new()
+  ResultsState <- bs:::backend_result_state_V1_2$new(list(df))
+  ResultsState$bgp$in_backend <- TRUE
   DataModelState <- bs:::backend_data_model_state_V1_2$new(df)
   DataModelState$df <- df[CO2$Plant %in% c("Qn1", "Qn2"), ]
   DataModelState$backup_df <- df
@@ -292,7 +299,8 @@ test_remove_filter()
 # =======================================================================================
 test_create_intermediate_var <- function() {
   df <- CO2
-  ResultsState <- bs:::backend_result_state_V1_2$new()
+  ResultsState <- bs:::backend_result_state_V1_2$new(list(df))
+  ResultsState$bgp$in_backend <- TRUE
   DataModelState <- bs:::backend_data_model_state_V1_2$new(df)
   DataWranglingState <- bs:::backend_data_wrangling_state_V1_2$new(DataModelState)
 
@@ -318,7 +326,8 @@ test_create_intermediate_var()
 
 test_create_new_col <- function() {
   df <- CO2
-  ResultsState <- bs:::backend_result_state_V1_2$new()
+  ResultsState <- bs:::backend_result_state_V1_2$new(list(df))
+  ResultsState$bgp$in_backend <- TRUE
   DataModelState <- bs:::backend_data_model_state_V1_2$new(df)
   DataWranglingState <- bs:::backend_data_wrangling_state_V1_2$new(DataModelState)
 
@@ -344,7 +353,8 @@ test_create_new_col()
 
 test_remove_intermediate_var <- function() {
   df <- CO2
-  ResultsState <- bs:::backend_result_state_V1_2$new()
+  ResultsState <- bs:::backend_result_state_V1_2$new(list(df))
+  ResultsState$bgp$in_backend <- TRUE
   DataModelState <- bs:::backend_data_model_state_V1_2$new(df)
   DataWranglingState <- bs:::backend_data_wrangling_state_V1_2$new(DataModelState)
   DataWranglingState$intermediate_vars <- list(foo = 1:3)
@@ -363,13 +373,14 @@ test_remove_intermediate_var()
 # =======================================================================================
 test_t_test <- function() {
   df <- CO2
-  ResultsState <- bs:::backend_result_state_V1_2$new()
+  ResultsState <- bs:::backend_result_state_V1_2$new(list(df))
+  ResultsState$bgp$in_backend <- TRUE
   DataModelState <- bs:::backend_data_model_state_V1_2$new(df)
   formula <- as.formula("uptake ~ Treatment")
   formula <- new("LinearFormula", formula = formula)
 
   tt <- bs:::t_test_V1_2$new(
-   r df = df,
+    df = df,
     formula = formula,
     variances_equal = "eq",
     conf_level = 0.95,
@@ -399,7 +410,8 @@ test_statistical_methods <- function() {
   outer_checks <- c()
   methods <- c("aov", "kruskal", "HSD", "kruskalTest", "LSD", "scheffe", "REGW")
   for (method in methods) {
-    ResultsState <- bs:::backend_result_state_V1_2$new()
+    ResultsState <- bs:::backend_result_state_V1_2$new(list(df))
+    ResultsState$bgp$in_backend <- TRUE
     st <- bs:::statistical_tests_V1_2$new(
       df = df,
       formula = formula,
@@ -415,7 +427,7 @@ test_statistical_methods <- function() {
     check1 <- expect_true(is.data.frame(result) || is.matrix(result))
     check2 <- expect_equal(ResultsState$counter, 1)
     check3 <- expect_match(ResultsState$history[[1]]$type, "ANOVA|Test|Tukey|post hoc|Least|Scheffe|REGW")
-    check4 <- expect_true(length(ResultsState$all_data) == 1)
+    check4 <- expect_true(length(ResultsState$all_data) == 2)
     checks <- c(check1, check2, check3, check4)
     outer_checks <- c(outer_checks, all(checks))
   }
@@ -444,7 +456,8 @@ test_statistical_methods_glm <- function() {
   )
 
   for (method in methods) {
-    ResultsState <- bs:::backend_result_state_V1_2$new()
+    ResultsState <- bs:::backend_result_state_V1_2$new(list(df))
+    ResultsState$bgp$in_backend <- TRUE
     st <- bs:::statistical_tests_V1_2$new(
       df = df,
       formula = formula,
@@ -456,12 +469,12 @@ test_statistical_methods_glm <- function() {
 
     result <- st$eval(ResultsState, method = method)
 
-   bs:::backend_get_result_V1_2(ResultsState)
+    bs:::backend_get_result_V1_2(ResultsState)
     result <- ResultsState$all_data[[length(ResultsState$all_data)]]
     check1 <- expect_true(is.data.frame(result) || is.matrix(result))
     check2 <- expect_equal(ResultsState$counter, 1)
     check3 <- expect_match(ResultsState$history[[1]]$type, "ANOVA|Chisq|PostHoc|Test")
-    check4 <- expect_true(length(ResultsState$all_data) == 1)
+    check4 <- expect_true(length(ResultsState$all_data) == 2)
     checks <- c(check1, check2, check3, check4)
     outer_checks <- c(outer_checks, all(checks))
   }
@@ -479,11 +492,12 @@ test_shapiro_on_data <- function() {
   formula <- as.formula("uptake ~ group")
   DataModelState <- bs:::backend_data_model_state_V1_2$new(df)
   formula <- new("LinearFormula", formula = formula)
-  ResultsState <- bs:::backend_result_state_V1_2$new()
+  ResultsState <- bs:::backend_result_state_V1_2$new(list(df))
+  ResultsState$bgp$in_backend <- TRUE
 
   sh <- bs:::shapiro_on_data_V1_2$new(df = df, formula = formula, com = bs:::backend_communicator_V1_2)
   sh$eval(ResultsState)
-  result <- ResultsState$all_data[[1]]
+  result <- ResultsState$all_data[[2]]
   check1 <- expect_true(is.data.frame(result))
   check2 <- expect_true("Normal distributed" %in% colnames(result))
   check3 <- expect_equal(ResultsState$counter, 1)
@@ -499,11 +513,12 @@ test_shapiro_on_residuals <- function() {
   formula <- as.formula("uptake ~ group")
   DataModelState <- bs:::backend_data_model_state_V1_2$new(df)
   formula <- new("LinearFormula", formula = formula)
-  ResultsState <- bs:::backend_result_state_V1_2$new()
+  ResultsState <- bs:::backend_result_state_V1_2$new(list(df))
+  ResultsState$bgp$in_backend <- TRUE
 
   sh <- bs:::shapiro_on_residuals_V1_2$new(df = df, formula = formula, com = bs:::backend_communicator_V1_2)
   sh$eval(ResultsState)
-  result <- ResultsState$all_data[[1]]
+  result <- ResultsState$all_data[[2]]
 
   check1 <- expect_true(is.data.frame(result))
   check2 <- expect_true("Residuals normal distributed" %in% colnames(result))
@@ -520,11 +535,12 @@ test_levene <- function() {
   formula <- as.formula("uptake ~ group")
   DataModelState <- bs:::backend_data_model_state_V1_2$new(df)
   formula <- new("LinearFormula", formula = formula)
-  ResultsState <- bs:::backend_result_state_V1_2$new()
+  ResultsState <- bs:::backend_result_state_V1_2$new(list(df))
+  ResultsState$bgp$in_backend <- TRUE
 
   lv <- bs:::levene_V1_2$new(df = df, formula = formula, center = "mean", com = bs:::backend_communicator_V1_2)
   lv$eval(ResultsState)
-  result <- ResultsState$all_data[[1]]
+  result <- ResultsState$all_data[[2]]
 
   check1 <- expect_true(is.data.frame(result))
   check2 <- expect_true("Variance homogenity" %in% colnames(result))
@@ -541,7 +557,8 @@ test_diagnostic_plots <- function() {
   formula <- as.formula("uptake ~ group")
   DataModelState <- bs:::backend_data_model_state_V1_2$new(df)
   formula <- new("LinearFormula", formula = formula)
-  ResultsState <- bs:::backend_result_state_V1_2$new()
+  ResultsState <- bs:::backend_result_state_V1_2$new(list(df))
+  ResultsState$bgp$in_backend <- TRUE
 
   dp <- bs:::diagnostic_plots_V1_2$new(df = df, formula = formula, com = bs:::backend_communicator_V1_2)
   dp$eval(ResultsState)
@@ -549,7 +566,7 @@ test_diagnostic_plots <- function() {
   p <- ResultsState$all_data[[length(ResultsState$all_data)]]
 
   check1 <- expect_true(inherits(p, "plot"))
-  check2 <- expect_match(names(ResultsState$all_data), "1 Diagnostic plot")
+  check2 <- expect_match(names(ResultsState$all_data[[2]]), "1 Diagnostic plot")
   check3 <- expect_equal(ResultsState$history[[1]]$type, "DiagnosticPlots")
   checks <- c(check1, check2, check3)
   expect_true(all(checks))
@@ -567,7 +584,8 @@ test_dose_response <- function() {
   DataModelState <- bs:::backend_data_model_state_V1_2$new(df)
   formula <- response ~ dose
   formula <- new("LinearFormula", formula = formula)
-  ResultsState <- bs:::backend_result_state_V1_2$new()
+  ResultsState <- bs:::backend_result_state_V1_2$new(list(df))
+  ResultsState$bgp$in_backend <- TRUE
 
   dr <- bs:::dose_response_V1_2$new(
     df = df,
@@ -595,7 +613,8 @@ test_dose_response()
 # Remove result from ResultList
 # =======================================================================================
 test_remove_result <- function() {
-  ResultsState <- bs:::backend_result_state_V1_2$new()
+  ResultsState <- bs:::backend_result_state_V1_2$new(list(df))
+  ResultsState$bgp$in_backend <- TRUE
   ResultsState$all_data <- list("MyResult" = 42)
   ResultsState$history <- list()
 

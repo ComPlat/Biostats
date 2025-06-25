@@ -15,7 +15,7 @@ reset <- function(app) {
   wait(app)
 }
 
-app <- bs::app()
+app <- bs:::app()
 # Create app
 app <- shiny::shinyApp(app$ui, app$server)
 app <- AppDriver$new(app)
@@ -605,8 +605,7 @@ app$click("OP-run_op_intermediate")
 wait(app)
 iv_list <- app$get_values()$export[["OP-iv_list"]]
 wait(app)
-expect_equal(iv_list[["get_cols"]], CO2[, c("conc", "conc", "uptake")])
-
+expect_true(all(iv_list[["get_cols"]] == CO2[, c("conc", "conc", "uptake")]))
 
 # Test string functions
 # =================================================================

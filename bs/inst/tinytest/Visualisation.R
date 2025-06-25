@@ -4,7 +4,7 @@ library(tinytest)
 wait <- function(app) {
   try(app$wait_for_idle(), silent = TRUE)
 }
-app <- bs::app()
+app <- bs:::app()
 app <- shiny::shinyApp(app$ui, app$server)
 app <- AppDriver$new(app)
 wait(app)
@@ -52,7 +52,7 @@ create_basic_plot <- function(app) {
   Sys.sleep(10)
   res <- app$get_values()$export
   res <- res$result_list
-  res[[1]]@p
+  res[[2]]@p
 }
 create_expected_plot <- function() {
   ggplot() +
@@ -86,7 +86,7 @@ create_fill_plot <- function(app) {
   Sys.sleep(10)
   res <- app$get_values()$export
   res <- res$result_list
-  res[[2]]@p
+  res[[3]]@p
 }
 create_expected_plot <- function() {
   legendTitleColour <- ""
@@ -131,7 +131,7 @@ create_colour_plot <- function(app) {
   Sys.sleep(10)
   res <- app$get_values()$export
   res <- res$result_list
-  res[[3]]@p
+  res[[4]]@p
 }
 create_expected_plot <- function() {
   CO2$Treatment <- as.character(CO2$Treatment)
@@ -179,7 +179,7 @@ create_specified_yaxis <- function(app) {
   Sys.sleep(10)
   res <- app$get_values()$export
   res <- res$result_list
-  res[[4]]@p
+  res[[5]]@p
 }
 create_expected_plot <- function() {
   padded_min_y <- 7.315
@@ -226,7 +226,7 @@ create_specified_xaxis <- function(app) {
   Sys.sleep(10)
   res <- app$get_values()$export
   res <- res$result_list
-  res[[5]]@p
+  res[[6]]@p
 }
 create_expected_plot <- function() {
   padded_min_y <- 7.315
@@ -278,7 +278,7 @@ create_facet_plot <- function(app) {
   Sys.sleep(10)
   res <- app$get_values()$export
   res <- res$result_list
-  res[[6]]@p
+  res[[7]]@p
 }
 create_expected_plot <- function() {
   padded_min_y <- 7.315
@@ -326,7 +326,7 @@ create_different_theme_plot <- function(app) {
   Sys.sleep(10)
   res <- app$get_values()$export
   res <- res$result_list
-  res[[7]]@p
+  res[[8]]@p
 }
 create_expected_plot <- function() {
   padded_min_y <- 7.315
@@ -370,12 +370,11 @@ Map(function(a, b) {
 # =============================================================================
 app$set_inputs(VisConditionedPanels = "Scatterplot")
 wait(app)
-app$view()
 app$click("VIS-CreatePlotScatter")
 Sys.sleep(10)
 res <- app$get_values()$export
 res <- res$result_list
-p <- res[[8]]@p
+p <- res[[9]]@p
 colourTheme <- "Dark2"
 colVar <- "Treatment"
 legendTitleColour <- "Title colour"
@@ -406,7 +405,7 @@ app$click("VIS-CreatePlotLine")
 Sys.sleep(10)
 res <- app$get_values()$export
 res <- res$result_list
-p <- res[[9]]@p
+p <- res[[10]]@p
 colourTheme <- "Dark2"
 colVar <- "Treatment"
 legendTitleColour <- "Title colour"

@@ -21,6 +21,7 @@
     "Log transform x-axis": false,
     "Log transform y-axis": false,
     "formula": "abs ~ conc",
+    "outliers": "",
     "Result name": "DoseResponseNr3"
   },
   {

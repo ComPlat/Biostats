@@ -189,12 +189,12 @@ readData <- function(path, DataModelState, ResultsState) {
   if (class(tables) == "try-error") {
     tables <- try(read_data_csv(path))
     if (class(tables) == "try-error") {
-      stop(conditionMessage(tables))
+      stop(tables)
     }
   }
 
   DataModelState$df <- tables[[1]]
-  if (length(tables) >= 2) {
+  if (length(tables) >= 1) {
     lapply(tables, function(t) {
       name <- paste0("df", ResultsState$counter)
       ResultsState$all_data[[name]] <- t

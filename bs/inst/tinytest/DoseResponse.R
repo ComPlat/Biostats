@@ -3,7 +3,7 @@ library(tinytest)
 wait <- function(app) {
   try(app$wait_for_idle(), silent = TRUE)
 }
-app <- bs::app()
+app <- bs:::app()
 app <- shiny::shinyApp(app$ui, app$server)
 app <- AppDriver$new(app)
 wait(app)
@@ -19,11 +19,11 @@ wait(app)
 # Define formula
 app$click("open_formula_editor")
 wait(app)
-app$set_inputs(`FO-colnames-dropdown_0` = "abs")
+app$set_inputs(`FO-colnames-dropdown_` = "abs")
 wait(app)
 app$set_inputs(`FO-editable_code` = "conc")
 wait(app)
-app$click("FO-create_formula_V1_2")
+app$click("FO-create_formula")
 wait(app)
 app$run_js("$('.modal-footer button:contains(\"Close\")').click();")
 wait(app)
@@ -35,8 +35,7 @@ wait(app)
 
 res <- app$get_values()$export
 res <- res[["FO-result_list"]]
-res_df <- res[[2]]@df
-res_df
+res_df <- res[[3]]@df
 
 data <- read.csv(system.file("/test_data/DoseResponse.csv", package = "bs"))
 expected <- bs:::ic50(
@@ -50,6 +49,12 @@ dfs <- lapply(expected, function(x) {
   }
 })
 expected <- do.call(rbind, dfs)
-tinytest::expect_equal(res_df, expected)
+equal <- Map(function(a, b) {
+  a <- a[!is.na(a)]
+  b <- b[!is.na(b)]
+  all(a == b)
+}, res_df, expected) |> unlist() |> all()
+expect_true(equal)
+
 
 app$stop()

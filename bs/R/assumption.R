@@ -2,13 +2,13 @@ assSidebarUI <- function(id) {
   tabPanel(
     "Assumption",
     tags$hr(),
-    uiOutput(NS(id, "shapiro")),
+    uiOutput(NS(id, "shapiroUI")),
     tags$hr(),
     uiOutput(NS(id, "shapiroResidualsUI")),
     tags$hr(),
     uiOutput(NS(id, "LeveneUI")),
     tags$hr(),
-    uiOutput(NS(id, "DiagnosticPlot"))
+    uiOutput(NS(id, "DiagnosticPlotUI"))
   )
 }
 
@@ -16,19 +16,11 @@ assUI <- function(id) {
   fluidRow()
 }
 
-# TODO: glm
-# 1. Assumptions for the ratio = mean/var analysis; Dispersion is the factor the variance is larger than expected
-# 2. Residuen analysis; residual plots on response scale and link scale
-# 3. relationship of response and predictors; Complicated
-#
-# TODO: Show all assumptions
-# Show all assumption tests even when no formula is set in the same way it is handled in the tests tab
-
 assServer <- function(id, DataModelState, ResultsState) {
   moduleServer(id, function(input, output, session) {
 
     # React to model type
-    output[["shapiro"]] <- renderUI({
+    output[["shapiroUI"]] <- renderUI({
       if (is.null(DataModelState$formula)) {
         return(
           info_div("You have to define a model in the formula editor to run any assumptions tests")
@@ -90,7 +82,7 @@ assServer <- function(id, DataModelState, ResultsState) {
         )
       }
     })
-    output[["DiagnosticPlot"]] <- renderUI({
+    output[["DiagnosticPlotUI"]] <- renderUI({
       if(inherits(DataModelState$formula, "LinearFormula") || inherits(DataModelState$formula, "GeneralisedLinearFormula")) {
         div(
           div(

@@ -3,7 +3,7 @@ library(tinytest)
 wait <- function(app) {
   try(app$wait_for_idle(), silent = TRUE)
 }
-app <- bs::app()
+app <- bs:::app()
 app <- shiny::shinyApp(app$ui, app$server)
 app <- AppDriver$new(app)
 wait(app)
@@ -19,11 +19,11 @@ wait(app)
 # Define formula
 app$click("open_formula_editor")
 wait(app)
-app$set_inputs(`FO-colnames-dropdown_0` = "uptake")
+app$set_inputs(`FO-colnames-dropdown_` = "uptake")
 wait(app)
 app$set_inputs(`FO-editable_code` = "conc * Treatment + Type")
 wait(app)
-app$click("FO-create_formula_V1_2")
+app$click("FO-create_formula")
 wait(app)
 app$run_js("$('.modal-footer button:contains(\"Close\")').click();")
 wait(app)
@@ -42,16 +42,16 @@ CO2$Type <- as.character(CO2$Type)
 expected <- broom::tidy(aov(uptake ~ conc * Treatment + Type, data = CO2))
 expected <- cbind(expected, row.names(expected))
 names(expected)[ncol(expected)] <- paste0("conc * Treatment + Type", collapse = ".")
-tinytest::expect_equal(res[[2]], expected)
+tinytest::expect_equal(res[[3]], expected)
 
 # Kruskal-Wallis
 app$click("open_formula_editor")
 wait(app)
-app$set_inputs(`FO-colnames-dropdown_0` = "uptake")
+app$set_inputs(`FO-colnames-dropdown_` = "uptake")
 wait(app)
 app$set_inputs(`FO-editable_code` = "conc")
 wait(app)
-app$click("FO-create_formula_V1_2")
+app$click("FO-create_formula")
 wait(app)
 app$run_js("$('.modal-footer button:contains(\"Close\")').click();")
 wait(app)
@@ -67,7 +67,7 @@ CO2$Treatment <- as.character(CO2$Treatment)
 expected <- broom::tidy(kruskal.test(uptake ~ conc, data = CO2))
 expected <- cbind(expected, row.names(expected))
 names(expected)[ncol(expected)] <- paste0("conc", collapse = ".")
-tinytest::expect_equal(res[[4]], expected)
+tinytest::expect_equal(res[[5]], expected)
 
 # PostHoc tests
 # TukeyHSD
@@ -87,7 +87,7 @@ fit <- agricolae::HSD.test(fit,
 )$groups
 expected <- cbind(fit, row.names(fit))
 names(expected)[ncol(expected)] <- paste0("conc", collapse = ".")
-tinytest::expect_equal(res[[5]], expected)
+tinytest::expect_equal(res[[6]], expected)
 
 app$set_inputs(`TESTS-PostHocTests` = "HSD")
 wait(app)
@@ -106,7 +106,7 @@ fit <- agricolae::HSD.test(fit,
 )$groups
 expected <- cbind(fit, row.names(fit))
 names(expected)[ncol(expected)] <- paste0("conc", collapse = ".")
-tinytest::expect_equal(res[[6]], expected)
+tinytest::expect_equal(res[[7]], expected)
 
 # Kruskal-Wallis test
 app$set_inputs(`TESTS-PostHocTests` = "kruskalTest")
@@ -126,7 +126,7 @@ fit <- with(df, agricolae::kruskal(df[, dep], df[, "conc"]),
 )$groups
 expected <- cbind(fit, row.names(fit))
 names(expected) <- c("uptake", "groups", "conc")
-tinytest::expect_equal(res[[7]], expected)
+tinytest::expect_equal(res[[8]], expected)
 
 # LSD
 app$set_inputs(`TESTS-PostHocTests` = "LSD")
@@ -149,7 +149,7 @@ fit <- agricolae::LSD.test(
 )$groups
 expected <- cbind(fit, row.names(fit))
 names(expected)[ncol(expected)] <- paste0("conc", collapse = ".")
-tinytest::expect_equal(res[[8]], expected)
+tinytest::expect_equal(res[[9]], expected)
 
 # scheffe
 # aov_res <- aov(formula, data = df)
@@ -170,7 +170,7 @@ fit <- agricolae::scheffe.test(
 )$groups
 expected <- cbind(fit, row.names(fit))
 names(expected)[ncol(expected)] <- paste0("conc", collapse = ".")
-tinytest::expect_equal(res[[9]], expected)
+tinytest::expect_equal(res[[10]], expected)
 
 # REGW
 app$set_inputs(`TESTS-PostHocTests` = "REGW")
@@ -189,7 +189,6 @@ fit <- agricolae::REGW.test(
 )$groups
 expected <- cbind(fit, row.names(fit))
 names(expected)[ncol(expected)] <- paste0("conc", collapse = ".")
-tinytest::expect_equal(res[[10]], expected)
-
+tinytest::expect_equal(res[[11]], expected)
 
 app$stop()

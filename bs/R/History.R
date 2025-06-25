@@ -407,6 +407,7 @@ eval_history <- function(json_string, df, all_data, backend = FALSE) {
     l <- l[-1] # Remove version step as it is not evaluated
     eval_entry <- get_correct_eval(version$Nr)[[1]]
     result_state <- get_correct_result_state(version$Nr)[[1]]$new(all_data)
+    result_state$bgp$in_backend <- TRUE
     data_model_state <- get_correct_data_model_state(version$Nr)[[1]]$new(df)
     data_wrangling_state <- get_correct_data_wrangling_state(version$Nr)[[1]]$new(data_model_state)
     get_result <- get_correct_get_result_fct(version$Nr)[[1]]

@@ -3,7 +3,7 @@ wait <- function(app) {
 }
 library(shinytest2)
 library(tinytest)
-app <- bs::app()
+app <- bs:::app()
 app <- shiny::shinyApp(app$ui, app$server)
 app <- AppDriver$new(app)
 wait(app)
@@ -19,16 +19,16 @@ wait(app)
 # Define formula
 app$click("open_formula_editor")
 wait(app)
-app$set_inputs(`FO-colnames-dropdown_0` = "uptake")
-wait(app)
 app$set_inputs(`FO-model_type` = "Generalised Linear Model")
+wait(app)
+app$set_inputs(`FO-colnames-dropdown_` = "uptake")
 wait(app)
 app$set_inputs(`FO-Family` = "Gamma")
 app$set_inputs(`FO-Link_function` = "inverse")
 wait(app)
 app$set_inputs(`FO-editable_code` = "conc * Treatment + Type")
 wait(app)
-app$click("FO-create_formula_V1_2")
+app$click("FO-create_formula")
 wait(app)
 app$run_js("$('.modal-footer button:contains(\"Close\")').click();")
 wait(app)
@@ -46,7 +46,7 @@ link_fct <- "inverse"
 family <- str2lang(paste0("stats::", family, "(\"", link_fct, "\")"))
 model <- glm(uptake ~ conc * Treatment + Type, data = CO2, family = eval(family))
 expected <- broom::tidy(anova(model, test = "Chisq"))
-tinytest::expect_equal(res$result_list[[2]], expected)
+tinytest::expect_equal(res$result_list[[3]], expected)
 
 # Posthoc tests
 app$set_inputs("TESTS-TestsConditionedPanels" = "Posthoc tests")
@@ -85,7 +85,7 @@ app$click("TESTS-PostHocEmmeansTest")
 Sys.sleep(10)
 res <- app$get_values()$export
 expected <- run_posthoc_glm(choices[1])
-tinytest::expect_equal(res$result_list[[3]], expected)
+tinytest::expect_equal(res$result_list[[4]], expected)
 # Sidak
 app$set_inputs(`TESTS-PostHocEmmeans` = choices[2])
 wait(app)
@@ -93,7 +93,7 @@ app$click("TESTS-PostHocEmmeansTest")
 Sys.sleep(10)
 res <- app$get_values()$export
 expected <- run_posthoc_glm(choices[2])
-tinytest::expect_equal(res$result_list[[4]], expected)
+tinytest::expect_equal(res$result_list[[5]], expected)
 # Hommel
 app$set_inputs(`TESTS-PostHocEmmeans` = choices[9])
 wait(app)
@@ -101,6 +101,6 @@ app$click("TESTS-PostHocEmmeansTest")
 Sys.sleep(10)
 res <- app$get_values()$export
 expected <- run_posthoc_glm(choices[9])
-tinytest::expect_equal(res$result_list[[5]], expected)
+tinytest::expect_equal(res$result_list[[6]], expected)
 
 app$stop()

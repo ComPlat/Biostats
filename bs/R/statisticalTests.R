@@ -2,7 +2,7 @@ testsSidebarUI <- function(id) {
   tabPanel(
     "Tests",
     br(),
-    uiOutput(NS(id, "SidebarTests")),
+    uiOutput(NS(id, "SidebarTestsUI")),
     uiOutput(NS(id, "padjUI"))
   )
 }
@@ -29,7 +29,7 @@ testsServer <- function(id, DataModelState, ResultsState) {
       do.call(tabsetPanel, c(tabs, id = NS(id, "TestsConditionedPanels")))
     })
     # Render Sidebar
-    output$SidebarTests <- renderUI({
+    output$SidebarTestsUI <- renderUI({
       req(input$TestsConditionedPanels)
       if (is.null(DataModelState$formula)) {
         return(
