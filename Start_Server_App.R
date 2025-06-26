@@ -1,4 +1,5 @@
 Sys.setenv(RUN_MODE = "SERVER")
 library(bs)
 app <- bs:::app()
-shiny::shinyApp(app$ui, app$server)
+shinyApp <- shiny::shinyApp(app$ui, app$server)
+shiny::runApp(shinyApp, host = "0.0.0.0", port = 3838)

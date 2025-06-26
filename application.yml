@@ -1,14 +1,22 @@
 proxy:
-  title: Biostats App
+  title: Biostats
   port: 8080
+  authentication: none
+  hide-navbar: true
+  landing-page: SingleApp
+
+  docker:
+    internal-networking: true
 
   specs:
-    - id: biostats-app
+    - id: biostats
       display-name: Biostats
-      description: Statistical analysis app
-      container-image: biostats-app:latest
-      container-port: 3838  # <- Important: tells ShinyProxy where to connect inside the container
-      container-log-path: ./container-logs
+      container-image: konradkraemer/biostats:latest
+      container-cmd: ["Rscript", "/srv/shiny-server/app.R"]
+      container-env:
+        RAW_QUERY: "{{request.queryString}}"
+      container-network: sp-net
 
-docker:
-  internal-networking: true
+server:
+  forward-headers-strategy: native
+

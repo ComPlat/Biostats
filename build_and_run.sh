@@ -11,4 +11,3 @@ docker build -t biostats-app .
 
 # Run the container
 docker run --net=host --rm -p 3838:3838 biostats-app
-
