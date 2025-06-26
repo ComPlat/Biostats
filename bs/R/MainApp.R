@@ -142,10 +142,10 @@ app <- function() {
         font-weight: bold;
         }
         .nav-tabs > li > a {
-          text-decoration: none;
-          color: #900C3F;
-          font-weight: bold;
-          margin-right: 15px;
+        text-decoration: none;
+        color: #900C3F;
+        font-weight: bold;
+        margin-right: 15px;
         }
         .nav-tabs > li > a:hover {
         text-decoration: underline;
@@ -379,7 +379,7 @@ app <- function() {
     })
 
     download_file <- reactive({
-      file <- download(session, "/home/shiny/results") # NOTE: from COMELN
+      file <- COMELN::download(session, "/home/shiny/results")
       readData(file, DataModelState, ResultsState)
       print_req(
         is.data.frame(DataModelState$df),
@@ -398,29 +398,27 @@ app <- function() {
       )
       req(is.data.frame(DataModelState$df))
     })
-
-    output$df <- renderDT({
-      if (Sys.getenv("RUN_MODE") == "SERVER") {
-        res <- try({
-          download_file()
-        })
-        if (inherits(res, "try-error")) {
-          return(NULL)
-        }
-        datatable(DataModelState$df, options = list(pageLength = 10))
-      } else {
-        req(input$file)
-        df <- try(readData(input$file$datapath, DataModelState, ResultsState))
-        if (inherits(df, "try-error")) {
-          err <- conditionMessage(attr(df, "condition"))
+    if (Sys.getenv("RUN_MODE") == "SERVER") {
+      observe({
+        e <- try(download_file())
+        if (!inherits(e, "try-error")) {
+          err <- conditionMessage(attr(e, "condition"))
           print_err(err)
-          return(NULL)
         }
-        req(!is.na(DataModelState$df))
-        datatable(DataModelState$df, options = list(pageLength = 10))
-      }
+      })
+    } else {
+      observeEvent(input$file, {
+        e <- try(readData(input$file$datapath, DataModelState, ResultsState))
+        if (inherits(e, "try-error")) {
+          err <- conditionMessage(attr(e, "condition"))
+          print_err(err)
+        }
+      })
+    }
+    output$df <- renderDT({
+      req(DataModelState$df)
+      datatable(DataModelState$df, options = list(pageLength = 10))
     })
-
     observe({
       req(!is.null(DataModelState$df))
       req(is.data.frame(DataModelState$df))
