@@ -50,9 +50,10 @@ DoseResponseServer <- function(id, DataModelState, ResultsState) {
 
     # Render sidebar
     output[["DoseResponseUI"]] <- renderUI({
-      if (is.null(DataModelState$formula)) {
+      message <- check_formula_dose_response(DataModelState)
+      if (!is.null(message)) {
         return(
-          info_div("You have to define a linear model in the formula editor to run a dose response analysis")
+          info_div(message)
         )
       }
       req(!is.null(DataModelState$df))
