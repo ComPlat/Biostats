@@ -13,8 +13,6 @@ proxy:
       display-name: Biostats
       container-image: konradkraemer/biostats:latest
       container-cmd: ["Rscript", "/srv/shiny-server/app.R"]
-      container-env:
-        RAW_QUERY: "{{request.queryString}}"
       container-network: sp-net
 
 server:

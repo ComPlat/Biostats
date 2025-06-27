@@ -17,17 +17,31 @@ download <- function(session, folder) {
 
   query <- getQueryString()
   url <- paste0(ipaddress)
+
+  url <- sub("0.0.0.0", "172.17.0.1", url) # TODO: remove; Only for testing when running on local host
+
+  res <- tryCatch(
+    {
+      httr::GET(url)
+    },
+    error = function(e) {
+      showNotification(paste("Test GET failed:", e$message), duration = 0)
+      NULL
+    }
+  )
+
   response <- GET(url)
+
   if(status_code(response)[[1]] != 200) {
     showNotification("File could not be downloaded from ELN", duration = 0)
     Sys.sleep(30)
   }
   content <- content(response, as = "text")
   tempfile <- tempfile(tmpdir = folder)
-  
+
   fileConn<-file(tempfile)
   writeLines(content, fileConn)
   close(fileConn)
-  
+
   return(tempfile)
 }

@@ -17,7 +17,9 @@ upload <- function(session, filepath, new_name) {
 
   query <- getQueryString()
   url <- paste0(ipaddress)
-  
+
+  url <- sub("0.0.0.0", "172.17.0.1", url) # TODO: remove; Only for testing when running on local host
+
   file_extension <- tools::file_ext(filepath)
   request <- POST(
     url,

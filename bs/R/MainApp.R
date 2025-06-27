@@ -400,8 +400,9 @@ app <- function() {
     })
     if (Sys.getenv("RUN_MODE") == "SERVER") {
       observe({
+        req(is.null(DataModelState$df))
         e <- try(download_file())
-        if (!inherits(e, "try-error")) {
+        if (inherits(e, "try-error")) {
           err <- conditionMessage(attr(e, "condition"))
           print_err(err)
         }
@@ -739,6 +740,7 @@ app <- function() {
       }
     })
 
+    # Download
     observeEvent(input$download, {
       if (!is_valid_filename(input$user_filename)) {
         runjs("document.getElementById('user_filename').focus();")

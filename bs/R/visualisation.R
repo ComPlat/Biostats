@@ -113,17 +113,29 @@ visServer <- function(id, DataModelState, ResultsState) {
   moduleServer(id, function(input, output, session) {
     # Render model plots
     output[["CreateModelBoxUI"]] <- renderUI({
+      req(!is.null(DataModelState$df))
+      req(is.data.frame(DataModelState$df))
       if (inherits(DataModelState$formula, "LinearFormula") || inherits(DataModelState$formula, "GeneralisedLinearFormula")) {
+        message <- check_visualization2(DataModelState)
+        if (!is.null(message)) return()
         actionButton("VIS-CreateModelBox", "Plot model")
       }
     })
     output[["CreateModelScatterUI"]] <- renderUI({
+      req(!is.null(DataModelState$df))
+      req(is.data.frame(DataModelState$df))
       if (inherits(DataModelState$formula, "LinearFormula") || inherits(DataModelState$formula, "GeneralisedLinearFormula")) {
+        message <- check_visualization2(DataModelState)
+        if (!is.null(message)) return()
         actionButton("VIS-CreateModelScatter", "Plot model")
       }
     })
     output[["CreateModelLineUI"]] <- renderUI({
+      req(!is.null(DataModelState$df))
+      req(is.data.frame(DataModelState$df))
       if (inherits(DataModelState$formula, "LinearFormula") || inherits(DataModelState$formula, "GeneralisedLinearFormula")) {
+        message <- check_visualization2(DataModelState)
+        if (!is.null(message)) return()
         actionButton("VIS-CreateModelLine", "Plot model")
       }
     })
@@ -214,6 +226,12 @@ visServer <- function(id, DataModelState, ResultsState) {
       )
     })
     output[["xVarUI"]] <- renderUI({
+      message <- check_visualization1(DataModelState)
+      if (!is.null(message)) {
+        return(
+          info_div(message)
+        )
+      }
       req(!is.null(DataModelState$df))
       req(is.data.frame(DataModelState$df))
       colnames <- names(DataModelState$df)

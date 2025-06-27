@@ -178,15 +178,19 @@ OperationEditorServer <- function(id, DataModelState, ResultsState, DataWranglin
   moduleServer(id, function(input, output, session) {
     # Data
     observe({
-      req(is.data.frame(DataModelState$df))
-      DataWranglingState$df <- DataModelState$df
-      DataWranglingState$df_name <- create_df_name(DataWranglingState$df_name, names(DataModelState$df))
-      DataWranglingState$intermediate_vars[[DataWranglingState$df_name]] <- DataModelState$df
+      req(DataModelState$active_df_name)
+      req(ResultsState$all_data[[DataModelState$active_df_name]])
+      df <- ResultsState$all_data[[DataModelState$active_df_name]]
+      req(is.data.frame(df))
+      DataWranglingState$df <- df
+
+      DataWranglingState$df_name <- create_df_name(DataWranglingState$df_name, names(df))
+      DataWranglingState$intermediate_vars[[DataWranglingState$df_name]] <- df
       output$head <- renderUI({
-        col_info <- sapply(DataModelState$df, function(col) class(col)[1]) |>
+        col_info <- sapply(df, function(col) class(col)[1]) |>
           t() |>
           as.data.frame()
-        names(col_info) <- names(DataWranglingState$df)
+        names(col_info) <- names(df)
         div(
           class = "var-box-output",
           actionButton(
@@ -222,8 +226,12 @@ OperationEditorServer <- function(id, DataModelState, ResultsState, DataWranglin
 
     # Create colnames button
     output[["colnames_list"]] <- renderUI({
-      req(!is.null(DataWranglingState$df))
-      req(is.data.frame(DataWranglingState$df))
+      message <- check_data_wrangling(DataWranglingState)
+      if (!is.null(message)) {
+        return(
+          info_div(message)
+        )
+      }
       DataWranglingState$df_name <- create_df_name(DataWranglingState$df_name, names(DataModelState$df))
       colnames <- c(DataWranglingState$df_name, names(DataWranglingState$df))
       button_list <- lapply(colnames[1:length(colnames)], function(i) {

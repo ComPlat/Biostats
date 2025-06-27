@@ -13,14 +13,12 @@ corrServer <- function(id, DataModelState, ResultsState) {
   moduleServer(id, function(input, output, session) {
 
     output[["CorrelationUI"]] <- renderUI({
-      if (is.null(DataModelState$formula)) {
+      message <- check_correlation(DataModelState)
+      if (!is.null(message)) {
         return(
-          info_div("You have to define a linear model in the formula editor to run any correlation tests")
+          info_div(message)
         )
       }
-      req(!is.null(DataModelState$df))
-      req(is.data.frame(DataModelState$df))
-      req(inherits(DataModelState$formula, "LinearFormula"))
       div(
         br(),
         sliderInput("CORR-conflevel", "Confidence level of the interval",

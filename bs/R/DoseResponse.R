@@ -50,15 +50,12 @@ DoseResponseServer <- function(id, DataModelState, ResultsState) {
 
     # Render sidebar
     output[["DoseResponseUI"]] <- renderUI({
-      message <- check_formula_dose_response(DataModelState)
+      message <- check_dose_response(DataModelState)
       if (!is.null(message)) {
         return(
           info_div(message)
         )
       }
-      req(!is.null(DataModelState$df))
-      req(is.data.frame(DataModelState$df))
-      req(inherits(DataModelState$formula, "LinearFormula"))
       div(
         style = "position: relative;",
         br(),

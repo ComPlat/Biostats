@@ -16,3 +16,6 @@ docker run -it --rm -p 8080:8080 \
   --network sp-net \
   --user root \
   openanalytics/shinyproxy
+
+# example call: http://localhost:8080/app/biostats/?token=XYZ
+# Maybe url has to be adapted in ELN?

@@ -21,13 +21,12 @@ assServer <- function(id, DataModelState, ResultsState) {
 
     # React to model type
     output[["shapiroUI"]] <- renderUI({
-      if (is.null(DataModelState$formula)) {
+      message <- check_assumptions(DataModelState)
+      if (!is.null(message)) {
         return(
-          info_div("You have to define a model in the formula editor to run any assumptions tests")
+          info_div(message)
         )
       }
-      req(!is.null(DataModelState$df))
-      req(is.data.frame(DataModelState$df))
       if(inherits(DataModelState$formula, "LinearFormula") || inherits(DataModelState$formula, "GeneralisedLinearFormula")) {
         div(
           h4(strong("Test of normal distribution")),
@@ -38,11 +37,6 @@ assServer <- function(id, DataModelState, ResultsState) {
             "Use this test if you have a formula like 'response ~ pred1 * pred2' (two-way ANOVA) to check normality of residuals within each group."
           ),
           br()
-        )
-      } else if (inherits(DataModelState$formula, "OptimFormula")) {
-        div(
-          class = "var-box-output",
-          h3(strong("There are no meaningful tests for an optimization"))
         )
       }
     })
